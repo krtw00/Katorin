@@ -1,0 +1,9 @@
+{
+  "name": "katorin-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
+    "express": "^5.1.0"
+  }
+}
