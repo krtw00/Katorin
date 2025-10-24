@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import './App.css';
+
 import LegendCupMock from './LegendCupMock';
 import { legendCupDefault } from './legendCupDefaults';
 import LegendCupInput from './LegendCupInput';
@@ -46,10 +47,7 @@ function App() {
     setAccountModalOpen(false);
   };
 
-  const openFilterModal = () => {
-    setFilterDraft(filters);
-    setFilterModalOpen(true);
-  };
+
 
   const closeFilterModal = () => setFilterModalOpen(false);
 
