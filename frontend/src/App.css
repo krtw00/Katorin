@@ -1,12 +1,12 @@
 .App {
   min-height: 100vh;
-  background: #e6e6e6;
-  padding: 32px;
+  background: #f6f7fb;
+  padding: 0;
   box-sizing: border-box;
 }
 
 @media (max-width: 600px) {
   .App {
-    padding: 16px;
+    padding: 0;
   }
 }

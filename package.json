@@ -4,9 +4,16 @@
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0"
   },
   "scripts": {
-    "dev": "node src/index.js"
+    "dev:api": "nodemon --config nodemon.json",
+    "dev:frontend": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10"
   }
 }

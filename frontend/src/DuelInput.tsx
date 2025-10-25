@@ -6,7 +6,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   IconButton,
   Paper,
   Stack,
@@ -19,6 +18,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -33,6 +33,8 @@ type MatchRecord = {
   opponentPlayer: string;
   opponentDeck: string;
   date: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 type MatchRecordFormValues = Omit<MatchRecord, 'id'>;
@@ -96,8 +98,6 @@ const emptyValues: MatchRecordFormValues = {
   date: '',
 };
 
-const createId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
 type RecordModalProps = {
   open: boolean;
   initialValues: MatchRecordFormValues;
@@ -143,6 +143,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
                 onChange={handleChange('team')}
                 fullWidth
                 sx={modalFieldStyles.self}
+                autoFocus
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -229,100 +230,30 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
   );
 };
 
-const legendCupMockRecords: MatchRecord[] = [
-  {
-    id: 'mock-0',
-    team: 'Raid Reign',
-    player: 'しいたけ',
-    deck: 'Labrynth',
-    selfScore: '1',
-    opponentScore: '0',
-    opponentTeam: 'B&E',
-    opponentPlayer: '紫暁天琴',
-    opponentDeck: 'FS tenpai',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-1',
-    team: 'Raid Reign',
-    player: 'しいたけ',
-    deck: 'Labrynth',
-    selfScore: '1',
-    opponentScore: '0',
-    opponentTeam: 'B&E',
-    opponentPlayer: 'sub.理想之郎',
-    opponentDeck: 'branded',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-2',
-    team: 'Raid Reign',
-    player: 'しいたけ',
-    deck: 'Labrynth',
-    selfScore: '1',
-    opponentScore: '0',
-    opponentTeam: 'B&E',
-    opponentPlayer: 'sub.理想之郎',
-    opponentDeck: 'branded',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-3',
-    team: 'Raid Reign',
-    player: 'しいたけ',
-    deck: 'Labrynth',
-    selfScore: '0',
-    opponentScore: '1',
-    opponentTeam: 'B&E',
-    opponentPlayer: '夢小僧',
-    opponentDeck: 'FS tearlaments',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-4',
-    team: 'Raid Reign',
-    player: 'エアーマン鈴木',
-    deck: 'Dracoslayer',
-    selfScore: '1',
-    opponentScore: '0',
-    opponentTeam: 'B&E',
-    opponentPlayer: '夢小僧',
-    opponentDeck: 'FS tearlaments',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-5',
-    team: 'Raid Reign',
-    player: 'エアーマン鈴木',
-    deck: 'Dracoslayer',
-    selfScore: '0',
-    opponentScore: '1',
-    opponentTeam: 'B&E',
-    opponentPlayer: '梁孝宏',
-    opponentDeck: 'millennium SE',
-    date: '2025/3/16',
-  },
-  {
-    id: 'mock-6',
-    team: 'Raid Reign',
-    player: 'フリーダム',
-    deck: 'FS Race',
-    selfScore: '1',
-    opponentScore: '0',
-    opponentTeam: 'B&E',
-    opponentPlayer: '梁孝宏',
-    opponentDeck: 'millennium SE',
-    date: '2025/3/16',
-  },
-];
-
-const LegendCupInput: React.FC = () => {
-  const [records, setRecords] = useState<MatchRecord[]>(legendCupMockRecords);
+const DuelInput: React.FC = () => {
+  const [records, setRecords] = useState<MatchRecord[]>([]);
   const [modalState, setModalState] = useState<{ open: boolean; mode: 'create' | 'edit'; targetId?: string }>({
     open: false,
     mode: 'create',
   });
   const [confirmState, setConfirmState] = useState<{ open: boolean; targetId?: string }>({ open: false });
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const response = await fetch('/api/matches');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        setRecords(data);
+      } catch (error) {
+        console.error('Error fetching records:', error);
+      }
+    };
+
+    fetchRecords();
+  }, []);
 
   const modalInitialValues = useMemo<MatchRecordFormValues>(() => {
     if (modalState.mode === 'edit' && modalState.targetId) {
@@ -353,20 +284,52 @@ const LegendCupInput: React.FC = () => {
 
   const closeConfirm = () => setConfirmState({ open: false });
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (confirmState.targetId) {
-      setRecords((prev) => prev.filter((record) => record.id !== confirmState.targetId));
+      try {
+        const response = await fetch(`/api/matches/${confirmState.targetId}`, { method: 'DELETE' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        setRecords((prev) => prev.filter((record) => record.id !== confirmState.targetId));
+      } catch (error) {
+        console.error('Error deleting record:', error);
+      }
     }
     closeConfirm();
   };
 
-  const handleModalSave = (values: MatchRecordFormValues) => {
+  const handleModalSave = async (values: MatchRecordFormValues) => {
     if (modalState.mode === 'edit' && modalState.targetId) {
-      setRecords((prev) =>
-        prev.map((record) => (record.id === modalState.targetId ? { ...record, ...values } : record))
-      );
+      try {
+        const response = await fetch(`/api/matches/${modalState.targetId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const updatedRecord: MatchRecord = await response.json();
+        setRecords((prev) => prev.map((record) => (record.id === updatedRecord.id ? updatedRecord : record)));
+      } catch (error) {
+        console.error('Error updating record:', error);
+      }
     } else {
-      setRecords((prev) => [...prev, { id: createId(), ...values }]);
+      try {
+        const response = await fetch('/api/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const newRecord: MatchRecord = await response.json();
+        setRecords((prev) => [newRecord, ...prev]);
+      } catch (error) {
+        console.error('Error creating record:', error);
+      }
     }
     closeModal();
   };
@@ -518,4 +481,4 @@ const LegendCupInput: React.FC = () => {
   );
 };
 
-export default LegendCupInput;
+export default DuelInput;

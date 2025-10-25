@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Grid,
   Paper,
   Table,
   TableBody,
@@ -10,7 +10,8 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { LegendCupForm } from './legendCupDefaults';
+import Grid from '@mui/material/Grid';
+import { DuelForm } from './duelDefaults';
 
 type RosterEntry = {
   primary: string;
@@ -51,14 +52,70 @@ const parseMatches = (raw: string): MatchEntry[] =>
     return { leftPlayer, leftDeck, score, rightDeck, rightPlayer };
   });
 
-type LegendCupMockProps = {
-  form: LegendCupForm;
+type DuelProps = {
+  form: DuelForm;
 };
 
-const LegendCupMock: React.FC<LegendCupMockProps> = ({ form }) => {
+const Duel: React.FC<DuelProps> = ({ form }) => {
+  const fallbackMatches = useMemo(() => parseMatches(form.matchesText), [form.matchesText]);
+  const [matchRows, setMatchRows] = useState<MatchEntry[]>(fallbackMatches);
+  const displayDate = useMemo(() => {
+    const [year, month, day] = form.date.split('-');
+    if (year && month && day) {
+      const paddedMonth = month.padStart(2, '0');
+      const paddedDay = day.padStart(2, '0');
+      return `${year}/${paddedMonth}/${paddedDay}`;
+    }
+    return form.date;
+  }, [form.date]);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const response = await fetch('/api/matches');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data: Array<{
+          player?: string;
+          deck?: string;
+          selfScore?: string | number | null;
+          opponentScore?: string | number | null;
+          opponentDeck?: string;
+          opponentPlayer?: string;
+        }> = await response.json();
+        const normalized = data.map<MatchEntry>((match) => {
+          const leftPlayer = match.player?.trim() || '-';
+          const leftDeck = match.deck?.trim() || '-';
+          const rightPlayer = match.opponentPlayer?.trim() || '-';
+          const rightDeck = match.opponentDeck?.trim() || '-';
+
+          const leftScore = match.selfScore ?? '';
+          const rightScore = match.opponentScore ?? '';
+          const score =
+            leftScore !== '' && rightScore !== ''
+              ? `${leftScore} - ${rightScore}`
+              : '-';
+
+          return {
+            leftPlayer,
+            leftDeck,
+            score,
+            rightDeck,
+            rightPlayer,
+          };
+        });
+        setMatchRows(normalized.length > 0 ? normalized : fallbackMatches);
+      } catch (error) {
+        console.error('Error fetching matches:', error);
+      }
+    };
+
+    fetchMatches();
+  }, [fallbackMatches]);
+
   const leftRoster = useMemo(() => parseRoster(form.leftRosterText), [form.leftRosterText]);
   const rightRoster = useMemo(() => parseRoster(form.rightRosterText), [form.rightRosterText]);
-  const matchRows = useMemo(() => parseMatches(form.matchesText), [form.matchesText]);
   const filteredMatchRows = useMemo(
     () =>
       matchRows.filter(
@@ -143,7 +200,7 @@ const LegendCupMock: React.FC<LegendCupMockProps> = ({ form }) => {
           </Box>
           <Box sx={{ textAlign: 'right', fontWeight: 600, color: '#333' }}>
             <Typography sx={{ fontSize: 18 }}>{form.stage}</Typography>
-            <Typography sx={{ fontSize: 16, mt: 0.5 }}>{form.date}</Typography>
+            <Typography sx={{ fontSize: 16, mt: 0.5 }}>{displayDate}</Typography>
           </Box>
         </Box>
 
@@ -241,7 +298,7 @@ const LegendCupMock: React.FC<LegendCupMockProps> = ({ form }) => {
                     px: 2,
                     py: 1.2,
                   },
-                  '& tr': { '& td:first-of-type': { textAlign: 'right' } },
+                  '& tr': { '&td:first-of-type': { textAlign: 'right' } },
                 }}
               >
                 <TableBody>
@@ -393,4 +450,4 @@ const LegendCupMock: React.FC<LegendCupMockProps> = ({ form }) => {
   );
 };
 
-export default LegendCupMock;
+export default Duel;

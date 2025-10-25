@@ -1,0 +1,35 @@
+# Node modules
+/node_modules
+/frontend/node_modules
+
+# Build outputs
+/frontend/build
+
+# Logs and temporary files
+*.log
+*.tmp
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories
+.idea/
+.vscode/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Supabase temporary folders
+supabase/.branches
+supabase/.temp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+api/.env
+api/.env.local
+frontend/.env
+frontend/.env.local

@@ -1,4 +1,4 @@
-export interface LegendCupForm {
+export interface DuelForm {
   title: string;
   subtitle: string;
   stage: string;
@@ -13,11 +13,11 @@ export interface LegendCupForm {
   loseLabel: string;
 }
 
-export const legendCupDefault: LegendCupForm = {
-  title: 'LEGEND CUP',
+export const duelDefault: DuelForm = {
+  title: 'DUEL',
   subtitle: '',
   stage: '',
-  date: '2025/3/16',
+  date: '2025-03-16',
   leftTeamName: 'Raid Reign',
   rightTeamName: 'B&E',
   leftRosterText: [
