@@ -26,6 +26,6 @@ jobs:
           fi
           supabase link --project-ref "${SUPABASE_PROJECT_REF}"
       - name: Apply Supabase Migrations
-        run: supabase db push --skip-pooler
+        run: supabase db push -p "${SUPABASE_DB_PASSWORD}"
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
