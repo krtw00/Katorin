@@ -25,6 +25,10 @@ jobs:
             exit 1
           fi
           supabase link --project-ref "${SUPABASE_PROJECT_REF}"
+      - name: Repair migration history
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration repair --status reverted 20251025 -p "${SUPABASE_DB_PASSWORD}"
       - name: Apply Supabase Migrations
         run: supabase db push -p "${SUPABASE_DB_PASSWORD}"
         env:
