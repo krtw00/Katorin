@@ -19,19 +19,13 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           if [ -z "${SUPABASE_PROJECT_REF}" ]; then
             echo "SUPABASE_PROJECT_REF secret が設定されていません。" >&2
             exit 1
           fi
-          if [ -z "${SUPABASE_DB_URL}" ]; then
-            echo "SUPABASE_DB_URL secret が設定されていません。" >&2
-            exit 1
-          fi
-          supabase link --project-ref "${SUPABASE_PROJECT_REF}" --db-url "${SUPABASE_DB_URL}"
+          supabase link --project-ref "${SUPABASE_PROJECT_REF}"
       - name: Apply Supabase Migrations
-        run: supabase db push --db-url "${SUPABASE_DB_URL}"
+        run: supabase db push --skip-pooler
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
