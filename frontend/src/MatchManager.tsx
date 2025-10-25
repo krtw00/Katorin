@@ -153,8 +153,20 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
     setError(null);
     try {
       const response = await fetch('/api/matches');
+      const contentType = response.headers.get('content-type') ?? '';
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const bodyText = await response.text().catch(() => '');
+        throw new Error(
+          bodyText ? `HTTP ${response.status}: ${bodyText.slice(0, 200)}` : `HTTP ${response.status}`,
+        );
+      }
+      if (!contentType.includes('application/json')) {
+        const bodyText = await response.text().catch(() => '');
+        throw new Error(
+          bodyText
+            ? `unexpected response format: ${bodyText.slice(0, 200)}`
+            : 'unexpected response format',
+        );
       }
       const data: MatchRecord[] = await response.json();
       setMatches(data);
