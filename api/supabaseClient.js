@@ -1,16 +1,19 @@
 const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
-const dotenv = require('dotenv');
 
-// ローカル開発時に .env / .env.local / supabase/.env を順番に読み込む
-const envFiles = [
-  path.resolve(__dirname, '../.env.local'),
-  path.resolve(__dirname, '../.env'),
-  path.resolve(__dirname, '../supabase/.env'),
-];
+// Vercel環境では環境変数が自動で設定されるため、dotenvはローカル開発時のみ使用
+if (process.env.NODE_ENV !== 'production') {
+  const path = require('path');
+  const dotenv = require('dotenv');
 
-for (const envPath of envFiles) {
-  dotenv.config({ path: envPath, override: false });
+  const envFiles = [
+    path.resolve(__dirname, '../.env.local'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../supabase/.env'),
+  ];
+
+  for (const envPath of envFiles) {
+    dotenv.config({ path: envPath, override: false });
+  }
 }
 
 const supabaseUrl = process.env.SUPABASE_URL;
