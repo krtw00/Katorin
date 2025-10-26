@@ -1,4 +1,4 @@
-const { supabase } = require('./supabaseClient');
+const { supabase, createSupabaseClientForToken, supabaseAdmin } = require('./supabaseClient');
 
 /**
  * Express middleware that verifies Supabase JWT access tokens.
@@ -23,6 +23,14 @@ const requireAuth = async (req, res, next) => {
     }
 
     req.user = data.user;
+    req.authToken = token;
+    if (createSupabaseClientForToken) {
+      req.supabase = createSupabaseClientForToken(token);
+    } else if (supabaseAdmin) {
+      req.supabase = supabaseAdmin;
+    } else {
+      req.supabase = supabase;
+    }
     return next();
   } catch (err) {
     console.error('[auth] Unexpected error during auth verification:', err);

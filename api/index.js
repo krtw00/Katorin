@@ -20,7 +20,11 @@ app.get('/api', (req, res) => {
 
 // Get all matches
 app.get('/api/matches', requireAuth, async (req, res) => {
-  const { data, error } = await supabase
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('matches')
     .select('*')
     .order('date', { ascending: false });
@@ -33,7 +37,11 @@ app.get('/api/matches', requireAuth, async (req, res) => {
 
 // Get match by id
 app.get('/api/matches/:id', requireAuth, async (req, res) => {
-  const { data, error } = await supabase
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('matches')
     .select('*')
     .eq('id', req.params.id)
@@ -47,7 +55,11 @@ app.get('/api/matches/:id', requireAuth, async (req, res) => {
 
 // Create a new match
 app.post('/api/matches', requireAuth, async (req, res) => {
-  const { data, error } = await supabase
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('matches')
     .insert(req.body)
     .select()
@@ -61,7 +73,11 @@ app.post('/api/matches', requireAuth, async (req, res) => {
 
 // Update a match
 app.put('/api/matches/:id', requireAuth, async (req, res) => {
-  const { data, error } = await supabase
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('matches')
     .update(req.body)
     .eq('id', req.params.id)
@@ -76,7 +92,11 @@ app.put('/api/matches/:id', requireAuth, async (req, res) => {
 
 // Delete a match
 app.delete('/api/matches/:id', requireAuth, async (req, res) => {
-  const { data, error } = await supabase
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('matches')
     .delete()
     .eq('id', req.params.id)
@@ -125,7 +145,11 @@ app.post('/api/tournaments', requireAuth, requireAdmin, async (req, res) => {
         .json({ error: 'スラッグは半角英数字とハイフンのみ使用できます。' });
     }
 
-    const { data, error } = await supabase
+    const client = req.supabase;
+    if (!client) {
+      return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+    }
+    const { data, error } = await client
       .from('tournaments')
       .insert({
         name: normalizedName,
