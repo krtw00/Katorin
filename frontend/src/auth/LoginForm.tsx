@@ -57,6 +57,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       } else {
         await signInWithPassword({ email, password });
       }
+<<<<<<< HEAD
+=======
+      if (mode === 'team') {
+        await signInWithPassword({ email: teamName, password });
+      } else {
+        await signInWithPassword({ email, password });
+      }
+>>>>>>> 5c90e4037dba84cec3af06dd3de2b930f9654d3b
       onSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'ログインに失敗しました。';
