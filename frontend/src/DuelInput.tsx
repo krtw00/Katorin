@@ -21,6 +21,7 @@ import {
 import Grid from '@mui/material/Grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 
 type MatchRecord = {
   id: string;
@@ -231,6 +232,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
 };
 
 const DuelInput: React.FC = () => {
+  const authFetch = useAuthorizedFetch();
   const [records, setRecords] = useState<MatchRecord[]>([]);
   const [modalState, setModalState] = useState<{ open: boolean; mode: 'create' | 'edit'; targetId?: string }>({
     open: false,
@@ -241,7 +243,7 @@ const DuelInput: React.FC = () => {
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const response = await fetch('/api/matches');
+        const response = await authFetch('/api/matches');
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -253,7 +255,7 @@ const DuelInput: React.FC = () => {
     };
 
     fetchRecords();
-  }, []);
+  }, [authFetch]);
 
   const modalInitialValues = useMemo<MatchRecordFormValues>(() => {
     if (modalState.mode === 'edit' && modalState.targetId) {
@@ -287,7 +289,7 @@ const DuelInput: React.FC = () => {
   const confirmDelete = async () => {
     if (confirmState.targetId) {
       try {
-        const response = await fetch(`/api/matches/${confirmState.targetId}`, { method: 'DELETE' });
+        const response = await authFetch(`/api/matches/${confirmState.targetId}`, { method: 'DELETE' });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -302,7 +304,7 @@ const DuelInput: React.FC = () => {
   const handleModalSave = async (values: MatchRecordFormValues) => {
     if (modalState.mode === 'edit' && modalState.targetId) {
       try {
-        const response = await fetch(`/api/matches/${modalState.targetId}`, {
+        const response = await authFetch(`/api/matches/${modalState.targetId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values),
@@ -317,7 +319,7 @@ const DuelInput: React.FC = () => {
       }
     } else {
       try {
-        const response = await fetch('/api/matches', {
+        const response = await authFetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values),

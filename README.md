@@ -34,9 +34,16 @@ npm install --prefix frontend
    SUPABASE_ANON_KEY=（supabase/.env に記載の anon キー）
    ```
 
+4. 認証付きのフロントエンドを利用するため、`frontend/.env.local` にも以下の環境変数を設定してください。
+   ```env
+   REACT_APP_SUPABASE_URL=http://127.0.0.1:54321
+   REACT_APP_SUPABASE_ANON_KEY=（supabase/.env に記載の anon キー）
+   ```
+   `frontend/.env.local` は存在しない場合に作成してください。
+
 ## データベーススキーマ
 
-`supabase/migrations/20250305000000_create_matches.sql` に対戦記録テーブルを作成するマイグレーションを用意しています。
+`supabase/migrations/20250305000000_create_matches.sql` に対戦記録テーブル、`supabase/migrations/20250320000000_create_tournaments.sql` に大会テーブルを作成するマイグレーションを用意しています。
 
 ```bash
 supabase db push
@@ -50,6 +57,14 @@ supabase db push
 - `date`（日付）
 
 これらのカラム名はフロントエンドから送信される JSON のキー（キャメルケース）と一致しています。
+
+大会テーブル（`tournaments`）は以下のカラムを持ちます。
+
+- `name`（大会名）
+- `slug`（半角英数とハイフンで構成される大会コード）
+- `description`（任意の説明文）
+- `created_by`（作成した Supabase ユーザー ID）
+- `created_at`（作成日時）
 
 ## ローカル開発の起動
 
@@ -76,5 +91,18 @@ npm run dev:frontend   # CRA 開発サーバー
   指定 ID の対戦記録を更新します。
 - `DELETE /api/matches/:id`  
   指定 ID の対戦記録を削除します。
+- `GET /api/tournaments`  
+  大会一覧を取得します（認証不要）。
+- `POST /api/tournaments`  
+  大会を作成します（管理者のみ）。
 
 エラーが発生した場合はレスポンスにメッセージが含まれ、サーバーログにも詳細が出力されます。
+
+> ℹ️ 全ての `/api/matches` エンドポイントは Supabase 認証トークン（`Authorization: Bearer ...`）が必須です。フロントエンドのログインに成功すると自動的に付与されます。
+> `POST /api/tournaments` も同様に認証が必須で、さらに Supabase ユーザーの `app_metadata.role` に `admin` が含まれている必要があります。
+
+## 管理者・参加者アカウントの運用
+
+- 管理者アカウントは Supabase Auth のユーザーに対してメールアドレス＋パスワードでサインインします。Supabase Studio の「Authentication → Users」で対象ユーザーの App Metadata に `{"role": "admin"}`（または `{"roles": ["admin"]}`）を設定してください。
+- 参加者アカウントを管理者が作成する場合は、Supabase の Service Role キーを使って疑似メールアドレス（例: `username@{tournament-slug}.players.local`）でユーザーを作成し、App Metadata に `{"role": "player", "tournament": "{tournament-slug}"}` などを付与します。ログイン画面は大会コードとユーザー名からこの疑似メールアドレスを組み立てて Supabase Auth にサインインする想定です。
+- 大会コード（スラッグ）は参加者メールのドメインとして使用されるため、半角英数字とハイフンのみを利用してください。フロントエンドの管理者用 UI から大会を作成できます。

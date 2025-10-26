@@ -26,6 +26,7 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 
 type GameRow = {
   id: string;
@@ -113,6 +114,7 @@ const getInitial = (value: string) => {
 };
 
 const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) => {
+  const authFetch = useAuthorizedFetch();
   const [form, setForm] = useState<MatchFormValues>(emptyForm);
   const [gameRows, setGameRows] = useState<GameRow[]>([]);
   const [isFinalized, setIsFinalized] = useState(false);
@@ -199,7 +201,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
       }));
     };
 
-  const fetchMatch = async () => {
+  const fetchMatch = useCallback(async () => {
     if (!matchId) {
       setForm(emptyForm);
       setGameRows([]);
@@ -217,7 +219,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
     setSaveFeedback(null);
     setInitialized(false);
     try {
-      const response = await fetch(`/api/matches/${matchId}`);
+      const response = await authFetch(`/api/matches/${matchId}`);
       if (!response.ok) {
         const message = await response.text();
         throw new Error(message || `HTTP ${response.status}`);
@@ -302,12 +304,11 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [authFetch, makeSnapshot, matchId]);
 
   useEffect(() => {
     fetchMatch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [fetchMatch]);
 
   const handleSave = useCallback(
     async (mode: 'auto' | 'finalize' | 'unfinalize', snapshotValue: string) => {
@@ -363,7 +364,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
           date: form.date ? form.date : null,
         };
 
-        const response = await fetch(`/api/matches/${matchId}`, {
+        const response = await authFetch(`/api/matches/${matchId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -473,6 +474,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
       totals.awayTotal,
       makeSnapshot,
       onSaved,
+      authFetch,
       isFinalized,
       persistedScores.home,
       persistedScores.away,

@@ -20,6 +20,7 @@ import {
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 
 type MatchRecord = {
   id: string;
@@ -147,12 +148,13 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
+  const authFetch = useAuthorizedFetch();
 
   const loadMatches = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/matches');
+      const response = await authFetch('/api/matches');
       const contentType = response.headers.get('content-type') ?? '';
       if (!response.ok) {
         const bodyText = await response.text().catch(() => '');
@@ -176,7 +178,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authFetch]);
 
   useEffect(() => {
     loadMatches();
@@ -674,6 +676,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
   const [values, setValues] = useState<MatchFormValues>(createInitialValues);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const authFetch = useAuthorizedFetch();
 
   useEffect(() => {
     if (open) {
@@ -701,7 +704,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
         date: values.date ? values.date : null,
       };
 
-      const response = await fetch('/api/matches', {
+      const response = await authFetch('/api/matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { DuelForm } from './duelDefaults';
+import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 
 type RosterEntry = {
   primary: string;
@@ -57,6 +58,7 @@ type DuelProps = {
 };
 
 const Duel: React.FC<DuelProps> = ({ form }) => {
+  const authFetch = useAuthorizedFetch();
   const fallbackMatches = useMemo(() => parseMatches(form.matchesText), [form.matchesText]);
   const [matchRows, setMatchRows] = useState<MatchEntry[]>(fallbackMatches);
   const displayDate = useMemo(() => {
@@ -72,7 +74,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const response = await fetch('/api/matches');
+        const response = await authFetch('/api/matches');
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -112,7 +114,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
     };
 
     fetchMatches();
-  }, [fallbackMatches]);
+  }, [authFetch, fallbackMatches]);
 
   const leftRoster = useMemo(() => parseRoster(form.leftRosterText), [form.leftRosterText]);
   const rightRoster = useMemo(() => parseRoster(form.rightRosterText), [form.rightRosterText]);
