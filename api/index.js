@@ -355,17 +355,12 @@ app.post('/api/admin/users', async (req, res) => {
   }
 
   const adminSignupToken = process.env.ADMIN_SIGNUP_TOKEN;
-  if (!adminSignupToken) {
-    return res
-      .status(500)
-      .json({ error: 'ADMIN_SIGNUP_TOKEN が設定されていないため管理者ユーザーを作成できません。' });
-  }
 
   const { email, password, displayName, token } = req.body ?? {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedPassword = typeof password === 'string' ? password.trim() : '';
 
-  if (typeof token !== 'string' || token.trim() !== adminSignupToken) {
+  if (adminSignupToken && (typeof token !== 'string' || token.trim() !== adminSignupToken)) {
     return res.status(403).json({ error: '無効な登録コードです。' });
   }
 
