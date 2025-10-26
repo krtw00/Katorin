@@ -24,7 +24,12 @@ const requireAuth = async (req, res, next) => {
 
     req.user = data.user;
     req.authToken = token;
-    if (createSupabaseClientForToken) {
+
+    const bypassRls = process.env.SUPABASE_BYPASS_RLS === 'true';
+
+    if (bypassRls && supabaseAdmin) {
+      req.supabase = supabaseAdmin;
+    } else if (createSupabaseClientForToken) {
       req.supabase = createSupabaseClientForToken(token);
     } else if (supabaseAdmin) {
       req.supabase = supabaseAdmin;
