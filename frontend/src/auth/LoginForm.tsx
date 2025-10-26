@@ -115,7 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               type="email"
               required
               fullWidth
-              disabled={submitting || mode !== 'admin'}
+              disabled={submitting}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
@@ -125,14 +125,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               type="password"
               required
               fullWidth
-              disabled={submitting || mode !== 'admin'}
+              disabled={submitting}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
               helperText={mode === 'admin' ? '' : 'チームログイン機能は準備中です'}
             />
             <Stack spacing={2}>
-              <Button type="submit" variant="contained" size="large" disabled={submitting || mode !== 'admin'}>
+              <Button type="submit" variant="contained" size="large" disabled={submitting}>
                 {submitting ? 'サインイン中...' : 'サインイン'}
               </Button>
               <Divider flexItem>
