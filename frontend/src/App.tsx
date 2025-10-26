@@ -144,13 +144,13 @@ const App: React.FC = () => {
         ) : null}
         {view === 'manager' ? (
           <MatchManager
-            tournament={selectedTournament}
+            tournament={selectedTournament!}
             onOpenResultEntry={handleOpenResult}
             reloadToken={reloadToken}
           />
         ) : (
           <ResultEntry
-            tournament={selectedTournament}
+            tournament={selectedTournament!}
             matchId={selectedMatchId}
             onBack={handleBackToManager}
             onSaved={handleResultSaved}

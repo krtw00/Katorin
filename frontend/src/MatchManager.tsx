@@ -945,41 +945,44 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               <ToggleButton value="participants">参加者管理</ToggleButton>
             </ToggleButtonGroup>
           </Stack>
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            flexWrap="wrap"
-            justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
-          >
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              onClick={handleOpenCreateMatch}
-              disabled={!canCreateMatch}
-              sx={{
-                bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
-                px: 3,
-                py: 1.25,
-                borderRadius: 999,
-                fontWeight: 700,
-                textTransform: 'none',
-                '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
-              }}
-            >
-              対戦作成
-            </Button>
-          </Stack>
         </Paper>
         <Box>
           <Stack spacing={3} sx={{ mb: 3 }}>
             {renderRoundControls()}
-            <Stack spacing={0.5}>
-              <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>対戦カード一覧</Typography>
-              <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-                チーム VS チームのカード情報とスコアを確認できます。
-              </Typography>
-            </Stack>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'space-between',
+                gap: 2,
+              }}
+            >
+              <Stack spacing={0.5}>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>対戦カード一覧</Typography>
+                <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
+                  チーム VS チームのカード情報とスコアを確認できます。
+                </Typography>
+              </Stack>
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={handleOpenCreateMatch}
+                disabled={!canCreateMatch}
+                sx={{
+                  alignSelf: { xs: 'stretch', sm: 'auto' },
+                  bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
+                  px: 3,
+                  py: 1.25,
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
+                }}
+              >
+                対戦作成
+              </Button>
+            </Box>
             {renderStatsChips()}
           </Stack>
           {view === 'matches' ? (
