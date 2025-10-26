@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('./supabaseClient');
+const { supabase, supabaseAdmin } = require('./supabaseClient');
 const { requireAuth, requireAdmin } = require('./authMiddleware');
 
 const createSlugFrom = (value) =>
@@ -344,6 +344,51 @@ app.post('/api/tournaments/:tournamentId/rounds/:roundId/reopen', requireAuth, r
     return res.status(500).json({ error: error.message });
   }
   res.json(data);
+});
+
+// Create an admin user (admin only, requires service role key)
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  if (!supabaseAdmin) {
+    return res
+      .status(500)
+      .json({ error: 'SERVICE ROLE KEY が設定されていないため管理者ユーザーを作成できません。' });
+  }
+
+  const { email, password, displayName } = req.body ?? {};
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const normalizedPassword = typeof password === 'string' ? password.trim() : '';
+
+  if (!normalizedEmail) {
+    return res.status(400).json({ error: 'メールアドレスを入力してください。' });
+  }
+  if (!normalizedPassword || normalizedPassword.length < 6) {
+    return res.status(400).json({ error: 'パスワードは6文字以上で入力してください。' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      email_confirm: true,
+      user_metadata: displayName ? { displayName } : undefined,
+      app_metadata: { role: 'admin' },
+    });
+    if (error) {
+      console.error('[POST /api/admin/users] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    if (!data?.user) {
+      return res.status(500).json({ error: 'ユーザーの作成に失敗しました。' });
+    }
+    res.status(201).json({
+      id: data.user.id,
+      email: data.user.email,
+      created_at: data.user.created_at,
+    });
+  } catch (err) {
+    console.error('[POST /api/admin/users] Unexpected error:', err);
+    res.status(500).json({ error: '管理者ユーザーの作成に失敗しました。' });
+  }
 });
 
 // Export the app for Vercel

@@ -6,6 +6,7 @@ import LoginForm from './auth/LoginForm';
 import { useAuth } from './auth/AuthContext';
 import TournamentSelection from './admin/TournamentSelection';
 import TournamentCreateDialog, { Tournament } from './admin/TournamentCreateDialog';
+import AdminCreateDialog from './admin/AdminCreateDialog';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'manager' | 'result'>('manager');
@@ -15,6 +16,8 @@ const App: React.FC = () => {
   const [previousTournament, setPreviousTournament] = useState<Tournament | null>(null);
   const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false);
   const [tournamentMessage, setTournamentMessage] = useState<string | null>(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminMessage, setAdminMessage] = useState<string | null>(null);
   const { loading, session, user, signOut } = useAuth();
 
   const handleOpenResult = (matchId: string) => {
@@ -68,6 +71,7 @@ const App: React.FC = () => {
     setSelectedTournament(tournament);
     setPreviousTournament(null);
     setTournamentMessage(`「${tournament.name}」を選択しました。`);
+    setAdminMessage(null);
   };
 
   const renderAdminMainView = () => (
@@ -98,17 +102,30 @@ const App: React.FC = () => {
               </Typography>
             </Stack>
           ) : null}
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            onClick={() => {
-              setTournamentDialogOpen(true);
-              setTournamentMessage(null);
-            }}
-          >
-            大会を作成
-          </Button>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setTournamentDialogOpen(true);
+                setTournamentMessage(null);
+              }}
+            >
+              大会を作成
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setAdminDialogOpen(true);
+                setAdminMessage(null);
+              }}
+            >
+              運営アカウント追加
+            </Button>
+          </Stack>
           <Button
             variant="text"
             color="inherit"
@@ -135,6 +152,11 @@ const App: React.FC = () => {
         {tournamentMessage ? (
           <Alert severity="success" onClose={() => setTournamentMessage(null)} sx={{ mb: 2 }}>
             {tournamentMessage}
+          </Alert>
+        ) : null}
+        {adminMessage ? (
+          <Alert severity="success" onClose={() => setAdminMessage(null)} sx={{ mb: 2 }}>
+            {adminMessage}
           </Alert>
         ) : null}
         {selectedTournament ? (
@@ -213,16 +235,26 @@ const App: React.FC = () => {
         renderParticipantPlaceholder()
       )}
       {isAdmin ? (
-        <TournamentCreateDialog
-          open={tournamentDialogOpen}
-          onClose={() => setTournamentDialogOpen(false)}
-          onCreated={(tournament) => {
-            setTournamentDialogOpen(false);
-            setSelectedTournament(tournament);
-            setPreviousTournament(null);
-            setTournamentMessage(`「${tournament.name}」を作成しました。`);
-          }}
-        />
+        <>
+          <TournamentCreateDialog
+            open={tournamentDialogOpen}
+            onClose={() => setTournamentDialogOpen(false)}
+            onCreated={(tournament) => {
+              setTournamentDialogOpen(false);
+              setSelectedTournament(tournament);
+              setPreviousTournament(null);
+              setTournamentMessage(`「${tournament.name}」を作成しました。`);
+            }}
+          />
+          <AdminCreateDialog
+            open={adminDialogOpen}
+            onClose={() => setAdminDialogOpen(false)}
+            onCreated={(createdEmail) => {
+              setAdminDialogOpen(false);
+              setAdminMessage(`運営アカウント（${createdEmail}）を作成しました。`);
+            }}
+          />
+        </>
       ) : null}
     </>
   );
