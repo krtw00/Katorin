@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   Alert,
   Box,
@@ -23,6 +24,14 @@ type LoginMode = 'admin' | 'team';
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const { signInWithPassword } = useAuth();
   const [mode, setMode] = useState<LoginMode>('admin');
+  const handleModeChange = (_: React.SyntheticEvent, newMode: LoginMode) => {
+    if (mode !== newMode) {
+      setMode(newMode);
+      setEmail('');
+      setPassword('');
+      setError(null);
+    }
+  };
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -74,12 +83,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
           <Tabs
             value={mode}
-            onChange={(_, value) => {
-              setMode(value);
-              setEmail('');
-              setPassword('');
-              setError(null);
-            }}
+            onChange={(event, value) => handleModeChange(event, value as LoginMode)}
             variant="fullWidth"
             sx={{
               bgcolor: '#f4f6fb',
@@ -100,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             }}
           >
             <Tab value="admin" label="運営ログイン" />
-            <Tab value="team" label="チームログイン" disabled />
+            <Tab value="team" label="チームログイン" />
           </Tabs>
 
           <Stack component="form" spacing={3} onSubmit={handleSubmit}>
