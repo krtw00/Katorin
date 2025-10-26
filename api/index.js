@@ -299,5 +299,52 @@ app.post('/api/tournaments/:tournamentId/rounds/:roundId/close', requireAuth, re
   res.json(data);
 });
 
+// Reopen a round (admin only, only latest closed round)
+app.post('/api/tournaments/:tournamentId/rounds/:roundId/reopen', requireAuth, requireAdmin, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { tournamentId, roundId } = req.params;
+
+  const { data: rounds, error: fetchError } = await client
+    .from('rounds')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('number', { ascending: false })
+    .limit(2);
+  if (fetchError) {
+    console.error('[POST /api/tournaments/:id/rounds/:roundId/reopen] fetch error:', fetchError);
+    return res.status(500).json({ error: fetchError.message });
+  }
+  const targetRound = rounds?.find((round) => round.id === roundId);
+  if (!targetRound) {
+    return res.status(404).json({ error: '指定されたラウンドが見つかりません。' });
+  }
+  if (targetRound.status !== 'closed') {
+    return res.status(400).json({ error: 'このラウンドは締め切られていません。' });
+  }
+  const latestRound = rounds?.[0];
+  if (!latestRound || latestRound.id !== targetRound.id) {
+    return res.status(400).json({ error: '新しいラウンドが追加済みのため、再開できません。' });
+  }
+
+  const { data, error } = await client
+    .from('rounds')
+    .update({
+      status: 'open',
+      closed_at: null,
+    })
+    .eq('id', roundId)
+    .eq('tournament_id', tournamentId)
+    .select('*')
+    .single();
+  if (error) {
+    console.error('[POST /api/tournaments/:id/rounds/:roundId/reopen] Supabase error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data);
+});
+
 // Export the app for Vercel
 module.exports = app;
