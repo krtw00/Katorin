@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Divider,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useAuth } from './AuthContext';
+import AdminCreateDialog from '../admin/AdminCreateDialog';
 
 type LoginFormProps = {
   onSuccess?: () => void;
@@ -12,6 +22,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminSuccess, setAdminSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,10 +82,39 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
           />
-          <Button type="submit" variant="contained" size="large" disabled={submitting}>
-            {submitting ? 'サインイン中...' : 'サインイン'}
-          </Button>
+          <Stack spacing={2}>
+            <Button type="submit" variant="contained" size="large" disabled={submitting}>
+              {submitting ? 'サインイン中...' : 'サインイン'}
+            </Button>
+            <Divider flexItem>
+              <Typography variant="caption" color="text.secondary">
+                運営アカウントの作成
+              </Typography>
+            </Divider>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setAdminDialogOpen(true);
+              }}
+              disabled={submitting}
+            >
+              運営アカウントを追加
+            </Button>
+          </Stack>
         </Stack>
+        {adminSuccess ? (
+          <Alert severity="success" sx={{ mt: 2 }} onClose={() => setAdminSuccess(null)}>
+            {adminSuccess}
+          </Alert>
+        ) : null}
+        <AdminCreateDialog
+          open={adminDialogOpen}
+          onClose={() => setAdminDialogOpen(false)}
+          onCreated={(createdEmail) => {
+            setAdminDialogOpen(false);
+            setAdminSuccess(`運営アカウント（${createdEmail}）を作成しました。`);
+          }}
+        />
       </Paper>
     </Box>
   );

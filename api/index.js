@@ -347,16 +347,27 @@ app.post('/api/tournaments/:tournamentId/rounds/:roundId/reopen', requireAuth, r
 });
 
 // Create an admin user (admin only, requires service role key)
-app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+app.post('/api/admin/users', async (req, res) => {
   if (!supabaseAdmin) {
     return res
       .status(500)
       .json({ error: 'SERVICE ROLE KEY が設定されていないため管理者ユーザーを作成できません。' });
   }
 
-  const { email, password, displayName } = req.body ?? {};
+  const adminSignupToken = process.env.ADMIN_SIGNUP_TOKEN;
+  if (!adminSignupToken) {
+    return res
+      .status(500)
+      .json({ error: 'ADMIN_SIGNUP_TOKEN が設定されていないため管理者ユーザーを作成できません。' });
+  }
+
+  const { email, password, displayName, token } = req.body ?? {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedPassword = typeof password === 'string' ? password.trim() : '';
+
+  if (typeof token !== 'string' || token.trim() !== adminSignupToken) {
+    return res.status(403).json({ error: '無効な登録コードです。' });
+  }
 
   if (!normalizedEmail) {
     return res.status(400).json({ error: 'メールアドレスを入力してください。' });
