@@ -22,6 +22,7 @@ import Grid from '@mui/material/Grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
+import type { Tournament } from './admin/TournamentCreateDialog';
 
 type MatchRecord = {
   id: string;
@@ -233,6 +234,51 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
 
 const DuelInput: React.FC = () => {
   const authFetch = useAuthorizedFetch();
+  const defaultTournamentId = process.env.REACT_APP_DEFAULT_TOURNAMENT_ID ?? null;
+  const [tournamentId, setTournamentId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return defaultTournamentId;
+    }
+    return window.localStorage.getItem('katorin:selectedTournamentId') ?? defaultTournamentId;
+  });
+  const [roundId, setRoundId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return window.localStorage.getItem('katorin:selectedRoundId');
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleTournamentChange = (event: Event) => {
+      const detail = (event as CustomEvent<Tournament | undefined>).detail;
+      if (detail && typeof detail === 'object' && 'id' in detail) {
+        setTournamentId(detail.id as string);
+      }
+    };
+    const handleTournamentClear = () => {
+      setTournamentId(defaultTournamentId ?? null);
+    };
+    const handleRoundChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string } | undefined>).detail;
+      if (detail && typeof detail === 'object' && 'id' in detail) {
+        setRoundId(detail.id as string);
+      }
+    };
+    const handleRoundClear = () => {
+      setRoundId(null);
+    };
+    window.addEventListener('katorin:tournamentChanged', handleTournamentChange as EventListener);
+    window.addEventListener('katorin:tournamentCleared', handleTournamentClear);
+    window.addEventListener('katorin:roundChanged', handleRoundChange as EventListener);
+    window.addEventListener('katorin:roundCleared', handleRoundClear);
+    return () => {
+      window.removeEventListener('katorin:tournamentChanged', handleTournamentChange as EventListener);
+      window.removeEventListener('katorin:tournamentCleared', handleTournamentClear);
+      window.removeEventListener('katorin:roundChanged', handleRoundChange as EventListener);
+      window.removeEventListener('katorin:roundCleared', handleRoundClear);
+    };
+  }, [defaultTournamentId]);
   const [records, setRecords] = useState<MatchRecord[]>([]);
   const [modalState, setModalState] = useState<{ open: boolean; mode: 'create' | 'edit'; targetId?: string }>({
     open: false,
@@ -243,7 +289,15 @@ const DuelInput: React.FC = () => {
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const response = await authFetch('/api/matches');
+        if (!tournamentId) {
+          setRecords([]);
+          return;
+        }
+        const params = new URLSearchParams({ tournamentId });
+        if (roundId) {
+          params.set('roundId', roundId);
+        }
+        const response = await authFetch(`/api/matches?${params.toString()}`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -255,7 +309,7 @@ const DuelInput: React.FC = () => {
     };
 
     fetchRecords();
-  }, [authFetch]);
+  }, [authFetch, tournamentId, roundId]);
 
   const modalInitialValues = useMemo<MatchRecordFormValues>(() => {
     if (modalState.mode === 'edit' && modalState.targetId) {
@@ -319,10 +373,13 @@ const DuelInput: React.FC = () => {
       }
     } else {
       try {
+        if (!tournamentId || !roundId) {
+          throw new Error('大会またはラウンドが選択されていません。');
+        }
         const response = await authFetch('/api/matches', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
+          body: JSON.stringify({ ...values, tournamentId, roundId }),
         });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);

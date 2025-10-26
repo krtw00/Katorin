@@ -13,6 +13,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { DuelForm } from './duelDefaults';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
+import type { Tournament } from './admin/TournamentCreateDialog';
 
 type RosterEntry = {
   primary: string;
@@ -61,6 +62,32 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
   const authFetch = useAuthorizedFetch();
   const fallbackMatches = useMemo(() => parseMatches(form.matchesText), [form.matchesText]);
   const [matchRows, setMatchRows] = useState<MatchEntry[]>(fallbackMatches);
+  const defaultTournamentId = process.env.REACT_APP_DEFAULT_TOURNAMENT_ID ?? null;
+  const [tournamentId, setTournamentId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return defaultTournamentId;
+    }
+    return window.localStorage.getItem('katorin:selectedTournamentId') ?? defaultTournamentId;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleChange = (event: Event) => {
+      const detail = (event as CustomEvent<Tournament | undefined>).detail;
+      if (detail && typeof detail === 'object' && 'id' in detail) {
+        setTournamentId(detail.id as string);
+      }
+    };
+    const handleClear = () => {
+      setTournamentId(defaultTournamentId ?? null);
+    };
+    window.addEventListener('katorin:tournamentChanged', handleChange as EventListener);
+    window.addEventListener('katorin:tournamentCleared', handleClear);
+    return () => {
+      window.removeEventListener('katorin:tournamentChanged', handleChange as EventListener);
+      window.removeEventListener('katorin:tournamentCleared', handleClear);
+    };
+  }, [defaultTournamentId]);
   const displayDate = useMemo(() => {
     const [year, month, day] = form.date.split('-');
     if (year && month && day) {
@@ -74,7 +101,12 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const response = await authFetch('/api/matches');
+        if (!tournamentId) {
+          setMatchRows(fallbackMatches);
+          return;
+        }
+        const params = new URLSearchParams({ tournamentId });
+        const response = await authFetch(`/api/matches?${params.toString()}`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -114,7 +146,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
     };
 
     fetchMatches();
-  }, [authFetch, fallbackMatches]);
+  }, [authFetch, fallbackMatches, tournamentId]);
 
   const leftRoster = useMemo(() => parseRoster(form.leftRosterText), [form.leftRosterText]);
   const rightRoster = useMemo(() => parseRoster(form.rightRosterText), [form.rightRosterText]);

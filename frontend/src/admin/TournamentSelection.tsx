@@ -16,9 +16,10 @@ import TournamentCreateDialog, { Tournament } from './TournamentCreateDialog';
 
 type TournamentSelectionProps = {
   onSelect: (tournament: Tournament) => void;
+  onCancel?: () => void;
 };
 
-const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect }) => {
+const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onCancel }) => {
   const authFetch = useAuthorizedFetch();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -122,25 +123,37 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect }) =
           ) : null}
           {error ? <Alert severity="error">{error}</Alert> : null}
         </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => {
-              setDialogOpen(true);
-              setInfoMessage(null);
-            }}
-          >
-            大会を作成
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={loadTournaments}
-            disabled={loading}
-          >
-            更新
-          </Button>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+        >
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => {
+                setDialogOpen(true);
+                setInfoMessage(null);
+              }}
+            >
+              大会を作成
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshRoundedIcon />}
+              onClick={loadTournaments}
+              disabled={loading}
+            >
+              更新
+            </Button>
+          </Stack>
+          {onCancel ? (
+            <Button variant="text" color="inherit" onClick={onCancel}>
+              戻る
+            </Button>
+          ) : null}
         </Stack>
         {loading ? (
           <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>

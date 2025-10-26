@@ -27,6 +27,7 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
+import type { Tournament } from './admin/TournamentCreateDialog';
 
 type GameRow = {
   id: string;
@@ -60,6 +61,7 @@ type MatchFormValues = {
 };
 
 type ResultEntryProps = {
+  tournament: Tournament | null;
   matchId: string | null;
   onBack: () => void;
   onSaved: () => void;
@@ -113,7 +115,7 @@ const getInitial = (value: string) => {
   return trimmed.length > 0 ? trimmed.slice(0, 1) : '？';
 };
 
-const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) => {
+const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, onSaved }) => {
   const authFetch = useAuthorizedFetch();
   const [form, setForm] = useState<MatchFormValues>(emptyForm);
   const [gameRows, setGameRows] = useState<GameRow[]>([]);
@@ -349,6 +351,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ matchId, onBack, onSaved }) =
           opponentPlayer: '',
           deck: '',
           opponentDeck: '',
+          tournamentId: tournament?.id,
           selfScore:
             mode === 'finalize'
               ? totals.homeTotal.toString()

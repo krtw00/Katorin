@@ -18,16 +18,25 @@ app.get('/api', (req, res) => {
   res.send('Hello from Node.js backend!');
 });
 
-// Get all matches
+// Get all matches for a tournament (optionally filtered by round)
 app.get('/api/matches', requireAuth, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { data, error } = await client
+  const { tournamentId, roundId } = req.query;
+  if (!tournamentId) {
+    return res.status(400).json({ error: 'tournamentId を指定してください。' });
+  }
+  let query = client
     .from('matches')
     .select('*')
+    .eq('tournament_id', tournamentId)
     .order('date', { ascending: false });
+  if (roundId) {
+    query = query.eq('round_id', roundId);
+  }
+  const { data, error } = await query;
   if (error) {
     console.error('[GET /api/matches] Supabase error:', error);
     return res.status(500).json({ error: error.message });
@@ -59,9 +68,20 @@ app.post('/api/matches', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
+  const { tournamentId, roundId, ...rest } = req.body ?? {};
+  if (!tournamentId) {
+    return res.status(400).json({ error: 'tournamentId を指定してください。' });
+  }
+  if (!roundId) {
+    return res.status(400).json({ error: 'roundId を指定してください。' });
+  }
   const { data, error } = await client
     .from('matches')
-    .insert(req.body)
+    .insert({
+      ...rest,
+      tournament_id: tournamentId,
+      round_id: roundId,
+    })
     .select()
     .single();
   if (error) {
@@ -77,9 +97,19 @@ app.put('/api/matches/:id', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
+  const { tournamentId, roundId, ...rest } = req.body ?? {};
+  const updatePayload = {
+    ...rest,
+  };
+  if (roundId) {
+    updatePayload.round_id = roundId;
+  }
+  if (tournamentId) {
+    updatePayload.tournament_id = tournamentId;
+  }
   const { data, error } = await client
     .from('matches')
-    .update(req.body)
+    .update(updatePayload)
     .eq('id', req.params.id)
     .select()
     .single();
@@ -168,6 +198,105 @@ app.post('/api/tournaments', requireAuth, requireAdmin, async (req, res) => {
     console.error('[POST /api/tournaments] Unexpected error:', err);
     res.status(500).json({ error: '大会の作成に失敗しました。' });
   }
+});
+
+// List rounds for a tournament
+app.get('/api/tournaments/:tournamentId/rounds', requireAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { tournamentId } = req.params;
+  const { data, error } = await client
+    .from('rounds')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('number', { ascending: true });
+  if (error) {
+    console.error('[GET /api/tournaments/:id/rounds] Supabase error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data ?? []);
+});
+
+// Create a new round (admin only)
+app.post('/api/tournaments/:tournamentId/rounds', requireAuth, requireAdmin, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { tournamentId } = req.params;
+  const title = req.body?.title ? req.body.title.toString().trim() : null;
+
+  const { data: latestRounds, error: latestError } = await client
+    .from('rounds')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('number', { ascending: false })
+    .limit(1);
+  if (latestError) {
+    console.error('[POST /api/tournaments/:id/rounds] fetch latest error:', latestError);
+    return res.status(500).json({ error: latestError.message });
+  }
+
+  const latestRound = latestRounds?.[0];
+  if (latestRound && latestRound.status !== 'closed') {
+    return res.status(400).json({ error: '前のラウンドを締めてから次のラウンドを作成してください。' });
+  }
+
+  const nextNumber = latestRound ? latestRound.number + 1 : 1;
+  const { data, error } = await client
+    .from('rounds')
+    .insert({
+      tournament_id: tournamentId,
+      number: nextNumber,
+      title: title && title.length > 0 ? title : null,
+      status: 'open',
+    })
+    .select('*')
+    .single();
+  if (error) {
+    console.error('[POST /api/tournaments/:id/rounds] Supabase error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.status(201).json(data);
+});
+
+// Close a round (admin only)
+app.post('/api/tournaments/:tournamentId/rounds/:roundId/close', requireAuth, requireAdmin, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { tournamentId, roundId } = req.params;
+  const { data: round, error: fetchError } = await client
+    .from('rounds')
+    .select('*')
+    .eq('id', roundId)
+    .eq('tournament_id', tournamentId)
+    .single();
+  if (fetchError) {
+    console.error('[POST /api/tournaments/:id/rounds/:roundId/close] fetch error:', fetchError);
+    return res.status(404).json({ error: '指定されたラウンドが見つかりません。' });
+  }
+  if (round.status === 'closed') {
+    return res.status(400).json({ error: 'このラウンドは既に締め切られています。' });
+  }
+  const { data, error } = await client
+    .from('rounds')
+    .update({
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+    })
+    .eq('id', roundId)
+    .eq('tournament_id', tournamentId)
+    .select('*')
+    .single();
+  if (error) {
+    console.error('[POST /api/tournaments/:id/rounds/:roundId/close] Supabase error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+  res.json(data);
 });
 
 // Export the app for Vercel

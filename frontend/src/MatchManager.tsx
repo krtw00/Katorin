@@ -21,6 +21,7 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
+import type { Tournament } from './admin/TournamentCreateDialog';
 
 type MatchRecord = {
   id: string;
@@ -34,6 +35,8 @@ type MatchRecord = {
   opponentDeck?: string | null;
   date?: string | null;
   created_at?: string | null;
+  tournament_id?: string | null;
+  round_id?: string | null;
 };
 
 type MatchFormValues = {
@@ -138,23 +141,86 @@ const statusMeta = {
 } satisfies Record<CardStatus, (match: DisplayMatch) => { label: string; bgcolor: string; color: string }>;
 
 type MatchManagerProps = {
+  tournament: Tournament;
   onOpenResultEntry: (matchId: string) => void;
   reloadToken: number;
 };
 
-const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadToken }) => {
+type Round = {
+  id: string;
+  tournament_id: string;
+  number: number;
+  title?: string | null;
+  status: 'open' | 'closed';
+  created_at: string;
+  closed_at?: string | null;
+};
+
+const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEntry, reloadToken }) => {
   const [view, setView] = useState<'matches' | 'participants'>('matches');
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState<boolean>(false);
+  const [rounds, setRounds] = useState<Round[]>([]);
+  const [roundsLoading, setRoundsLoading] = useState<boolean>(true);
+  const [roundError, setRoundError] = useState<string | null>(null);
+  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+  const [roundDialogOpen, setRoundDialogOpen] = useState<boolean>(false);
+  const [roundDialogError, setRoundDialogError] = useState<string | null>(null);
+  const [roundTitle, setRoundTitle] = useState<string>('');
+  const [roundSubmitting, setRoundSubmitting] = useState<boolean>(false);
+  const [roundFeedback, setRoundFeedback] = useState<string | null>(null);
   const authFetch = useAuthorizedFetch();
 
+  const loadRounds = useCallback(async () => {
+    setRoundsLoading(true);
+    setRoundError(null);
+    try {
+      const response = await authFetch(`/api/tournaments/${tournament.id}/rounds`);
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!response.ok) {
+        const message = contentType.includes('application/json')
+          ? (await response.json()).error ?? `HTTP ${response.status}`
+          : await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      if (!contentType.includes('application/json')) {
+        throw new Error('サーバーが不正なレスポンスを返しました。');
+      }
+      const data: Round[] = await response.json();
+      setRounds(data);
+      setSelectedRoundId((prev) => {
+        if (prev && data.some((round) => round.id === prev)) {
+          return prev;
+        }
+        const openRound = [...data].reverse().find((round) => round.status !== 'closed');
+        const fallback = data.length > 0 ? data[data.length - 1] : null;
+        return (openRound ?? fallback)?.id ?? null;
+      });
+    } catch (err) {
+      console.error('Failed to load rounds:', err);
+      setRoundError('ラウンド一覧の取得に失敗しました。時間をおいて再度お試しください。');
+    } finally {
+      setRoundsLoading(false);
+    }
+  }, [authFetch, tournament.id]);
+
   const loadMatches = useCallback(async () => {
+    if (!selectedRoundId) {
+      setMatches([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch('/api/matches');
+      const params = new URLSearchParams();
+      params.set('tournamentId', tournament.id);
+      if (selectedRoundId) {
+        params.set('roundId', selectedRoundId);
+      }
+      const response = await authFetch(`/api/matches?${params.toString()}`);
       const contentType = response.headers.get('content-type') ?? '';
       if (!response.ok) {
         const bodyText = await response.text().catch(() => '');
@@ -178,11 +244,22 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
     } finally {
       setLoading(false);
     }
-  }, [authFetch]);
+  }, [authFetch, selectedRoundId, tournament.id]);
 
   useEffect(() => {
+    setSelectedRoundId(null);
+    setMatches([]);
+    setRoundFeedback(null);
+    loadRounds();
+  }, [loadRounds, tournament.id]);
+
+  useEffect(() => {
+    if (!selectedRoundId) {
+      setMatches([]);
+      return;
+    }
     loadMatches();
-  }, [loadMatches, reloadToken]);
+  }, [loadMatches, reloadToken, selectedRoundId]);
 
   const displayMatches = useMemo<DisplayMatch[]>(() => {
     const normalizeName = (value?: string | null) => {
@@ -286,9 +363,118 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
     };
   }, [displayMatches]);
 
-  const handleMatchCreated = (record: MatchRecord) => {
-    setMatches((prev) => [record, ...prev]);
+  const selectedRound = useMemo(
+    () => rounds.find((round) => round.id === selectedRoundId) ?? null,
+    [rounds, selectedRoundId],
+  );
+
+  const canCreateMatch = Boolean(selectedRound && selectedRound.status !== 'closed');
+
+  const roundStatusChip = useMemo(() => {
+    if (!selectedRound) return null;
+    if (selectedRound.status === 'closed') {
+      return <Chip label="締め済み" sx={{ bgcolor: '#e8ecf8', color: '#43506c', fontWeight: 700 }} />;
+    }
+    return <Chip label="進行中" sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700 }} />;
+  }, [selectedRound]);
+
+  const handleMatchCreated = () => {
     setCreateOpen(false);
+    setRoundFeedback('対戦を追加しました。');
+    loadMatches();
+  };
+
+  useEffect(() => {
+    setRoundFeedback(null);
+  }, [selectedRoundId]);
+
+  const handleOpenCreateMatch = () => {
+    if (!canCreateMatch) {
+      return;
+    }
+    setCreateOpen(true);
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (selectedRound) {
+      window.localStorage.setItem('katorin:selectedRoundId', selectedRound.id);
+      window.localStorage.setItem('katorin:selectedRoundNumber', String(selectedRound.number));
+      window.dispatchEvent(new CustomEvent('katorin:roundChanged', { detail: selectedRound }));
+    } else {
+      window.localStorage.removeItem('katorin:selectedRoundId');
+      window.localStorage.removeItem('katorin:selectedRoundNumber');
+      window.dispatchEvent(new CustomEvent('katorin:roundCleared'));
+    }
+  }, [selectedRound]);
+
+  const handleCreateRound = async () => {
+    if (roundSubmitting) return;
+    setRoundSubmitting(true);
+    setRoundDialogError(null);
+    try {
+      const response = await authFetch(`/api/tournaments/${tournament.id}/rounds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: roundTitle.trim().length > 0 ? roundTitle.trim() : undefined,
+        }),
+      });
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!response.ok) {
+        const message = contentType.includes('application/json')
+          ? (await response.json()).error ?? `HTTP ${response.status}`
+          : await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      if (!contentType.includes('application/json')) {
+        throw new Error('サーバーが不正なレスポンスを返しました。');
+      }
+      const newRound: Round = await response.json();
+      await loadRounds();
+      setSelectedRoundId(newRound.id);
+      setRoundFeedback(`第${newRound.number}回戦を作成しました。`);
+      setRoundDialogOpen(false);
+      setRoundTitle('');
+      setRoundDialogError(null);
+    } catch (err) {
+      console.error('Failed to create round:', err);
+      setRoundDialogError('ラウンドの作成に失敗しました。');
+    } finally {
+      setRoundSubmitting(false);
+    }
+  };
+
+  const handleCloseRound = async () => {
+    if (!selectedRound || selectedRound.status === 'closed') {
+      return;
+    }
+    const closingRound = selectedRound;
+    setRoundSubmitting(true);
+    setRoundFeedback(null);
+    try {
+      const response = await authFetch(
+        `/api/tournaments/${tournament.id}/rounds/${closingRound.id}/close`,
+        { method: 'POST' },
+      );
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!response.ok) {
+        const message = contentType.includes('application/json')
+          ? (await response.json()).error ?? `HTTP ${response.status}`
+          : await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      if (!contentType.includes('application/json')) {
+        throw new Error('サーバーが不正なレスポンスを返しました。');
+      }
+      await loadRounds();
+      setRoundFeedback(`第${closingRound.number}回戦を締めました。`);
+    } catch (err) {
+      console.error('Failed to close round:', err);
+      setRoundFeedback('ラウンドの締め処理に失敗しました。');
+    } finally {
+      setRoundSubmitting(false);
+    }
   };
 
   const renderStatsChips = () => (
@@ -309,6 +495,157 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
         label={`登録チーム ${stats.teamCount}`}
         sx={{ bgcolor: '#f4f6fd', color: '#4a5162', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
       />
+    </Stack>
+  );
+
+  const renderRoundControls = () => (
+    <Stack spacing={2}>
+      {roundFeedback ? (
+        <Alert severity="success" onClose={() => setRoundFeedback(null)}>
+          {roundFeedback}
+        </Alert>
+      ) : null}
+      {roundError ? (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" startIcon={<RefreshRoundedIcon />} onClick={loadRounds}>
+              再読み込み
+            </Button>
+          }
+        >
+          {roundError}
+        </Alert>
+      ) : null}
+      {roundsLoading ? (
+        <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
+          <CircularProgress />
+          <Typography variant="body2" color="text.secondary">
+            ラウンドを読み込み中です…
+          </Typography>
+        </Stack>
+      ) : rounds.length === 0 ? (
+        <Paper
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: 4,
+            bgcolor: '#fff',
+            border: '1px dashed rgba(24, 32, 56, 0.18)',
+            textAlign: 'center',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>まだラウンドが作成されていません</Typography>
+          <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 3 }}>
+            まずは第1回戦を作成して、対戦カードを登録しましょう。
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => {
+              setRoundTitle('');
+              setRoundDialogError(null);
+              setRoundDialogOpen(true);
+            }}
+            sx={{
+              bgcolor: '#0d1026',
+              borderRadius: 999,
+              px: 3,
+              py: 1.15,
+              fontWeight: 700,
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#181d3f' },
+            }}
+          >
+            第1回戦を作成
+          </Button>
+        </Paper>
+      ) : (
+        <Stack spacing={2}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            justifyContent="space-between"
+          >
+            <ToggleButtonGroup
+              exclusive
+              value={selectedRoundId}
+              onChange={(_, newRoundId) => {
+                if (newRoundId) {
+                  setSelectedRoundId(newRoundId);
+                }
+              }}
+              sx={{
+                flexWrap: 'wrap',
+                gap: 1,
+                '& .MuiToggleButton-root': {
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  minWidth: 140,
+                  borderRadius: 12,
+                  border: '1px solid rgba(24, 32, 56, 0.12)',
+                  color: '#4a5162',
+                  px: 2,
+                  py: 1.25,
+                },
+                '& .Mui-selected': {
+                  bgcolor: '#f4f7ff',
+                  borderColor: '#0d1026',
+                  color: '#0d1026',
+                  boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
+                },
+              }}
+            >
+              {rounds.map((round) => (
+                <ToggleButton key={round.id} value={round.id}>
+                  <Stack spacing={0.5} alignItems="center">
+                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{`第${round.number}回戦`}</Typography>
+                    <Typography sx={{ fontSize: 11, color: '#7d8495' }}>
+                      {round.status === 'closed' ? '締め済み' : '進行中'}
+                    </Typography>
+                  </Stack>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                startIcon={<AddRoundedIcon />}
+                onClick={() => {
+                  setRoundTitle('');
+                  setRoundDialogError(null);
+                  setRoundDialogOpen(true);
+                }}
+                disabled={roundSubmitting}
+              >
+                新しいラウンドを作成
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleCloseRound}
+                disabled={!selectedRound || selectedRound.status === 'closed' || roundSubmitting}
+              >
+                このラウンドを締める
+              </Button>
+            </Stack>
+          </Stack>
+          {selectedRound ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography sx={{ fontWeight: 700, color: '#2f3645' }}>
+                {`第${selectedRound.number}回戦`}
+                {selectedRound.title ? `｜${selectedRound.title}` : ''}
+              </Typography>
+              {roundStatusChip}
+            </Stack>
+          ) : null}
+          {selectedRound && selectedRound.status === 'closed' ? (
+            <Alert severity="info" sx={{ borderRadius: 3 }}>
+              このラウンドは締め切られています。必要であれば新しいラウンドを作成してください。
+            </Alert>
+          ) : null}
+        </Stack>
+      )}
     </Stack>
   );
 
@@ -506,14 +843,15 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
           <Button
             variant="contained"
             startIcon={<AddRoundedIcon />}
-            onClick={() => setCreateOpen(true)}
+            onClick={handleOpenCreateMatch}
+            disabled={!canCreateMatch}
             sx={{
               borderRadius: 999,
               textTransform: 'none',
               fontWeight: 700,
               px: 3,
-              bgcolor: '#0d1026',
-              '&:hover': { bgcolor: '#181d3f' },
+              bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
+              '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
             }}
           >
             対戦を作成
@@ -617,15 +955,16 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
             <Button
               variant="contained"
               startIcon={<AddRoundedIcon />}
-              onClick={() => setCreateOpen(true)}
+              onClick={handleOpenCreateMatch}
+              disabled={!canCreateMatch}
               sx={{
-                bgcolor: '#0d1026',
+                bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
                 px: 3,
                 py: 1.25,
                 borderRadius: 999,
                 fontWeight: 700,
                 textTransform: 'none',
-                '&:hover': { bgcolor: '#181d3f' },
+                '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
               }}
             >
               対戦作成
@@ -633,7 +972,8 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
           </Stack>
         </Paper>
         <Box>
-          <Stack spacing={1.5} sx={{ mb: 3 }}>
+          <Stack spacing={3} sx={{ mb: 3 }}>
+            {renderRoundControls()}
             <Stack spacing={0.5}>
               <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>対戦カード一覧</Typography>
               <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
@@ -661,7 +1001,46 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
           )}
         </Box>
       </Box>
-      <MatchCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleMatchCreated} />
+      <MatchCreateDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleMatchCreated}
+        tournamentId={tournament.id}
+        roundId={selectedRound?.id ?? null}
+      />
+      <Dialog open={roundDialogOpen} onClose={() => (!roundSubmitting ? setRoundDialogOpen(false) : null)} maxWidth="sm" fullWidth>
+        <DialogTitle>ラウンドを作成</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3}>
+            {roundDialogError ? <Alert severity="error">{roundDialogError}</Alert> : null}
+            <Typography variant="body2" color="text.secondary">
+              ラウンド名は任意です。未入力の場合は「第n回戦」という表記のみになります。
+            </Typography>
+            <TextField
+              label="ラウンド名（任意）"
+              placeholder="例: 準決勝、決勝 など"
+              value={roundTitle}
+              onChange={(event) => setRoundTitle(event.target.value)}
+              fullWidth
+              disabled={roundSubmitting}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRoundDialogOpen(false);
+              setRoundDialogError(null);
+            }}
+            disabled={roundSubmitting}
+          >
+            キャンセル
+          </Button>
+          <Button onClick={handleCreateRound} variant="contained" disabled={roundSubmitting}>
+            {roundSubmitting ? '作成中...' : '作成する'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
@@ -669,10 +1048,12 @@ const MatchManager: React.FC<MatchManagerProps> = ({ onOpenResultEntry, reloadTo
 type MatchCreateDialogProps = {
   open: boolean;
   onClose: () => void;
-  onCreated: (record: MatchRecord) => void;
+  onCreated: () => void;
+  tournamentId: string;
+  roundId: string | null;
 };
 
-const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, onCreated }) => {
+const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, onCreated, tournamentId, roundId }) => {
   const [values, setValues] = useState<MatchFormValues>(createInitialValues);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -695,6 +1076,10 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
     };
 
   const handleSubmit = async () => {
+    if (!roundId) {
+      setError('ラウンドが選択されていません。');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -702,6 +1087,8 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
         team: values.team.trim(),
         opponentTeam: values.opponentTeam.trim(),
         date: values.date ? values.date : null,
+        tournamentId,
+        roundId,
       };
 
       const response = await authFetch('/api/matches', {
@@ -713,8 +1100,8 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
         const message = await response.text();
         throw new Error(message || `HTTP ${response.status}`);
       }
-      const record: MatchRecord = await response.json();
-      onCreated(record);
+      await response.json();
+      onCreated();
     } catch (err) {
       console.error('Error creating match:', err);
       setError('対戦の作成に失敗しました。入力内容を確認して再度お試しください。');
@@ -723,7 +1110,8 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({ open, onClose, on
     }
   };
 
-  const isSubmitDisabled = submitting || values.team.trim() === '' || values.opponentTeam.trim() === '';
+  const isSubmitDisabled =
+    submitting || !roundId || values.team.trim() === '' || values.opponentTeam.trim() === '';
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>

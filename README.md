@@ -41,6 +41,8 @@ npm install --prefix frontend
    ```
    `frontend/.env.local` は存在しない場合に作成してください。
 
+   ※ 選択状態を共有したい補助的な用途として、`REACT_APP_DEFAULT_TOURNAMENT_ID` / `REACT_APP_DEFAULT_ROUND_ID` を定義すると、対戦表作成ツールなど補助画面がその大会・ラウンドを初期値として読み込みます（任意）。
+
 ## データベーススキーマ
 
 `supabase/migrations/20250305000000_create_matches.sql` に対戦記録テーブル、`supabase/migrations/20250320000000_create_tournaments.sql` に大会テーブルを作成するマイグレーションを用意しています。
@@ -95,11 +97,17 @@ npm run dev:frontend   # CRA 開発サーバー
   大会一覧を取得します（認証不要）。
 - `POST /api/tournaments`  
   大会を作成します（管理者のみ）。
+- `GET /api/tournaments/:tournamentId/rounds`  
+  指定した大会のラウンドを番号順に取得します。
+- `POST /api/tournaments/:tournamentId/rounds`  
+  新しいラウンドを作成します（管理者のみ）。直前のラウンドが締め済みである必要があります。
+- `POST /api/tournaments/:tournamentId/rounds/:roundId/close`  
+  指定したラウンドを締めます（管理者のみ）。
 
 エラーが発生した場合はレスポンスにメッセージが含まれ、サーバーログにも詳細が出力されます。
 
-> ℹ️ 全ての `/api/matches` エンドポイントは Supabase 認証トークン（`Authorization: Bearer ...`）が必須です。フロントエンドのログインに成功すると自動的に付与されます。
-> `POST /api/tournaments` も同様に認証が必須で、さらに Supabase ユーザーの `app_metadata.role` に `admin` が含まれている必要があります。
+> ℹ️ 全ての `/api/matches` エンドポイントは Supabase 認証トークン（`Authorization: Bearer ...`）が必須です。さらに `GET /api/matches` では `tournamentId`（必要に応じて `roundId`）のクエリパラメータを指定してください。`POST /api/matches` の際は本文に `tournamentId` と `roundId` を含める必要があります。
+> 大会やラウンドの作成・締め操作（`POST /api/tournaments*`）も同様に認証が必須で、Supabase ユーザーの `app_metadata.role` に `admin` が含まれている必要があります。
 
 ## 管理者・参加者アカウントの運用
 
@@ -113,3 +121,9 @@ npm run dev:frontend   # CRA 開発サーバー
 2. 既存の大会を選択するか、「大会を作成」ボタンから新しく大会を登録すると、その大会が選択状態になり、対戦管理ツールへ遷移します。
 3. 画面右上の「大会を変更」ボタンから、いつでも別の大会に切り替えられます。
 4. 大会を追加した直後は自動的にその大会が選択されます。必要に応じて右上のボタンから再度大会一覧に戻ってください。
+
+## ラウンド管理
+
+- 各大会には「第 n 回戦」としてラウンドを作成できます。ラウンドは常に最新のみが「進行中」となり、締め処理を行うと次のラウンドを作成できるようになります。
+- 対戦カードは必ずいずれかのラウンドに属します。管理画面からラウンドを選択することで、そのラウンドに紐づく対戦だけが表示され、対戦の新規作成も進行中のラウンドのみに限定されます。
+- 運営以外の画面では参加者向け機能を今後追加予定です。現状では管理者ロールでログインしたユーザーのみがラウンド作成・締めを実行できます。

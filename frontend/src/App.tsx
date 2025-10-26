@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, Typography } from '@mui/material';
 import MatchManager from './MatchManager';
 import ResultEntry from './ResultEntry';
@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [previousTournament, setPreviousTournament] = useState<Tournament | null>(null);
   const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false);
   const [tournamentMessage, setTournamentMessage] = useState<string | null>(null);
   const { loading, session, user, signOut } = useAuth();
@@ -29,6 +30,21 @@ const App: React.FC = () => {
   const handleResultSaved = () => {
     setReloadToken((prev) => prev + 1);
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (selectedTournament) {
+      window.localStorage.setItem('katorin:selectedTournamentId', selectedTournament.id);
+      window.localStorage.setItem('katorin:selectedTournamentName', selectedTournament.name);
+      window.dispatchEvent(new CustomEvent('katorin:tournamentChanged', { detail: selectedTournament }));
+    } else {
+      window.localStorage.removeItem('katorin:selectedTournamentId');
+      window.localStorage.removeItem('katorin:selectedTournamentName');
+      window.dispatchEvent(new CustomEvent('katorin:tournamentCleared'));
+    }
+  }, [selectedTournament]);
 
   const handleSignOut = () => {
     signOut().catch((err) => {
@@ -50,6 +66,7 @@ const App: React.FC = () => {
 
   const handleTournamentSelected = (tournament: Tournament) => {
     setSelectedTournament(tournament);
+    setPreviousTournament(null);
     setTournamentMessage(`「${tournament.name}」を選択しました。`);
   };
 
@@ -97,6 +114,7 @@ const App: React.FC = () => {
             color="inherit"
             size="small"
             onClick={() => {
+              setPreviousTournament(selectedTournament);
               setSelectedTournament(null);
               setTournamentMessage(null);
             }}
@@ -125,9 +143,18 @@ const App: React.FC = () => {
           </Alert>
         ) : null}
         {view === 'manager' ? (
-          <MatchManager onOpenResultEntry={handleOpenResult} reloadToken={reloadToken} />
+          <MatchManager
+            tournament={selectedTournament}
+            onOpenResultEntry={handleOpenResult}
+            reloadToken={reloadToken}
+          />
         ) : (
-          <ResultEntry matchId={selectedMatchId} onBack={handleBackToManager} onSaved={handleResultSaved} />
+          <ResultEntry
+            tournament={selectedTournament}
+            matchId={selectedMatchId}
+            onBack={handleBackToManager}
+            onSaved={handleResultSaved}
+          />
         )}
       </Box>
     </Stack>
@@ -167,7 +194,21 @@ const App: React.FC = () => {
       ) : !session ? (
         <LoginForm />
       ) : isAdmin ? (
-        selectedTournament ? renderAdminMainView() : <TournamentSelection onSelect={handleTournamentSelected} />
+        selectedTournament ? (
+          renderAdminMainView()
+        ) : (
+          <TournamentSelection
+            onSelect={handleTournamentSelected}
+            onCancel={
+              previousTournament
+                ? () => {
+                    setSelectedTournament(previousTournament);
+                    setPreviousTournament(null);
+                  }
+                : undefined
+            }
+          />
+        )
       ) : (
         renderParticipantPlaceholder()
       )}
@@ -178,6 +219,7 @@ const App: React.FC = () => {
           onCreated={(tournament) => {
             setTournamentDialogOpen(false);
             setSelectedTournament(tournament);
+            setPreviousTournament(null);
             setTournamentMessage(`「${tournament.name}」を作成しました。`);
           }}
         />
