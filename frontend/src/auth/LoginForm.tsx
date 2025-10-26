@@ -48,7 +48,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       if (mode !== 'admin') {
         throw new Error('チームログインは準備中です。');
       }
-      await signInWithPassword({ email, password });
+      if (mode === 'team') {
+        await signInWithPassword({ email: teamName, password });
+      } else {
+        await signInWithPassword({ email, password });
+      }
       onSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'ログインに失敗しました。';
@@ -114,16 +118,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               </Alert>
             ) : null}
             {error ? <Alert severity="error">{error}</Alert> : null}
-            <TextField
-              label="メールアドレス"
-              type="email"
-              required
-              fullWidth
-              disabled={submitting}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
+            {mode === 'team' ? (
+              <TextField
+                label="チーム名（ユーザー名）"
+                required
+                fullWidth
+                disabled={submitting}
+                value={teamName}
+                onChange={(event) => setTeamName(event.target.value)}
+              />
+            ) : (
+              <TextField
+                label="メールアドレス"
+                type="email"
+                required
+                fullWidth
+                disabled={submitting}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+              />
+            )}
             <TextField
               label="パスワード"
               type="password"
@@ -133,10 +148,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              helperText={mode === 'admin' ? '' : 'チームログイン機能は準備中です'}
+              helperText={mode === 'admin' ? '' : '運営が配布したパスワードを入力してください'}
             />
             <Stack spacing={2}>
-              <Button type="submit" variant="contained" size="large" disabled={submitting}>
+              <Button type="submit" variant="contained" size="large" disabled={submitting || (mode === 'team' && teamName.trim().length === 0)}>
                 {submitting ? 'サインイン中...' : 'サインイン'}
               </Button>
               <Divider flexItem>
