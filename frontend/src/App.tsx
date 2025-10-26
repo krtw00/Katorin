@@ -99,17 +99,6 @@ const App: React.FC = () => {
             </Stack>
           ) : null}
           <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            onClick={() => {
-              setTournamentDialogOpen(true);
-              setTournamentMessage(null);
-            }}
-          >
-            大会を作成
-          </Button>
-          <Button
             variant="text"
             color="inherit"
             size="small"
