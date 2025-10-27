@@ -55,6 +55,7 @@
       "createButton": "Create Tournament",
       "refreshButton": "Refresh",
       "backButton": "Back",
+      "logoutButton": "Logout",
       "loading": "Loading tournaments...",
       "noTournaments": "No tournaments registered yet. Please press Create Tournament to register one first.",
       "selectButton": "Manage This Tournament",

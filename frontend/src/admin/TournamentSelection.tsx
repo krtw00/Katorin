@@ -12,7 +12,9 @@ import {
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
+import { useAuth } from '../auth/AuthContext';
 import TournamentCreateDialog, { Tournament } from './TournamentCreateDialog';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
@@ -24,6 +26,7 @@ type TournamentSelectionProps = {
 const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onCancel }) => {
   const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
+  const { signOut } = useAuth();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +89,14 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
     setDialogOpen(false);
     setInfoMessage(t('tournament.selection.created', { name: tournament.name }));
     onSelect(tournament);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
 
   return (
@@ -156,11 +167,21 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
               {t('tournament.selection.refreshButton')}
             </Button>
           </Stack>
-          {onCancel ? (
-            <Button variant="text" color="inherit" onClick={onCancel}>
-              {t('tournament.selection.backButton')}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            {onCancel ? (
+              <Button variant="text" color="inherit" onClick={onCancel}>
+                {t('tournament.selection.backButton')}
+              </Button>
+            ) : null}
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<LogoutRoundedIcon />}
+              onClick={handleLogout}
+            >
+              {t('tournament.selection.logoutButton')}
             </Button>
-          ) : null}
+          </Stack>
         </Stack>
         {loading ? (
           <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>

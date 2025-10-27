@@ -55,6 +55,7 @@
       "createButton": "大会を作成",
       "refreshButton": "更新",
       "backButton": "戻る",
+      "logoutButton": "ログアウト",
       "loading": "大会を読み込み中です…",
       "noTournaments": "まだ大会が登録されていません。先に「大会を作成」を押して登録してください。",
       "selectButton": "この大会を管理する",

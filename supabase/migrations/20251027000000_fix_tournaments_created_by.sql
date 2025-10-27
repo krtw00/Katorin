@@ -1,0 +1,41 @@
+-- 既存の大会データをアカウントに紐づけるマイグレーション
+--
+-- このマイグレーションは既存のcreated_byがNULLの大会データを
+-- 特定のアカウントに紐づけます。
+--
+-- 使い方:
+-- 1. まず、既存のユーザーIDを確認します:
+--    SELECT id, email FROM auth.users;
+--
+-- 2. 下記のSQLの'YOUR_USER_ID_HERE'を実際のユーザーIDに置き換えます
+--
+-- 3. created_byがNULLの大会を確認:
+--    SELECT id, name, slug, created_by FROM public.tournaments WHERE created_by IS NULL;
+--
+-- 4. 特定のユーザーIDに紐づけを実行:
+--    UPDATE public.tournaments
+--    SET created_by = 'YOUR_USER_ID_HERE'
+--    WHERE created_by IS NULL;
+--
+-- 注意: このスクリプトは手動実行用です。実際のユーザーIDを確認してから実行してください。
+
+-- created_byがNULLの大会データを確認するためのクエリ
+-- SELECT id, name, slug, created_by, created_at
+-- FROM public.tournaments
+-- WHERE created_by IS NULL
+-- ORDER BY created_at DESC;
+
+-- 既存のユーザーを確認するためのクエリ
+-- SELECT id, email, created_at
+-- FROM auth.users
+-- ORDER BY created_at ASC;
+
+-- 実行例:
+-- 以下のコメントを外して、YOUR_USER_ID_HEREを実際のユーザーIDに置き換えて実行してください
+-- UPDATE public.tournaments
+-- SET created_by = 'YOUR_USER_ID_HERE'
+-- WHERE created_by IS NULL;
+
+-- created_byカラムをNOT NULLに変更する場合は、全てのレコードが
+-- created_byを持っていることを確認してから以下を実行:
+-- ALTER TABLE public.tournaments ALTER COLUMN created_by SET NOT NULL;

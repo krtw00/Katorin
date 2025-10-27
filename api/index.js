@@ -140,10 +140,15 @@ app.delete('/api/matches/:id', requireAuth, async (req, res) => {
 });
 
 // List tournaments (public)
-app.get('/api/tournaments', async (_req, res) => {
-  const { data, error } = await supabase
+app.get('/api/tournaments', requireAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { data, error } = await client
     .from('tournaments')
     .select('id, name, slug, description, created_at')
+    .eq('created_by', req.user.id)
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[GET /api/tournaments] Supabase error:', error);
