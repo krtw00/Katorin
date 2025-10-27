@@ -46,6 +46,8 @@ const LanguageSwitcher: React.FC = () => {
         onClick={handleClose}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        disableAutoFocus
+        disableEnforceFocus
       >
         <MenuItem
           onClick={() => handleLanguageChange('ja')}
