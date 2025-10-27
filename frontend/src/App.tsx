@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MatchManager from './MatchManager';
 import ResultEntry from './ResultEntry';
 import LoginForm from './auth/LoginForm';
@@ -8,10 +9,14 @@ import TournamentSelection from './admin/TournamentSelection';
 import TournamentCreateDialog, { Tournament } from './admin/TournamentCreateDialog';
 import PasswordResetForm from './auth/PasswordResetForm';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import TeamLoginForm from './team/TeamLoginForm';
+import TeamManagementPage from './team/TeamManagementPage';
+import ParticipantManagementPage from './team/ParticipantManagementPage';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'manager' | 'result'>('manager');
-  const [authView, setAuthView] = useState<'login' | 'reset'>('login');
+  const [adminSection, setAdminSection] = useState<'matches' | 'teams'>('matches');
+  const [, setAuthView] = useState<'login' | 'reset'>('login');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -33,6 +38,12 @@ const App: React.FC = () => {
   const handleResultSaved = () => {
     setReloadToken((prev) => prev + 1);
   };
+
+  useEffect(() => {
+    setAdminSection('matches');
+    setView('manager');
+    setSelectedMatchId(null);
+  }, [selectedTournament?.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -137,20 +148,61 @@ const App: React.FC = () => {
             現在「{selectedTournament.name}」を管理しています。
           </Alert>
         ) : null}
-        {view === 'manager' ? (
-          <MatchManager
-            tournament={selectedTournament!}
-            onOpenResultEntry={handleOpenResult}
-            reloadToken={reloadToken}
-          />
-        ) : (
-          <ResultEntry
-            tournament={selectedTournament!}
-            matchId={selectedMatchId}
-            onBack={handleBackToManager}
-            onSaved={handleResultSaved}
-          />
-        )}
+        <Stack spacing={3}>
+          <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'center' } }}>
+            <ToggleButtonGroup
+              exclusive
+              value={adminSection}
+              onChange={(_, next) => {
+                if (next) {
+                  setAdminSection(next);
+                }
+              }}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                bgcolor: '#f6f7fb',
+                borderRadius: 999,
+                p: 0.5,
+                boxShadow: 'inset 0 0 0 1px rgba(24, 32, 56, 0.08)',
+                '& .MuiToggleButton-root': {
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: '#6a7184',
+                  px: 3,
+                  border: 'none',
+                  borderRadius: 999,
+                },
+                '& .Mui-selected': {
+                  bgcolor: '#f4f7ff',
+                  color: '#1a1d2f',
+                  boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
+                },
+              }}
+            >
+              <ToggleButton value="matches">対戦管理</ToggleButton>
+              <ToggleButton value="teams">チーム・参加者管理</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+          {adminSection === 'matches' ? (
+            view === 'manager' ? (
+              <MatchManager
+                tournament={selectedTournament!}
+                onOpenResultEntry={handleOpenResult}
+                reloadToken={reloadToken}
+              />
+            ) : (
+              <ResultEntry
+                tournament={selectedTournament!}
+                matchId={selectedMatchId}
+                onBack={handleBackToManager}
+                onSaved={handleResultSaved}
+              />
+            )
+          ) : (
+            <TeamManagementPage embedded />
+          )}
+        </Stack>
       </Box>
     </Stack>
   );
@@ -172,7 +224,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <>
+    <BrowserRouter>
       <CssBaseline />
       {loading ? (
         <Box
@@ -186,30 +238,45 @@ const App: React.FC = () => {
         >
           <CircularProgress />
         </Box>
-      ) : !session ? (
-        authView === 'login' ? (
-          <LoginForm onShowPasswordReset={() => setAuthView('reset')} />
-        ) : (
-          <PasswordResetForm onBackToLogin={() => setAuthView('login')} />
-        )
-      ) : isAdmin ? (
-        selectedTournament ? (
-          renderAdminMainView()
-        ) : (
-          <TournamentSelection
-            onSelect={handleTournamentSelected}
-            onCancel={
-              previousTournament
-                ? () => {
-                    setSelectedTournament(previousTournament);
-                    setPreviousTournament(null);
-                  }
-                : undefined
+      ) : (
+        <Routes>
+          <Route path="/login" element={session ? <Navigate to="/" /> : <LoginForm onShowPasswordReset={() => setAuthView('reset')} />} />
+          <Route path="/password-reset" element={session ? <Navigate to="/" /> : <PasswordResetForm onBackToLogin={() => setAuthView('login')} />} />
+          <Route
+            path="/"
+            element={
+              session ? (
+                isAdmin ? (
+                  selectedTournament ? (
+                    renderAdminMainView()
+                  ) : (
+                    <TournamentSelection
+                      onSelect={handleTournamentSelected}
+                      onCancel={
+                        previousTournament
+                          ? () => {
+                              setSelectedTournament(previousTournament);
+                              setPreviousTournament(null);
+                            }
+                          : undefined
+                      }
+                    />
+                  )
+                ) : (
+                  renderParticipantPlaceholder()
+                )
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
-        )
-      ) : (
-        renderParticipantPlaceholder()
+          {/* Team Management Routes (Placeholders for now) */}
+          <Route path="/team-login" element={<TeamLoginForm />} />
+          <Route path="/team-management" element={<TeamManagementPage />} />
+          <Route path="/team/:teamId/participants" element={<ParticipantManagementPage />} />
+          {/* Fallback for unknown routes */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       )}
       {isAdmin ? (
         <>
@@ -225,7 +292,7 @@ const App: React.FC = () => {
           />
         </>
       ) : null}
-    </>
+    </BrowserRouter>
   );
 };
 

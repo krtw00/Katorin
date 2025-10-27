@@ -56,7 +56,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
     } finally {
       setLoading(false);
     }
-  }, [authFetch]);
+  }, [authFetch, t]);
 
   useEffect(() => {
     loadTournaments();

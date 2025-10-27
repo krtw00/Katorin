@@ -19,6 +19,15 @@
       "teamNameRequired": "チーム名を入力してください。",
       "loginFailed": "ログインに失敗しました。"
     },
+    "teamLoginForm": {
+      "title": "チームログイン",
+      "username": "チームユーザー名",
+      "password": "パスワード",
+      "loginButton": "ログイン",
+      "loginFailed": "ログインに失敗しました。ユーザー名またはパスワードが無効です。",
+      "networkError": "ネットワークエラーが発生しました。時間をおいて再度お試しください。",
+      "backToAdminLogin": "運営ログイン画面に戻る"
+    },
     "passwordReset": {
       "title": "パスワードリセット",
       "emailLabel": "メールアドレス",
@@ -65,6 +74,56 @@
       "errorInvalidResponse": "サーバーが不正なレスポンスを返しました。"
     }
   },
+  "teamManagement": {
+    "title": "チーム管理",
+    "createTeam": "チームを作成",
+    "editTeam": "チームを編集",
+    "allFieldsRequired": "すべての項目は必須です。",
+    "saveError": "チームの保存に失敗しました。",
+    "confirmDelete": "このチームを削除しますか？この操作は元に戻せません。",
+    "deleteError": "チームの削除に失敗しました。",
+    "fetchError": "チームの取得に失敗しました。",
+    "noTeams": "まだチームが登録されていません。チームを作成してください。",
+    "teamName": "チーム名",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "leaveBlankForNoChange": "変更しない場合は空欄にしてください。"
+  },
+  "participantManagement": {
+    "title": "参加者管理",
+    "titleForTeam": "{{teamName}} の参加者",
+    "addParticipant": "参加者を追加",
+    "editParticipant": "参加者を編集",
+    "nameRequired": "参加者名は必須です。",
+    "teamIdMissing": "チームIDがありません。",
+    "saveError": "参加者の保存に失敗しました。",
+    "confirmDelete": "この参加者を削除しますか？この操作は元に戻せません。",
+    "deleteError": "参加者の削除に失敗しました。",
+    "fetchError": "参加者の取得に失敗しました。",
+    "fetchTeamError": "チーム詳細の取得に失敗しました。",
+    "fetchTeamsForMoveError": "参加者移動のためのチーム取得に失敗しました。",
+    "noParticipants": "まだ参加者が登録されていません。参加者を追加してください。",
+    "participantName": "参加者名",
+    "canEdit": "編集可能",
+    "cannotEdit": "編集不可",
+    "grantEditPermission": "編集権限を付与する",
+    "moveToTeam": "チームを移動"
+  },
+  "matchCreateDialog": {
+    "createMatch": "対戦を作成",
+    "editMatch": "対戦を編集",
+    "roundNotSelected": "ラウンドが選択されていません。",
+    "updateFailed": "対戦の更新に失敗しました。入力内容を確認して再度お試しください。",
+    "createFailed": "対戦の作成に失敗しました。入力内容を確認して再度お試しください。",
+    "fetchTeamsError": "チームの取得に失敗しました。",
+    "noTeamsRegistered": "まだチームが登録されていません。チーム管理でチームを登録してください。",
+    "createMatchDescription": "プレイヤーやスコアは「結果入力」で設定できます。まずはカードに載せたいチーム名と日付だけ登録しましょう。",
+    "editMatchDescription": "チーム名や日付を修正できます。スコアなどの詳細は「結果入力」で編集してください。",
+    "homeTeam": "ホームチーム",
+    "awayTeam": "アウェイチーム",
+    "selectTeam": "チームを選択",
+    "matchDate": "対戦日"
+  },
   "admin": {
     "create": {
       "title": "運営アカウントを作成",
@@ -101,6 +160,10 @@
     "confirm": "確認",
     "loading": "読み込み中...",
     "error": "エラー",
-    "success": "成功"
+    "success": "成功",
+    "updating": "更新中...",
+    "creating": "作成中...",
+    "update": "更新する",
+    "create": "作成する"
   }
 }
