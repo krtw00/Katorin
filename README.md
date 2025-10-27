@@ -17,43 +17,43 @@ npm install --prefix frontend
 
 ## Supabase の起動と環境変数
 
-1. Supabase を起動します。
+1. Supabase をローカルで起動します（Docker が必要です）。
    ```bash
-   supabase start
+   npx supabase start
    ```
-   初回起動時に `supabase/.env` が生成され、Anon キーなどが記載されます。
+   起動すると、API URL や各種キーが標準出力に表示されます。以下のような情報が表示されます：
+   ```
+   API URL: http://127.0.0.1:54321
+   Publishable key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   Secret key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   Studio URL: http://127.0.0.1:54323
+   ```
 
-2. API サーバーは `.env.local` → `.env` → `supabase/.env` の順番で環境変数を読み込みます。最も簡単なのは生成されたファイルをそのままコピーする方法です。
+2. ルート直下に `.env.local` を作成し、バックエンド API 用の環境変数を設定します。
    ```bash
-   cp supabase/.env .env.local
-   ```
-
-3. 手動で設定する場合は最低限以下 2 つを定義してください。
-   ```env
+   # .env.local
    SUPABASE_URL=http://127.0.0.1:54321
-   SUPABASE_ANON_KEY=（supabase/.env に記載の anon キー）
+   SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
    ```
+   ※ 上記のキーはローカル開発環境用のデフォルト値です。`npx supabase start` の出力に表示される値を使用してください。
 
-4. 認証付きのフロントエンドを利用するため、`frontend/.env.local` にも以下の環境変数を設定してください。
-   ```env
+3. フロントエンド用の環境変数を設定します。`frontend/.env.local` を作成してください。
+   ```bash
+   # frontend/.env.local
    REACT_APP_SUPABASE_URL=http://127.0.0.1:54321
-   REACT_APP_SUPABASE_ANON_KEY=（supabase/.env に記載の anon キー）
+   REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
    ```
-   `frontend/.env.local` は存在しない場合に作成してください。
 
    ※ 選択状態を共有したい補助的な用途として、`REACT_APP_DEFAULT_TOURNAMENT_ID` / `REACT_APP_DEFAULT_ROUND_ID` を定義すると、対戦表作成ツールなど補助画面がその大会・ラウンドを初期値として読み込みます（任意）。
-
-5. 運営アカウントの作成 API を利用する場合は、ルート直下の `.env.local`（API 用）に `SUPABASE_SERVICE_ROLE_KEY` も設定してください。
-   ```env
-   SUPABASE_SERVICE_ROLE_KEY=（supabase/.env に記載の service_role キー）
-   ```
 
 ## データベーススキーマ
 
 `supabase/migrations/20250305000000_create_matches.sql` に対戦記録テーブル、`supabase/migrations/20250320000000_create_tournaments.sql` に大会テーブルを作成するマイグレーションを用意しています。
 
+マイグレーションが必要な場合は以下のコマンドを実行してください。
 ```bash
-supabase db push
+npx supabase db push
 ```
 
 テーブルは以下のカラムを持ちます。
@@ -87,6 +87,14 @@ npm run dev:frontend   # CRA 開発サーバー
 ```
 
 フロントエンドは `package.json` の `proxy` 設定によりポート 3001 の API へリクエストを転送します。
+
+開発サーバーが起動したら、ブラウザで以下の URL にアクセスしてください。
+
+- **フロントエンド**: http://localhost:3000
+- **API**: http://localhost:3001
+- **Supabase Studio**: http://127.0.0.1:54323
+
+フロントエンド画面でログインが必要になります。管理者アカウントは Supabase Studio から作成するか、`POST /api/admin/users` エンドポイントを利用して作成してください。
 
 ## API エンドポイント
 
