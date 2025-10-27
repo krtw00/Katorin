@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Alert,
@@ -17,11 +18,13 @@ import AdminCreateDialog from '../admin/AdminCreateDialog';
 
 type LoginFormProps = {
   onSuccess?: () => void;
+  onShowPasswordReset: () => void;
 };
 
 type LoginMode = 'admin' | 'team';
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
+  const { t } = useTranslation('common');
   const { signInWithPassword } = useAuth();
   const [mode, setMode] = useState<LoginMode>('admin');
   const [email, setEmail] = useState('');
@@ -51,7 +54,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     try {
       if (mode === 'team') {
         if (!teamName.trim()) {
-          throw new Error('チーム名を入力してください。');
+          throw new Error(t('auth.login.teamNameRequired'));
         }
         await signInWithPassword({ email: teamName, password });
       } else {
@@ -61,7 +64,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
       onSuccess?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'ログインに失敗しました。';
+      const message = err instanceof Error ? err.message : t('auth.login.loginFailed');
       setError(message);
     } finally {
       setSubmitting(false);
@@ -84,10 +87,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         <Stack spacing={3}>
           <Stack spacing={1}>
             <Typography component="h1" variant="h5" textAlign="center" fontWeight="bold">
-              Katorin ログイン
+              {t('auth.login.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" textAlign="center">
-              利用者に応じてタブを選んでサインインしてください。
+              {t('auth.login.subtitle')}
             </Typography>
           </Stack>
 
@@ -113,20 +116,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               },
             }}
           >
-            <Tab value="admin" label="運営ログイン" />
-            <Tab value="team" label="チームログイン" />
+            <Tab value="admin" label={t('auth.login.adminTab')} />
+            <Tab value="team" label={t('auth.login.teamTab')} />
           </Tabs>
 
           <Stack component="form" spacing={3} onSubmit={handleSubmit}>
             {mode === 'team' ? (
               <Alert severity="info" color="info">
-                運営が配布したチーム名（ユーザー名）とパスワードを入力してください。
+                {t('auth.login.teamInfo')}
               </Alert>
             ) : null}
             {error ? <Alert severity="error">{error}</Alert> : null}
             {mode === 'team' ? (
               <TextField
-                label="チーム名（ユーザー名）"
+                label={t('auth.login.teamNameLabel')}
                 required
                 fullWidth
                 disabled={submitting}
@@ -135,7 +138,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               />
             ) : (
               <TextField
-                label="メールアドレス"
+                label={t('auth.login.emailLabel')}
                 type="email"
                 required
                 fullWidth
@@ -146,7 +149,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               />
             )}
             <TextField
-              label="パスワード"
+              label={t('auth.login.passwordLabel')}
               type="password"
               required
               fullWidth
@@ -154,15 +157,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              helperText={mode === 'admin' ? '' : '運営が配布したパスワードを入力してください'}
+              helperText={mode === 'admin' ? '' : t('auth.login.passwordHelperText')}
             />
             <Stack spacing={2}>
               <Button type="submit" variant="contained" size="large" disabled={submitting || (mode === 'team' && teamName.trim().length === 0)}>
-                {submitting ? 'サインイン中...' : 'サインイン'}
+                {submitting ? t('auth.login.submitting') : t('auth.login.submitButton')}
               </Button>
+              {mode === 'admin' && (
+                <Button variant="text" size="small" onClick={onShowPasswordReset} sx={{ alignSelf: 'center' }}>
+                  {t('auth.login.forgotPassword')}
+                </Button>
+              )}
               <Divider flexItem>
                 <Typography variant="caption" color="text.secondary">
-                  運営アカウントの作成
+                  {t('auth.login.adminCreateSection')}
                 </Typography>
               </Divider>
               <Button
@@ -172,7 +180,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                 }}
                 disabled={submitting}
               >
-                運営アカウントを追加
+                {t('auth.login.adminCreateButton')}
               </Button>
             </Stack>
           </Stack>
@@ -188,7 +196,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           onClose={() => setAdminDialogOpen(false)}
           onCreated={(createdEmail) => {
             setAdminDialogOpen(false);
-            setAdminSuccess(`運営アカウント（${createdEmail}）を作成しました。`);
+            setAdminSuccess(t('auth.login.adminCreatedSuccess', { email: createdEmail }));
           }}
         />
       </Paper>

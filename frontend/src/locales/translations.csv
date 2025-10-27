@@ -1,0 +1,18 @@
+key,ja,en
+auth.login.title,Katorin ログイン,Katorin Login
+auth.login.subtitle,利用者に応じてタブを選んでサインインしてください。,Please select the appropriate tab to sign in.
+auth.login.adminTab,運営ログイン,Admin Login
+auth.login.teamTab,チームログイン,Team Login
+auth.login.teamInfo,運営が配布したチーム名（ユーザー名）とパスワードを入力してください。,Please enter the team name (username) and password provided by the administrator.
+auth.login.teamNameLabel,チーム名（ユーザー名）,Team Name (Username)
+auth.login.emailLabel,メールアドレス,Email Address
+auth.login.passwordLabel,パスワード,Password
+auth.login.passwordHelperText,運営が配布したパスワードを入力してください,Please enter the password provided by the administrator
+auth.login.submitButton,サインイン,Sign In
+auth.login.submitting,サインイン中...,Signing in...
+auth.login.forgotPassword,パスワードをお忘れですか？,Forgot your password?
+auth.login.adminCreateSection,運営アカウントの作成,Create Admin Account
+auth.login.adminCreateButton,運営アカウントを追加,Add Admin Account
+auth.login.adminCreatedSuccess,運営アカウント（{{email}}）を作成しました。,Admin account ({{email}}) has been created.
+auth.login.teamNameRequired,チーム名を入力してください。,Please enter a team name.
+auth.login.loginFailed,ログインに失敗しました。,Login failed.

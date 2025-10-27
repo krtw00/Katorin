@@ -1,0 +1,23 @@
+{
+  "auth": {
+    "login": {
+      "title": "Katorin ログイン",
+      "subtitle": "利用者に応じてタブを選んでサインインしてください。",
+      "adminTab": "運営ログイン",
+      "teamTab": "チームログイン",
+      "teamInfo": "運営が配布したチーム名（ユーザー名）とパスワードを入力してください。",
+      "teamNameLabel": "チーム名（ユーザー名）",
+      "emailLabel": "メールアドレス",
+      "passwordLabel": "パスワード",
+      "passwordHelperText": "運営が配布したパスワードを入力してください",
+      "submitButton": "サインイン",
+      "submitting": "サインイン中...",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "adminCreateSection": "運営アカウントの作成",
+      "adminCreateButton": "運営アカウントを追加",
+      "adminCreatedSuccess": "運営アカウント（{{email}}）を作成しました。",
+      "teamNameRequired": "チーム名を入力してください。",
+      "loginFailed": "ログインに失敗しました。"
+    }
+  }
+}

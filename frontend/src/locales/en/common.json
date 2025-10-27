@@ -1,0 +1,23 @@
+{
+  "auth": {
+    "login": {
+      "title": "Katorin Login",
+      "subtitle": "Please select the appropriate tab to sign in.",
+      "adminTab": "Admin Login",
+      "teamTab": "Team Login",
+      "teamInfo": "Please enter the team name (username) and password provided by the administrator.",
+      "teamNameLabel": "Team Name (Username)",
+      "emailLabel": "Email Address",
+      "passwordLabel": "Password",
+      "passwordHelperText": "Please enter the password provided by the administrator",
+      "submitButton": "Sign In",
+      "submitting": "Signing in...",
+      "forgotPassword": "Forgot your password?",
+      "adminCreateSection": "Create Admin Account",
+      "adminCreateButton": "Add Admin Account",
+      "adminCreatedSuccess": "Admin account ({{email}}) has been created.",
+      "teamNameRequired": "Please enter a team name.",
+      "loginFailed": "Login failed."
+    }
+  }
+}
