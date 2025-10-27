@@ -16,3 +16,69 @@ auth.login.adminCreateButton,運営アカウントを追加,Add Admin Account
 auth.login.adminCreatedSuccess,運営アカウント（{{email}}）を作成しました。,Admin account ({{email}}) has been created.
 auth.login.teamNameRequired,チーム名を入力してください。,Please enter a team name.
 auth.login.loginFailed,ログインに失敗しました。,Login failed.
+auth.passwordReset.title,パスワードリセット,Password Reset
+auth.passwordReset.emailLabel,メールアドレス,Email Address
+auth.passwordReset.newPasswordLabel,新しいパスワード,New Password
+auth.passwordReset.newPasswordHelperText,6文字以上で入力してください。,Please enter at least 6 characters.
+auth.passwordReset.submitButton,パスワードをリセット,Reset Password
+auth.passwordReset.submitting,リセット中...,Resetting...
+auth.passwordReset.backToLogin,ログイン画面に戻る,Back to Login
+auth.passwordReset.success,パスワードが正常にリセットされました。ログイン画面に戻って新しいパスワードでログインしてください。,Password has been reset successfully. Please return to the login screen and sign in with your new password.
+auth.passwordReset.failed,パスワードのリセットに失敗しました。,Password reset failed.
+auth.passwordReset.unexpectedError,予期せぬエラーが発生しました。,An unexpected error occurred.
+tournament.create.title,大会を作成,Create Tournament
+tournament.create.subtitle,大会コード（スラッグ）はメールアドレスのドメインとしても使用されます。半角英数字とハイフンで入力してください。,The tournament code (slug) will also be used as the email domain. Please use alphanumeric characters and hyphens only.
+tournament.create.nameLabel,大会名,Tournament Name
+tournament.create.slugLabel,大会コード（スラッグ）,Tournament Code (Slug)
+tournament.create.slugPlaceholder,例: 2025-spring-league,e.g., 2025-spring-league
+tournament.create.slugHelperText,半角英数とハイフンのみ。空欄のままでも大会名から自動生成されます。,Only alphanumeric characters and hyphens. If left blank it will be auto-generated from the tournament name.
+tournament.create.descriptionLabel,説明 (任意),Description (Optional)
+tournament.create.cancel,キャンセル,Cancel
+tournament.create.submit,作成する,Create
+tournament.create.submitting,作成中…,Creating...
+tournament.create.errorNameRequired,大会名を入力してください。,Please enter a tournament name.
+tournament.create.errorSlugInvalid,スラッグは半角英数字とハイフンのみ使用してください。,Slug must contain only alphanumeric characters and hyphens.
+tournament.create.errorFailed,大会の作成に失敗しました。,Failed to create tournament.
+tournament.create.errorInvalidResponse,サーバーが不正なレスポンスを返しました。,The server returned an invalid response.
+tournament.selection.title,大会を選択,Select Tournament
+tournament.selection.subtitle,まずは管理したい大会を選択してください。新しい大会を作成することもできます。,First select the tournament you want to manage. You can also create a new tournament.
+tournament.selection.createButton,大会を作成,Create Tournament
+tournament.selection.refreshButton,更新,Refresh
+tournament.selection.backButton,戻る,Back
+tournament.selection.loading,大会を読み込み中です…,Loading tournaments...
+tournament.selection.noTournaments,まだ大会が登録されていません。先に「大会を作成」を押して登録してください。,No tournaments registered yet. Please press "Create Tournament" to register one first.
+tournament.selection.selectButton,この大会を管理する,Manage This Tournament
+tournament.selection.createdAt,作成日時:,Created:
+tournament.selection.created,「{{name}}」を作成しました。,Created "{{name}}".
+tournament.selection.errorFailed,大会一覧の取得に失敗しました。時間をおいて再度お試しください。,Failed to retrieve tournament list. Please try again later.
+tournament.selection.errorInvalidResponse,サーバーが不正なレスポンスを返しました。,The server returned an invalid response.
+admin.create.title,運営アカウントを作成,Create Admin Account
+admin.create.subtitle,作成したメールアドレスとパスワードでログインできる運営アカウントを追加します。追加されたユーザーには自動的に管理者権限が付与されます。,Add an admin account that can be used to log in with the created email and password. Added users will automatically be granted administrator privileges.
+admin.create.emailLabel,メールアドレス,Email Address
+admin.create.passwordLabel,パスワード（6文字以上）,Password (6+ characters)
+admin.create.displayNameLabel,表示名（任意）,Display Name (Optional)
+admin.create.cancel,キャンセル,Cancel
+admin.create.submit,作成する,Create
+admin.create.submitting,作成中...,Creating...
+admin.create.errorFailed,管理者アカウントの作成に失敗しました。時間をおいて再度お試しください。,Failed to create admin account. Please try again later.
+admin.create.errorInvalidResponse,サーバーが不正なレスポンスを返しました。,The server returned an invalid response.
+match.dateNotSet,日付未設定,Date Not Set
+match.pending,未決定,Pending
+match.completed,完了,Completed
+match.wins,勝,Win
+match.losses,負,Loss
+match.draws,引分,Draw
+common.total,合計,Total
+common.teams,チーム,Teams
+common.add,追加,Add
+common.edit,編集,Edit
+common.delete,削除,Delete
+common.save,保存,Save
+common.cancel,キャンセル,Cancel
+common.refresh,更新,Refresh
+common.back,戻る,Back
+common.close,閉じる,Close
+common.confirm,確認,Confirm
+common.loading,読み込み中...,Loading...
+common.error,エラー,Error
+common.success,成功,Success

@@ -18,6 +18,88 @@
       "adminCreatedSuccess": "運営アカウント（{{email}}）を作成しました。",
       "teamNameRequired": "チーム名を入力してください。",
       "loginFailed": "ログインに失敗しました。"
+    },
+    "passwordReset": {
+      "title": "パスワードリセット",
+      "emailLabel": "メールアドレス",
+      "newPasswordLabel": "新しいパスワード",
+      "newPasswordHelperText": "6文字以上で入力してください。",
+      "submitButton": "パスワードをリセット",
+      "submitting": "リセット中...",
+      "backToLogin": "ログイン画面に戻る",
+      "success": "パスワードが正常にリセットされました。ログイン画面に戻って新しいパスワードでログインしてください。",
+      "failed": "パスワードのリセットに失敗しました。",
+      "unexpectedError": "予期せぬエラーが発生しました。"
     }
+  },
+  "tournament": {
+    "create": {
+      "title": "大会を作成",
+      "subtitle": "大会コード（スラッグ）はメールアドレスのドメインとしても使用されます。半角英数字とハイフンで入力してください。",
+      "nameLabel": "大会名",
+      "slugLabel": "大会コード（スラッグ）",
+      "slugPlaceholder": "例: 2025-spring-league",
+      "slugHelperText": "半角英数とハイフンのみ。空欄のままでも大会名から自動生成されます。",
+      "descriptionLabel": "説明 (任意)",
+      "cancel": "キャンセル",
+      "submit": "作成する",
+      "submitting": "作成中…",
+      "errorNameRequired": "大会名を入力してください。",
+      "errorSlugInvalid": "スラッグは半角英数字とハイフンのみ使用してください。",
+      "errorFailed": "大会の作成に失敗しました。",
+      "errorInvalidResponse": "サーバーが不正なレスポンスを返しました。"
+    },
+    "selection": {
+      "title": "大会を選択",
+      "subtitle": "まずは管理したい大会を選択してください。新しい大会を作成することもできます。",
+      "createButton": "大会を作成",
+      "refreshButton": "更新",
+      "backButton": "戻る",
+      "loading": "大会を読み込み中です…",
+      "noTournaments": "まだ大会が登録されていません。先に「大会を作成」を押して登録してください。",
+      "selectButton": "この大会を管理する",
+      "createdAt": "作成日時:",
+      "created": "「{{name}}」を作成しました。",
+      "errorFailed": "大会一覧の取得に失敗しました。時間をおいて再度お試しください。",
+      "errorInvalidResponse": "サーバーが不正なレスポンスを返しました。"
+    }
+  },
+  "admin": {
+    "create": {
+      "title": "運営アカウントを作成",
+      "subtitle": "作成したメールアドレスとパスワードでログインできる運営アカウントを追加します。追加されたユーザーには自動的に管理者権限が付与されます。",
+      "emailLabel": "メールアドレス",
+      "passwordLabel": "パスワード（6文字以上）",
+      "displayNameLabel": "表示名（任意）",
+      "cancel": "キャンセル",
+      "submit": "作成する",
+      "submitting": "作成中...",
+      "errorFailed": "管理者アカウントの作成に失敗しました。時間をおいて再度お試しください。",
+      "errorInvalidResponse": "サーバーが不正なレスポンスを返しました。"
+    }
+  },
+  "match": {
+    "dateNotSet": "日付未設定",
+    "pending": "未決定",
+    "completed": "完了",
+    "wins": "勝",
+    "losses": "負",
+    "draws": "引分"
+  },
+  "common": {
+    "total": "合計",
+    "teams": "チーム",
+    "add": "追加",
+    "edit": "編集",
+    "delete": "削除",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "refresh": "更新",
+    "back": "戻る",
+    "close": "閉じる",
+    "confirm": "確認",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功"
   }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -37,6 +38,7 @@ const slugify = (raw: string) =>
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, onClose, onCreated }) => {
+  const { t } = useTranslation('common');
   const authFetch = useAuthorizedFetch();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -69,11 +71,11 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
     const trimmedDescription = description.trim();
 
     if (!trimmedName) {
-      setError('大会名を入力してください。');
+      setError(t('tournament.create.errorNameRequired'));
       return;
     }
     if (!trimmedSlug || !slugPattern.test(trimmedSlug)) {
-      setError('スラッグは半角英数字とハイフンのみ使用してください。');
+      setError(t('tournament.create.errorSlugInvalid'));
       return;
     }
 
@@ -92,18 +94,18 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
       const contentType = response.headers.get('content-type') ?? '';
       if (!response.ok) {
         const message = contentType.includes('application/json')
-          ? (await response.json()).error ?? '大会の作成に失敗しました。'
+          ? (await response.json()).error ?? t('tournament.create.errorFailed')
           : await response.text();
-        throw new Error(message || '大会の作成に失敗しました。');
+        throw new Error(message || t('tournament.create.errorFailed'));
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('tournament.create.errorInvalidResponse'));
       }
       const tournament: Tournament = await response.json();
       onCreated?.(tournament);
     } catch (err) {
       console.error('Failed to create tournament:', err);
-      setError(err instanceof Error ? err.message : '大会の作成に失敗しました。');
+      setError(err instanceof Error ? err.message : t('tournament.create.errorFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -111,15 +113,15 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>大会を作成</DialogTitle>
+      <DialogTitle>{t('tournament.create.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
           <Typography variant="body2" color="text.secondary">
-            大会コード（スラッグ）はメールアドレスのドメインとしても使用されます。半角英数字とハイフンで入力してください。
+            {t('tournament.create.subtitle')}
           </Typography>
           {error ? <Alert severity="error">{error}</Alert> : null}
           <TextField
-            label="大会名"
+            label={t('tournament.create.nameLabel')}
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoFocus
@@ -128,19 +130,19 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
             disabled={submitting}
           />
           <TextField
-            label="大会コード（スラッグ）"
+            label={t('tournament.create.slugLabel')}
             value={slugTouched ? slug : derivedSlug}
             onChange={(event) => {
               setSlugTouched(true);
               setSlug(event.target.value);
             }}
-            placeholder="例: 2025-spring-league"
-            helperText="半角英数とハイフンのみ。空欄のままでも大会名から自動生成されます。"
+            placeholder={t('tournament.create.slugPlaceholder')}
+            helperText={t('tournament.create.slugHelperText')}
             fullWidth
             disabled={submitting}
           />
           <TextField
-            label="説明 (任意)"
+            label={t('tournament.create.descriptionLabel')}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             multiline
@@ -152,10 +154,10 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={submitting}>
-          キャンセル
+          {t('tournament.create.cancel')}
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
-          {submitting ? '作成中…' : '作成する'}
+          {submitting ? t('tournament.create.submitting') : t('tournament.create.submit')}
         </Button>
       </DialogActions>
     </Dialog>

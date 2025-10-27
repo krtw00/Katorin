@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -20,6 +21,7 @@ type TournamentSelectionProps = {
 };
 
 const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onCancel }) => {
+  const { t } = useTranslation('common');
   const authFetch = useAuthorizedFetch();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -40,13 +42,13 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('tournament.selection.errorInvalidResponse'));
       }
       const data: Tournament[] = await response.json();
       setTournaments(data);
     } catch (err) {
       console.error('Failed to load tournaments:', err);
-      setError('大会一覧の取得に失敗しました。時間をおいて再度お試しください。');
+      setError(t('tournament.selection.errorFailed'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
       return [tournament, ...prev];
     });
     setDialogOpen(false);
-    setInfoMessage(`「${tournament.name}」を作成しました。`);
+    setInfoMessage(t('tournament.selection.created', { name: tournament.name }));
     onSelect(tournament);
   };
 
@@ -111,10 +113,10 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
       >
         <Stack spacing={1}>
           <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.04em' }}>
-            大会を選択
+            {t('tournament.selection.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            まずは管理したい大会を選択してください。新しい大会を作成することもできます。
+            {t('tournament.selection.subtitle')}
           </Typography>
           {infoMessage ? (
             <Alert severity="success" onClose={() => setInfoMessage(null)}>
@@ -138,7 +140,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
                 setInfoMessage(null);
               }}
             >
-              大会を作成
+              {t('tournament.selection.createButton')}
             </Button>
             <Button
               variant="outlined"
@@ -146,12 +148,12 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
               onClick={loadTournaments}
               disabled={loading}
             >
-              更新
+              {t('tournament.selection.refreshButton')}
             </Button>
           </Stack>
           {onCancel ? (
             <Button variant="text" color="inherit" onClick={onCancel}>
-              戻る
+              {t('tournament.selection.backButton')}
             </Button>
           ) : null}
         </Stack>
@@ -159,12 +161,12 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
           <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>
             <CircularProgress />
             <Typography variant="body2" color="text.secondary">
-              大会を読み込み中です…
+              {t('tournament.selection.loading')}
             </Typography>
           </Stack>
         ) : sortedTournaments.length === 0 ? (
           <Alert severity="info" icon={<AddRoundedIcon fontSize="inherit" />}>
-            まだ大会が登録されていません。先に「大会を作成」を押して登録してください。
+            {t('tournament.selection.noTournaments')}
           </Alert>
         ) : (
           <Stack spacing={2}>
@@ -197,7 +199,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
                     </Typography>
                   ) : null}
                   <Typography variant="caption" color="text.disabled">
-                    作成日時:{' '}
+                    {t('tournament.selection.createdAt')}{' '}
                     {new Date(tournament.created_at).toLocaleString('ja-JP', {
                       year: 'numeric',
                       month: '2-digit',
@@ -212,7 +214,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
                   endIcon={<ArrowForwardRoundedIcon />}
                   onClick={() => handleSelect(tournament)}
                 >
-                  この大会を管理する
+                  {t('tournament.selection.selectButton')}
                 </Button>
               </Paper>
             ))}

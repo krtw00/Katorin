@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Button,
@@ -19,6 +20,7 @@ type AdminCreateDialogProps = {
 };
 
 const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, onCreated }) => {
+  const { t } = useTranslation('common');
   const authFetch = useAuthorizedFetch();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -61,7 +63,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('admin.create.errorInvalidResponse'));
       }
       const result = await response.json();
       onCreated?.(result.email ?? email);
@@ -70,7 +72,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
     } catch (err) {
       console.error('Failed to create admin user:', err);
       setError(
-        err instanceof Error ? err.message : '管理者アカウントの作成に失敗しました。時間をおいて再度お試しください。',
+        err instanceof Error ? err.message : t('admin.create.errorFailed'),
       );
     } finally {
       setSubmitting(false);
@@ -82,15 +84,15 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>運営アカウントを作成</DialogTitle>
+      <DialogTitle>{t('admin.create.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
           <Typography variant="body2" color="text.secondary">
-            作成したメールアドレスとパスワードでログインできる運営アカウントを追加します。追加されたユーザーには自動的に管理者権限が付与されます。
+            {t('admin.create.subtitle')}
           </Typography>
           {error ? <Alert severity="error">{error}</Alert> : null}
           <TextField
-            label="メールアドレス"
+            label={t('admin.create.emailLabel')}
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -99,7 +101,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
             disabled={submitting}
           />
           <TextField
-            label="パスワード（6文字以上）"
+            label={t('admin.create.passwordLabel')}
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -107,7 +109,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
             disabled={submitting}
           />
           <TextField
-            label="表示名（任意）"
+            label={t('admin.create.displayNameLabel')}
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             disabled={submitting}
@@ -116,10 +118,10 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={submitting}>
-          キャンセル
+          {t('admin.create.cancel')}
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={isDisabled}>
-          {submitting ? '作成中...' : '作成する'}
+          {submitting ? t('admin.create.submitting') : t('admin.create.submit')}
         </Button>
       </DialogActions>
     </Dialog>

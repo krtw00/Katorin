@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 
 interface PasswordResetFormProps {
@@ -6,6 +7,7 @@ interface PasswordResetFormProps {
 }
 
 const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) => {
+  const { t } = useTranslation('common');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,14 +32,14 @@ const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'パスワードのリセットに失敗しました。');
+        throw new Error(data.error || t('auth.passwordReset.failed'));
       }
 
-      setSuccess('パスワードが正常にリセットされました。ログイン画面に戻って新しいパスワードでログインしてください。');
+      setSuccess(t('auth.passwordReset.success'));
       setEmail('');
       setNewPassword('');
     } catch (err: any) {
-      setError(err.message || '予期せぬエラーが発生しました。');
+      setError(err.message || t('auth.passwordReset.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -48,14 +50,14 @@ const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) 
       <Card sx={{ minWidth: 360, maxWidth: 480, boxShadow: 3 }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" textAlign="center">
-            パスワードリセット
+            {t('auth.passwordReset.title')}
           </Typography>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
-                label="メールアドレス"
+                label={t('auth.passwordReset.emailLabel')}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -63,19 +65,19 @@ const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) 
                 fullWidth
               />
               <TextField
-                label="新しいパスワード"
+                label={t('auth.passwordReset.newPasswordLabel')}
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 fullWidth
-                helperText="6文字以上で入力してください。"
+                helperText={t('auth.passwordReset.newPasswordHelperText')}
               />
               <Button type="submit" variant="contained" fullWidth disabled={loading}>
-                {loading ? 'リセット中...' : 'パスワードをリセット'}
+                {loading ? t('auth.passwordReset.submitting') : t('auth.passwordReset.submitButton')}
               </Button>
               <Button variant="text" onClick={onBackToLogin} fullWidth>
-                ログイン画面に戻る
+                {t('auth.passwordReset.backToLogin')}
               </Button>
             </Stack>
           </form>

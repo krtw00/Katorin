@@ -18,6 +18,88 @@
       "adminCreatedSuccess": "Admin account ({{email}}) has been created.",
       "teamNameRequired": "Please enter a team name.",
       "loginFailed": "Login failed."
+    },
+    "passwordReset": {
+      "title": "Password Reset",
+      "emailLabel": "Email Address",
+      "newPasswordLabel": "New Password",
+      "newPasswordHelperText": "Please enter at least 6 characters.",
+      "submitButton": "Reset Password",
+      "submitting": "Resetting...",
+      "backToLogin": "Back to Login",
+      "success": "Password has been reset successfully. Please return to the login screen and sign in with your new password.",
+      "failed": "Password reset failed.",
+      "unexpectedError": "An unexpected error occurred."
     }
+  },
+  "tournament": {
+    "create": {
+      "title": "Create Tournament",
+      "subtitle": "The tournament code (slug) will also be used as the email domain. Please use alphanumeric characters and hyphens only.",
+      "nameLabel": "Tournament Name",
+      "slugLabel": "Tournament Code (Slug)",
+      "slugPlaceholder": "e.g.",
+      "slugHelperText": "Only alphanumeric characters and hyphens. If left blank it will be auto-generated from the tournament name.",
+      "descriptionLabel": "Description (Optional)",
+      "cancel": "Cancel",
+      "submit": "Create",
+      "submitting": "Creating...",
+      "errorNameRequired": "Please enter a tournament name.",
+      "errorSlugInvalid": "Slug must contain only alphanumeric characters and hyphens.",
+      "errorFailed": "Failed to create tournament.",
+      "errorInvalidResponse": "The server returned an invalid response."
+    },
+    "selection": {
+      "title": "Select Tournament",
+      "subtitle": "First select the tournament you want to manage. You can also create a new tournament.",
+      "createButton": "Create Tournament",
+      "refreshButton": "Refresh",
+      "backButton": "Back",
+      "loading": "Loading tournaments...",
+      "noTournaments": "No tournaments registered yet. Please press Create Tournament to register one first.",
+      "selectButton": "Manage This Tournament",
+      "createdAt": "Created:",
+      "created": "Created {{name}}.",
+      "errorFailed": "Failed to retrieve tournament list. Please try again later.",
+      "errorInvalidResponse": "The server returned an invalid response."
+    }
+  },
+  "admin": {
+    "create": {
+      "title": "Create Admin Account",
+      "subtitle": "Add an admin account that can be used to log in with the created email and password. Added users will automatically be granted administrator privileges.",
+      "emailLabel": "Email Address",
+      "passwordLabel": "Password (6+ characters)",
+      "displayNameLabel": "Display Name (Optional)",
+      "cancel": "Cancel",
+      "submit": "Create",
+      "submitting": "Creating...",
+      "errorFailed": "Failed to create admin account. Please try again later.",
+      "errorInvalidResponse": "The server returned an invalid response."
+    }
+  },
+  "match": {
+    "dateNotSet": "Date Not Set",
+    "pending": "Pending",
+    "completed": "Completed",
+    "wins": "Win",
+    "losses": "Loss",
+    "draws": "Draw"
+  },
+  "common": {
+    "total": "Total",
+    "teams": "Teams",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "refresh": "Refresh",
+    "back": "Back",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
   }
 }
