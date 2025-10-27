@@ -25,11 +25,23 @@ jobs:
             exit 1
           fi
           supabase link --project-ref "${SUPABASE_PROJECT_REF}"
-      - name: Repair migration history (remove 20251025)
+      - name: Delete 20251025 migration from remote history
         continue-on-error: true
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase migration repair --status reverted 20251025 -p "${SUPABASE_DB_PASSWORD}"
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          # PostgreSQLクライアントをインストール
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+
+          # マイグレーション履歴テーブルから20251025のレコードを削除
+          PGPASSWORD="${SUPABASE_DB_PASSWORD}" psql \
+            -h "aws-0-ap-northeast-1.pooler.supabase.com" \
+            -p 6543 \
+            -U "postgres.${SUPABASE_PROJECT_REF}" \
+            -d postgres \
+            -c "DELETE FROM supabase_migrations.schema_migrations WHERE version LIKE '20251025%';" \
+            || echo "Migration already deleted or error occurred"
       - name: Apply Supabase Migrations
         run: supabase db push --include-all -p "${SUPABASE_DB_PASSWORD}"
         env:
