@@ -83,7 +83,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
     submitting || email.trim().length === 0 || password.trim().length < 6;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth disableEnforceFocus>
       <DialogTitle>{t('admin.create.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>

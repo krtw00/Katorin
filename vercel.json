@@ -3,6 +3,10 @@
   "outputDirectory": "frontend/build",
   "routes": [
     {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
     },

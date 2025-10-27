@@ -112,7 +112,7 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableEnforceFocus>
       <DialogTitle>{t('tournament.create.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
