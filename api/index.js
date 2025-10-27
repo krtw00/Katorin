@@ -369,12 +369,13 @@ app.post('/api/password-reset', async (req, res) => {
     // SupabaseのAdmin APIにはemailで直接ユーザーを検索するメソッドがないため、
     // 全ユーザーをリストしてから該当ユーザーを探す。
     // 注意: ユーザー数が多い場合はパフォーマンスに影響が出る可能性がある。
-    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     if (listError) {
       console.error('[POST /api/password-reset] Supabase listUsers error:', listError);
       return res.status(500).json({ error: 'ユーザーの検索に失敗しました。' });
     }
 
+    const users = listData?.users ?? [];
     const user = users.find((u) => u.email === normalizedEmail);
     if (!user) {
       return res.status(404).json({ error: '指定されたメールアドレスのユーザーが見つかりません。' });
