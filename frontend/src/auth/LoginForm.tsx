@@ -183,11 +183,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             </Alert>
           ) : null}
         </Stack>
-        {adminSuccess ? (
-          <Alert severity="success" sx={{ mt: 2 }} onClose={() => setAdminSuccess(null)}>
-            {adminSuccess}
-          </Alert>
-        ) : null}
         <AdminCreateDialog
           open={adminDialogOpen}
           onClose={() => setAdminDialogOpen(false)}
