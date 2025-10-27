@@ -33,3 +33,6 @@ api/.env
 api/.env.local
 frontend/.env
 frontend/.env.local
+
+# Claude Code configuration
+.claude/
