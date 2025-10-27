@@ -22,7 +22,7 @@ type TournamentSelectionProps = {
 };
 
 const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onCancel }) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState<boolean>(false);

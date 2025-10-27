@@ -8,7 +8,7 @@ interface PasswordResetFormProps {
 }
 
 const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);

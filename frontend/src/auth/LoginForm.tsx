@@ -25,7 +25,7 @@ type LoginFormProps = {
 type LoginMode = 'admin' | 'team';
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const { signInWithPassword } = useAuth();
   const [mode, setMode] = useState<LoginMode>('admin');
   const [email, setEmail] = useState('');

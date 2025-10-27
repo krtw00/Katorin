@@ -38,7 +38,7 @@ const slugify = (raw: string) =>
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, onClose, onCreated }) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');

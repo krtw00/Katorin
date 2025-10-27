@@ -20,7 +20,7 @@ type AdminCreateDialogProps = {
 };
 
 const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, onCreated }) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
