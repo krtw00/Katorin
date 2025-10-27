@@ -14,6 +14,7 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import TournamentCreateDialog, { Tournament } from './TournamentCreateDialog';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 type TournamentSelectionProps = {
   onSelect: (tournament: Tournament) => void;
@@ -109,8 +110,12 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
+          position: 'relative',
         }}
       >
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <LanguageSwitcher />
+        </Box>
         <Stack spacing={1}>
           <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.04em' }}>
             {t('tournament.selection.title')}

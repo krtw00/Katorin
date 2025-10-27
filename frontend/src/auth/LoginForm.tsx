@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useAuth } from './AuthContext';
 import AdminCreateDialog from '../admin/AdminCreateDialog';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 type LoginFormProps = {
   onSuccess?: () => void;
@@ -83,7 +84,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         padding: 2,
       }}
     >
-      <Paper elevation={3} sx={{ maxWidth: 480, width: '100%', padding: 4 }}>
+      <Paper elevation={3} sx={{ maxWidth: 480, width: '100%', padding: 4, position: 'relative' }}>
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <LanguageSwitcher />
+        </Box>
         <Stack spacing={3}>
           <Stack spacing={1}>
             <Typography component="h1" variant="h5" textAlign="center" fontWeight="bold">

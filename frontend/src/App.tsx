@@ -6,8 +6,8 @@ import LoginForm from './auth/LoginForm';
 import { useAuth } from './auth/AuthContext';
 import TournamentSelection from './admin/TournamentSelection';
 import TournamentCreateDialog, { Tournament } from './admin/TournamentCreateDialog';
-
 import PasswordResetForm from './auth/PasswordResetForm';
+import LanguageSwitcher from './components/LanguageSwitcher';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'manager' | 'result'>('manager');
@@ -118,6 +118,9 @@ const App: React.FC = () => {
               {user.email}
             </Typography>
           ) : null}
+          <Box sx={{ color: 'inherit' }}>
+            <LanguageSwitcher />
+          </Box>
           <Button variant="outlined" color="inherit" size="small" onClick={handleSignOut}>
             ログアウト
           </Button>

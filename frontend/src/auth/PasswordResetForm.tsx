@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 interface PasswordResetFormProps {
   onBackToLogin: () => void;
@@ -47,7 +48,10 @@ const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) 
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#f4f6fb' }}>
-      <Card sx={{ minWidth: 360, maxWidth: 480, boxShadow: 3 }}>
+      <Card sx={{ minWidth: 360, maxWidth: 480, boxShadow: 3, position: 'relative' }}>
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <LanguageSwitcher />
+        </Box>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" textAlign="center">
             {t('auth.passwordReset.title')}
