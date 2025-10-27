@@ -30,6 +30,6 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase migration repair --status reverted 20251025 -p "${SUPABASE_DB_PASSWORD}"
       - name: Apply Supabase Migrations
-        run: supabase db push -p "${SUPABASE_DB_PASSWORD}"
+        run: supabase db push --include-all -p "${SUPABASE_DB_PASSWORD}"
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
