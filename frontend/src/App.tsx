@@ -7,8 +7,11 @@ import { useAuth } from './auth/AuthContext';
 import TournamentSelection from './admin/TournamentSelection';
 import TournamentCreateDialog, { Tournament } from './admin/TournamentCreateDialog';
 
+import PasswordResetForm from './auth/PasswordResetForm';
+
 const App: React.FC = () => {
   const [view, setView] = useState<'manager' | 'result'>('manager');
+  const [authView, setAuthView] = useState<'login' | 'reset'>('login');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -181,7 +184,11 @@ const App: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : !session ? (
-        <LoginForm />
+        authView === 'login' ? (
+          <LoginForm onShowPasswordReset={() => setAuthView('reset')} />
+        ) : (
+          <PasswordResetForm onBackToLogin={() => setAuthView('login')} />
+        )
       ) : isAdmin ? (
         selectedTournament ? (
           renderAdminMainView()

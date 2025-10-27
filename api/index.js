@@ -346,6 +346,64 @@ app.post('/api/tournaments/:tournamentId/rounds/:roundId/reopen', requireAuth, r
   res.json(data);
 });
 
+// Reset password without authentication
+app.post('/api/password-reset', async (req, res) => {
+  if (!supabaseAdmin) {
+    return res
+      .status(500)
+      .json({ error: 'SERVICE ROLE KEY が設定されていないためパスワードをリセットできません。' });
+  }
+
+  const { email, newPassword } = req.body ?? {};
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+
+  if (!normalizedEmail) {
+    return res.status(400).json({ error: 'メールアドレスを入力してください。' });
+  }
+  if (!normalizedPassword || normalizedPassword.length < 6) {
+    return res.status(400).json({ error: 'パスワードは6文字以上で入力してください。' });
+  }
+
+  try {
+    // SupabaseのAdmin APIにはemailで直接ユーザーを検索するメソッドがないため、
+    // 全ユーザーをリストしてから該当ユーザーを探す。
+    // 注意: ユーザー数が多い場合はパフォーマンスに影響が出る可能性がある。
+    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) {
+      console.error('[POST /api/password-reset] Supabase listUsers error:', listError);
+      return res.status(500).json({ error: 'ユーザーの検索に失敗しました。' });
+    }
+
+    const user = users.find((u) => u.email === normalizedEmail);
+    if (!user) {
+      return res.status(404).json({ error: '指定されたメールアドレスのユーザーが見つかりません。' });
+    }
+
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      password: normalizedPassword,
+    });
+
+    if (error) {
+      console.error('[POST /api/password-reset] Supabase updateUserById error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data?.user) {
+      return res.status(500).json({ error: 'パスワードのリセットに失敗しました。' });
+    }
+
+    res.status(200).json({
+      message: 'パスワードをリセットしました。',
+      userId: data.user.id,
+      email: data.user.email,
+    });
+  } catch (err) {
+    console.error('[POST /api/password-reset] Unexpected error:', err);
+    res.status(500).json({ error: 'パスワードのリセットに失敗しました。' });
+  }
+});
+
 // Create an admin user (admin only, requires service role key)
 app.post('/api/admin/users', async (req, res) => {
   if (!supabaseAdmin) {
@@ -394,6 +452,51 @@ app.post('/api/admin/users', async (req, res) => {
   } catch (err) {
     console.error('[POST /api/admin/users] Unexpected error:', err);
     res.status(500).json({ error: '管理者ユーザーの作成に失敗しました。' });
+  }
+});
+
+// Reset user password (admin only)
+app.post('/api/admin/users/:userId/reset-password', requireAuth, requireAdmin, async (req, res) => {
+  if (!supabaseAdmin) {
+    return res
+      .status(500)
+      .json({ error: 'SERVICE ROLE KEY が設定されていないためパスワードをリセットできません。' });
+  }
+
+  const { userId } = req.params;
+  const { newPassword } = req.body ?? {};
+  const normalizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+
+  if (!userId) {
+    return res.status(400).json({ error: 'ユーザーIDを指定してください。' });
+  }
+
+  if (!normalizedPassword || normalizedPassword.length < 6) {
+    return res.status(400).json({ error: 'パスワードは6文字以上で入力してください。' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: normalizedPassword,
+    });
+
+    if (error) {
+      console.error('[POST /api/admin/users/:userId/reset-password] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data?.user) {
+      return res.status(500).json({ error: 'パスワードのリセットに失敗しました。' });
+    }
+
+    res.status(200).json({
+      message: 'パスワードをリセットしました。',
+      userId: data.user.id,
+      email: data.user.email,
+    });
+  } catch (err) {
+    console.error('[POST /api/admin/users/:userId/reset-password] Unexpected error:', err);
+    res.status(500).json({ error: 'パスワードのリセットに失敗しました。' });
   }
 });
 
