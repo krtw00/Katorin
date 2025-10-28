@@ -27,15 +27,14 @@ const LanguageSwitcher: React.FC = () => {
   return (
     <>
       <Tooltip title={languageName}>
-        <IconButton
-          onClick={handleClick}
-          size="small"
-          sx={{ ml: 2 }}
-          aria-controls={open ? 'language-menu' : undefined}
-          aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
-        >
-          <LanguageRoundedIcon />
+                  <IconButton
+                    onClick={handleClick}
+                    size="small"
+                    sx={{ ml: 2, color: '#9ca3af' }}
+                    aria-controls={open ? 'language-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={open ? 'true' : undefined}
+                  >          <LanguageRoundedIcon />
         </IconButton>
       </Tooltip>
       <Menu
