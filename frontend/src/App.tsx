@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import MatchManager from './MatchManager';
 import ResultEntry from './ResultEntry';
 import LoginForm from './auth/LoginForm';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false);
   const [tournamentMessage, setTournamentMessage] = useState<string | null>(null);
   const { loading, session, user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleOpenResult = (matchId: string) => {
     setSelectedMatchId(matchId);
@@ -81,7 +83,7 @@ const App: React.FC = () => {
   const handleTournamentSelected = (tournament: Tournament) => {
     setSelectedTournament(tournament);
     setPreviousTournament(null);
-    setTournamentMessage(`「${tournament.name}」を選択しました。`);
+    setTournamentMessage(t('app.tournamentSelectedMessage', { tournamentName: tournament.name }));
   };
 
   const renderAdminMainView = () => (
@@ -99,13 +101,13 @@ const App: React.FC = () => {
         }}
       >
         <Typography variant="h6" fontWeight="bold">
-          Katorin Match Manager
+          {t('app.title')}
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           {selectedTournament ? (
             <Stack spacing={0.5} alignItems="flex-end">
               <Typography variant="caption" color="#9ca3af">
-                選択中の大会
+                {t('app.selectedTournament')}
               </Typography>
               <Typography variant="body2" fontWeight="bold" color="#d1d5db">
                 {selectedTournament.name}
@@ -122,7 +124,7 @@ const App: React.FC = () => {
               setTournamentMessage(null);
             }}
           >
-            大会を変更
+            {t('app.changeTournament')}
           </Button>
           {user?.email ? (
             <Typography variant="body2" color="#d1d5db">
@@ -133,7 +135,7 @@ const App: React.FC = () => {
             <LanguageSwitcher />
           </Box>
           <Button variant="outlined" color="inherit" size="small" onClick={handleSignOut}>
-            ログアウト
+            {t('app.logout')}
           </Button>
         </Stack>
       </Box>
@@ -145,7 +147,7 @@ const App: React.FC = () => {
         ) : null}
         {selectedTournament ? (
           <Alert severity="info" sx={{ mb: 2 }}>
-            現在「{selectedTournament.name}」を管理しています。
+            {t('app.managingTournamentMessage', { tournamentName: selectedTournament.name })}
           </Alert>
         ) : null}
         <Stack spacing={3}>
@@ -180,8 +182,8 @@ const App: React.FC = () => {
                 },
               }}
             >
-              <ToggleButton value="matches">対戦管理</ToggleButton>
-              <ToggleButton value="teams">チーム・参加者管理</ToggleButton>
+              <ToggleButton value="matches">{t('app.matchManagement')}</ToggleButton>
+              <ToggleButton value="teams">{t('app.teamParticipantManagement')}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
           {adminSection === 'matches' ? (
@@ -211,13 +213,13 @@ const App: React.FC = () => {
     <Stack sx={{ minHeight: '100vh', bgcolor: '#f4f6fb', alignItems: 'center', justifyContent: 'center', p: 4 }}>
       <Stack spacing={2} alignItems="center">
         <Typography variant="h5" fontWeight="bold">
-          参加者用画面は準備中です
+          {t('app.participantScreenComingSoonTitle')}
         </Typography>
         <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-          現在は運営アカウントのみ管理ツールをご利用いただけます。参加者向けの機能は今後追加予定です。
+          {t('app.participantScreenComingSoonDescription')}
         </Typography>
         <Button variant="outlined" onClick={handleSignOut}>
-          ログアウト
+          {t('app.logout')}
         </Button>
       </Stack>
     </Stack>
@@ -287,7 +289,7 @@ const App: React.FC = () => {
               setTournamentDialogOpen(false);
               setSelectedTournament(tournament);
               setPreviousTournament(null);
-              setTournamentMessage(`「${tournament.name}」を作成しました。`);
+              setTournamentMessage(t('app.tournamentCreatedMessage', { tournamentName: tournament.name }));
             }}
           />
         </>

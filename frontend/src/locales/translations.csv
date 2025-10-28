@@ -82,3 +82,14 @@ common.confirm,確認,Confirm
 common.loading,読み込み中...,Loading...
 common.error,エラー,Error
 common.success,成功,Success
+app.title,Katorin Match Manager,Katorin Match Manager
+app.selectedTournament,選択中の大会,Selected Tournament
+app.changeTournament,大会を変更,Change Tournament
+app.logout,ログアウト,Logout
+app.tournamentSelectedMessage,「{{tournamentName}}」を選択しました。, "{{tournamentName}}" selected.
+app.managingTournamentMessage,現在「{{tournamentName}}」を管理しています。,Currently managing "{{tournamentName}}".
+app.matchManagement,対戦管理,Match Management
+app.teamParticipantManagement,チーム・参加者管理,Team/Participant Management
+app.participantScreenComingSoonTitle,参加者用画面は準備中です,Participant screen is coming soon
+app.participantScreenComingSoonDescription,現在は運営アカウントのみ管理ツールをご利用いただけます。参加者向けの機能は今後追加予定です。,Currently, only admin accounts can use the management tool. Participant features will be added in the future.
+app.tournamentCreatedMessage,「{{tournamentName}}」を作成しました。, "{{tournamentName}}" created.
