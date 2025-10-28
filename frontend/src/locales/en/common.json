@@ -29,7 +29,9 @@
       "backToLogin": "Back to Login",
       "success": "Password has been reset successfully. Please return to the login screen and sign in with your new password.",
       "failed": "Password reset failed.",
-      "unexpectedError": "An unexpected error occurred."
+      "unexpectedError": "An unexpected error occurred.",
+      "successEmailSent": "Password reset link generated. Please check your email.",
+      "sendResetLink": "Send Reset Link"
     }
   },
   "tournament": {

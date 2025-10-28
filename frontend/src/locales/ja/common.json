@@ -29,7 +29,9 @@
       "backToLogin": "ログイン画面に戻る",
       "success": "パスワードが正常にリセットされました。ログイン画面に戻って新しいパスワードでログインしてください。",
       "failed": "パスワードのリセットに失敗しました。",
-      "unexpectedError": "予期せぬエラーが発生しました。"
+      "unexpectedError": "予期せぬエラーが発生しました。",
+      "successEmailSent": "パスワードリセットのリンクを生成しました。メールをご確認ください。",
+      "sendResetLink": "リセットリンクを送信"
     }
   },
   "tournament": {

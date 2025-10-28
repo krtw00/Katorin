@@ -93,3 +93,5 @@ app.teamParticipantManagement,チーム・参加者管理,Team/Participant Manag
 app.participantScreenComingSoonTitle,参加者用画面は準備中です,Participant screen is coming soon
 app.participantScreenComingSoonDescription,現在は運営アカウントのみ管理ツールをご利用いただけます。参加者向けの機能は今後追加予定です。,Currently, only admin accounts can use the management tool. Participant features will be added in the future.
 app.tournamentCreatedMessage,「{{tournamentName}}」を作成しました。, "{{tournamentName}}" created.
+auth.passwordReset.successEmailSent,パスワードリセットのリンクを生成しました。メールをご確認ください。,Password reset link generated. Please check your email.
+auth.passwordReset.sendResetLink,リセットリンクを送信,Send Reset Link
