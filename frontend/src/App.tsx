@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MatchManager from './MatchManager';
 import ResultEntry from './ResultEntry';
@@ -14,10 +14,10 @@ import TeamLoginForm from './team/TeamLoginForm';
 import TeamManagementPage from './team/TeamManagementPage';
 import ParticipantManagementPage from './team/ParticipantManagementPage';
 
-const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<'manager' | 'result'>('manager');
   const [adminSection, setAdminSection] = useState<'matches' | 'teams'>('matches');
-  const [, setAuthView] = useState<'login' | 'reset'>('login');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -226,7 +226,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <BrowserRouter>
+    <>
       <CssBaseline />
       {loading ? (
         <Box
@@ -242,8 +242,8 @@ const App: React.FC = () => {
         </Box>
       ) : (
         <Routes>
-          <Route path="/login" element={session ? <Navigate to="/" /> : <LoginForm onShowPasswordReset={() => setAuthView('reset')} />} />
-          <Route path="/password-reset" element={session ? <Navigate to="/" /> : <PasswordResetForm onBackToLogin={() => setAuthView('login')} />} />
+          <Route path="/login" element={session ? <Navigate to="/" /> : <LoginForm onShowPasswordReset={() => navigate('/password-reset')} />} />
+          <Route path="/password-reset" element={session ? <Navigate to="/" /> : <PasswordResetForm onBackToLogin={() => navigate('/login')} />} />
           <Route
             path="/"
             element={
@@ -294,6 +294,14 @@ const App: React.FC = () => {
           />
         </>
       ) : null}
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 };
