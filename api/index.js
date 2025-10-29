@@ -983,8 +983,12 @@ app.post('/api/password-reset', async (req, res) => {
 
   try {
     // Supabaseの認証機能を使ってパスワードリセットメールを送信
+    const redirectUrl = process.env.PASSWORD_RESET_REDIRECT_URL || 'http://localhost:3000/password-reset';
+    console.log('[POST /api/password-reset] Using redirect URL:', redirectUrl);
+    console.log('[POST /api/password-reset] Environment check - NODE_ENV:', process.env.NODE_ENV);
+
     const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: process.env.PASSWORD_RESET_REDIRECT_URL || 'http://localhost:3000/password-reset',
+      redirectTo: redirectUrl,
     });
 
     if (error) {
