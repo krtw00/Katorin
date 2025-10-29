@@ -14,6 +14,7 @@ import Grid from '@mui/material/Grid';
 import { DuelForm } from './duelDefaults';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
+import { useTranslation } from 'react-i18next';
 
 type RosterEntry = {
   primary: string;
@@ -59,6 +60,7 @@ type DuelProps = {
 };
 
 const Duel: React.FC<DuelProps> = ({ form }) => {
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const fallbackMatches = useMemo(() => parseMatches(form.matchesText), [form.matchesText]);
   const [matchRows, setMatchRows] = useState<MatchEntry[]>(fallbackMatches);
@@ -295,7 +297,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
                 letterSpacing: '0.08em',
               }}
             >
-              VS
+              {t('duel.vs')}
             </Typography>
           </Grid>
 
@@ -379,11 +381,11 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
           >
             <TableHead>
               <TableRow>
-                <TableCell>PLAYER</TableCell>
-                <TableCell>DECK</TableCell>
+                <TableCell>{t('duel.player')}</TableCell>
+                <TableCell>{t('duel.deck')}</TableCell>
                 <TableCell></TableCell>
-                  <TableCell>DECK</TableCell>
-                <TableCell>PLAYER</TableCell>
+                  <TableCell>{t('duel.deck')}</TableCell>
+                <TableCell>{t('duel.player')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

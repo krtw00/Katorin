@@ -21,6 +21,7 @@ import {
 import Grid from '@mui/material/Grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
 
@@ -40,18 +41,6 @@ type MatchRecord = {
 };
 
 type MatchRecordFormValues = Omit<MatchRecord, 'id'>;
-
-const columns: Array<{ key: keyof MatchRecordFormValues; label: string; align?: 'center' | 'right'; group?: 'self' | 'opponent' }> = [
-  { key: 'team', label: 'チーム', group: 'self' },
-  { key: 'player', label: '選手', group: 'self' },
-  { key: 'deck', label: 'デッキ', group: 'self' },
-  { key: 'selfScore', label: 'スコア', align: 'center', group: 'self' },
-  { key: 'opponentScore', label: 'スコア', align: 'center', group: 'opponent' },
-  { key: 'opponentDeck', label: 'デッキ', group: 'opponent' },
-  { key: 'opponentPlayer', label: '選手', group: 'opponent' },
-  { key: 'opponentTeam', label: 'チーム', group: 'opponent' },
-  { key: 'date', label: '日付', align: 'center' },
-];
 
 const groupStyles = {
   self: {
@@ -109,6 +98,7 @@ type RecordModalProps = {
 };
 
 const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, onSave, onClose }) => {
+  const { t } = useTranslation();
   const [values, setValues] = useState<MatchRecordFormValues>(initialValues);
 
   useEffect(() => {
@@ -134,13 +124,13 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{mode === 'create' ? '対戦記録を追加' : '対戦記録を編集'}</DialogTitle>
+      <DialogTitle>{mode === 'create' ? t('duelInput.addRecord') : t('duelInput.editRecord')}</DialogTitle>
       <DialogContent dividers>
         <Box sx={{ mt: 1 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="チーム"
+                label={t('duelInput.team')}
                 value={values.team}
                 onChange={handleChange('team')}
                 fullWidth
@@ -150,7 +140,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="チーム"
+                label={t('duelInput.team')}
                 value={values.opponentTeam}
                 onChange={handleChange('opponentTeam')}
                 fullWidth
@@ -159,7 +149,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="選手"
+                label={t('duelInput.player')}
                 value={values.player}
                 onChange={handleChange('player')}
                 fullWidth
@@ -168,7 +158,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="選手"
+                label={t('duelInput.player')}
                 value={values.opponentPlayer}
                 onChange={handleChange('opponentPlayer')}
                 fullWidth
@@ -176,11 +166,11 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField label="デッキ" value={values.deck} onChange={handleChange('deck')} fullWidth sx={modalFieldStyles.self} />
+              <TextField label={t('duelInput.deck')} value={values.deck} onChange={handleChange('deck')} fullWidth sx={modalFieldStyles.self} />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="デッキ"
+                label={t('duelInput.deck')}
                 value={values.opponentDeck}
                 onChange={handleChange('opponentDeck')}
                 fullWidth
@@ -189,7 +179,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="スコア"
+                label={t('duelInput.score')}
                 value={values.selfScore}
                 onChange={handleChange('selfScore')}
                 type="number"
@@ -200,7 +190,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="スコア"
+                label={t('duelInput.score')}
                 value={values.opponentScore}
                 onChange={handleChange('opponentScore')}
                 type="number"
@@ -211,7 +201,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="日付"
+                label={t('duelInput.date')}
                 type="date"
                 value={values.date}
                 onChange={handleChange('date')}
@@ -223,9 +213,9 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>キャンセル</Button>
+        <Button onClick={onClose}>{t('duelInput.cancel')}</Button>
         <Button onClick={handleSubmit} variant="contained">
-          {mode === 'create' ? '追加' : '更新'}
+          {mode === 'create' ? t('duelInput.add') : t('duelInput.update')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -233,6 +223,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
 };
 
 const DuelInput: React.FC = () => {
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const defaultTournamentId = process.env.REACT_APP_DEFAULT_TOURNAMENT_ID ?? null;
   const [tournamentId, setTournamentId] = useState<string | null>(() => {
@@ -322,6 +313,18 @@ const DuelInput: React.FC = () => {
     return emptyValues;
   }, [modalState.mode, modalState.targetId, records]);
 
+  const columns: Array<{ key: keyof MatchRecordFormValues; label: string; align?: 'center' | 'right'; group?: 'self' | 'opponent' }> = [
+    { key: 'team', label: t('duelInput.team'), group: 'self' },
+    { key: 'player', label: t('duelInput.player'), group: 'self' },
+    { key: 'deck', label: t('duelInput.deck'), group: 'self' },
+    { key: 'selfScore', label: t('duelInput.score'), align: 'center', group: 'self' },
+    { key: 'opponentScore', label: t('duelInput.score'), align: 'center', group: 'opponent' },
+    { key: 'opponentDeck', label: t('duelInput.deck'), group: 'opponent' },
+    { key: 'opponentPlayer', label: t('duelInput.player'), group: 'opponent' },
+    { key: 'opponentTeam', label: t('duelInput.team'), group: 'opponent' },
+    { key: 'date', label: t('duelInput.date'), align: 'center' },
+  ];
+
   const openCreateModal = () => {
     setModalState({ open: true, mode: 'create' });
   };
@@ -374,7 +377,7 @@ const DuelInput: React.FC = () => {
     } else {
       try {
         if (!tournamentId || !roundId) {
-          throw new Error('大会またはラウンドが選択されていません。');
+          throw new Error(t('duelInput.noTournamentOrRound'));
         }
         const response = await authFetch('/api/matches', {
           method: 'POST',
@@ -405,10 +408,10 @@ const DuelInput: React.FC = () => {
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.08em' }}>
-          対戦記録一覧
+          {t('duelInput.matchRecordList')}
         </Typography>
         <Button variant="contained" onClick={openCreateModal}>
-          対戦記録を追加
+          {t('duelInput.addRecord')}
         </Button>
       </Box>
 
@@ -462,14 +465,14 @@ const DuelInput: React.FC = () => {
                   </TableCell>
                 );
               })}
-              <TableCell align="center">アクション</TableCell>
+              <TableCell align="center">{t('duelInput.action')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {records.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 6, color: 'rgba(255,255,255,0.6)' }}>
-                  まだ対戦記録がありません。「対戦記録を追加」から登録してください。
+                  {t('duelInput.noRecords')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -498,12 +501,12 @@ const DuelInput: React.FC = () => {
                   })}
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
-                      <Tooltip title="Edit record">
+                      <Tooltip title={t('duelInput.editRecord')}>
                         <IconButton size="small" color="primary" onClick={() => openEditModal(record.id)}>
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete record">
+                      <Tooltip title={t('duelInput.delete')}>
                         <IconButton size="small" color="error" onClick={() => handleDelete(record.id)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -525,14 +528,14 @@ const DuelInput: React.FC = () => {
         onClose={closeModal}
       />
       <Dialog open={confirmState.open} onClose={closeConfirm} maxWidth="xs" fullWidth>
-        <DialogTitle>削除の確認</DialogTitle>
+        <DialogTitle>{t('duelInput.deleteConfirmation')}</DialogTitle>
         <DialogContent dividers>
-          <Typography>この対戦記録を削除しますか？</Typography>
+          <Typography>{t('duelInput.deleteConfirmationMessage')}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeConfirm}>キャンセル</Button>
+          <Button onClick={closeConfirm}>{t('duelInput.cancel')}</Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
-            削除する
+            {t('duelInput.delete')}
           </Button>
         </DialogActions>
       </Dialog>

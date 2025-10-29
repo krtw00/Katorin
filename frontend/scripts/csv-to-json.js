@@ -13,10 +13,10 @@ const OUTPUT_DIR = path.join(__dirname, '../src/locales');
 
 function parseCSV(csvContent) {
   const lines = csvContent.split('\n').filter(line => line.trim());
-  const headers = lines[0].split(',');
+  const headers = lines[0].split(',').map(h => h.trim());
 
   // ヘッダーから言語コードを取得（最初の列はkeyなので除外）
-  const languages = headers.slice(1);
+  const languages = headers.slice(1).map(lang => lang.replace(/\r/g, ''));
 
   // 各言語用のオブジェクトを初期化
   const translations = {};
@@ -92,21 +92,26 @@ function main() {
 
     // 各言語用のJSONファイルを生成
     languages.forEach(lang => {
-      const langDir = path.join(OUTPUT_DIR, lang);
+      try {
+        const langDir = path.join(OUTPUT_DIR, lang);
 
-      // ディレクトリが存在しない場合は作成
-      if (!fs.existsSync(langDir)) {
-        fs.mkdirSync(langDir, { recursive: true });
+        // ディレクトリが存在しない場合は作成
+        if (!fs.existsSync(langDir)) {
+          fs.mkdirSync(langDir, { recursive: true });
+        }
+
+        const outputPath = path.join(langDir, 'common.json');
+        fs.writeFileSync(
+          outputPath,
+          JSON.stringify(translations[lang], null, 2),
+          'utf-8'
+        );
+
+        console.log(`✓ ${outputPath} を生成しました`);
+      } catch (error) {
+        console.error(`エラーが発生しました (${lang}):`, error.message);
+        // 他の言語の処理は続行
       }
-
-      const outputPath = path.join(langDir, 'common.json');
-      fs.writeFileSync(
-        outputPath,
-        JSON.stringify(translations[lang], null, 2),
-        'utf-8'
-      );
-
-      console.log(`✓ ${outputPath} を生成しました`);
     });
 
     console.log('\n変換が完了しました！');

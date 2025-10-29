@@ -4,7 +4,7 @@ import { IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import LanguageRoundedIcon from '@mui/icons-material/LanguageRounded';
 
 const LanguageSwitcher: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -22,7 +22,7 @@ const LanguageSwitcher: React.FC = () => {
   };
 
   const currentLanguage = i18n.language || 'ja';
-  const languageName = currentLanguage === 'ja' ? '日本語' : 'English';
+  const languageName = currentLanguage === 'ja' ? t('language.japanese') : t('language.english');
 
   return (
     <>
@@ -52,13 +52,13 @@ const LanguageSwitcher: React.FC = () => {
           onClick={() => handleLanguageChange('ja')}
           selected={currentLanguage === 'ja'}
         >
-          日本語
+          {t('language.japanese')}
         </MenuItem>
         <MenuItem
           onClick={() => handleLanguageChange('en')}
           selected={currentLanguage === 'en'}
         >
-          English
+          {t('language.english')}
         </MenuItem>
       </Menu>
     </>

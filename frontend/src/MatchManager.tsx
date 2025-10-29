@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Avatar,
@@ -49,6 +50,7 @@ type Round = {
 };
 
 const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEntry, reloadToken }) => {
+  const { t } = useTranslation();
   const [view, setView] = useState<'matches' | 'participants'>('matches');
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -83,7 +85,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('matchManager.serverError'));
       }
       const data: Round[] = await response.json();
       setRounds(data);
@@ -97,11 +99,11 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
       });
     } catch (err) {
       console.error('Failed to load rounds:', err);
-      setRoundError('ラウンド一覧の取得に失敗しました。時間をおいて再度お試しください。');
+      setRoundError(t('matchManager.fetchRoundsFailed'));
     } finally {
       setRoundsLoading(false);
     }
-  }, [authFetch, tournament.id]);
+  }, [authFetch, tournament.id, t]);
 
   const loadMatches = useCallback(async () => {
     if (!selectedRoundId) {
@@ -137,11 +139,11 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
       setMatches(data);
     } catch (err) {
       console.error('Error fetching matches:', err);
-      setError('対戦データの取得に失敗しました。時間をおいて再度お試しください。');
+      setError(t('matchManager.fetchMatchesFailed'));
     } finally {
       setLoading(false);
     }
-  }, [authFetch, selectedRoundId, tournament.id]);
+  }, [authFetch, selectedRoundId, tournament.id, t]);
 
   useEffect(() => {
     setSelectedRoundId(null);
@@ -161,7 +163,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const displayMatches = useMemo<DisplayMatch[]>(() => {
     const normalizeName = (value?: string | null) => {
       const trimmed = value?.trim();
-      return trimmed && trimmed.length > 0 ? trimmed : 'チーム未設定';
+      return trimmed && trimmed.length > 0 ? trimmed : t('matchManager.teamNotSet');
     };
 
     return matches
@@ -235,7 +237,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         };
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }, [matches]);
+  }, [matches, t]);
 
   const stats = useMemo<MatchStats>(() => {
     const teams = new Set<string>();
@@ -270,10 +272,10 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const roundStatusChip = useMemo(() => {
     if (!selectedRound) return null;
     if (selectedRound.status === 'closed') {
-      return <Chip label="締め済み" sx={{ bgcolor: '#e8ecf8', color: '#43506c', fontWeight: 700 }} />;
+      return <Chip label={t('matchManager.closed')} sx={{ bgcolor: '#e8ecf8', color: '#43506c', fontWeight: 700 }} />;
     }
-    return <Chip label="進行中" sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700 }} />;
-  }, [selectedRound]);
+    return <Chip label={t('matchManager.inProgress')} sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700 }} />;
+  }, [selectedRound, t]);
 
   const latestRoundNumber = useMemo(
     () => rounds.reduce((max, round) => Math.max(max, round.number), 0),
@@ -289,7 +291,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
 
   const handleMatchDialogCompleted = (mode: 'create' | 'edit') => {
     setMatchDialog({ open: false, mode: 'create', match: null });
-    setRoundFeedback(mode === 'create' ? '対戦を追加しました。' : '対戦を更新しました。');
+    setRoundFeedback(mode === 'create' ? t('matchManager.matchAdded') : t('matchManager.matchUpdated'));
     loadMatches();
   };
 
@@ -331,11 +333,11 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         throw new Error(message || `HTTP ${response.status}`);
       }
       await loadMatches();
-      setRoundFeedback('対戦を削除しました。');
+      setRoundFeedback(t('matchManager.matchDeleted'));
       setDeleteTarget(null);
     } catch (err) {
       console.error('Failed to delete match:', err);
-      setDeleteError(err instanceof Error ? err.message : '対戦の削除に失敗しました。');
+      setDeleteError(err instanceof Error ? err.message : t('matchManager.deleteMatchFailed'));
     } finally {
       setDeleteSubmitting(false);
     }
@@ -380,18 +382,18 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('matchManager.serverError'));
       }
       const newRound: Round = await response.json();
       await loadRounds();
       setSelectedRoundId(newRound.id);
-      setRoundFeedback(`第${newRound.number}回戦を作成しました。`);
+      setRoundFeedback(t('matchManager.roundCreated', { number: newRound.number }));
       setRoundDialogOpen(false);
       setRoundTitle('');
       setRoundDialogError(null);
     } catch (err) {
       console.error('Failed to create round:', err);
-      setRoundDialogError('ラウンドの作成に失敗しました。');
+      setRoundDialogError(t('matchManager.createRoundFailed'));
     } finally {
       setRoundSubmitting(false);
     }
@@ -417,13 +419,13 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('matchManager.serverError'));
       }
       await loadRounds();
-      setRoundFeedback(`第${closingRound.number}回戦を締めました。`);
+      setRoundFeedback(t('matchManager.roundClosed', { number: closingRound.number }));
     } catch (err) {
       console.error('Failed to close round:', err);
-      setRoundFeedback('ラウンドの締め処理に失敗しました。');
+      setRoundFeedback(t('matchManager.closeRoundFailed'));
     } finally {
       setRoundSubmitting(false);
     }
@@ -449,13 +451,13 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         throw new Error(message || `HTTP ${response.status}`);
       }
       if (!contentType.includes('application/json')) {
-        throw new Error('サーバーが不正なレスポンスを返しました。');
+        throw new Error(t('matchManager.serverError'));
       }
       await loadRounds();
-      setRoundFeedback(`第${reopeningRound.number}回戦を再開しました。`);
+      setRoundFeedback(t('matchManager.roundReopened', { number: reopeningRound.number }));
     } catch (err) {
       console.error('Failed to reopen round:', err);
-      setRoundFeedback('ラウンドの再開に失敗しました。');
+      setRoundFeedback(t('matchManager.reopenRoundFailed'));
     } finally {
       setRoundSubmitting(false);
     }
@@ -463,19 +465,19 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const renderStatsChips = () => (
     <Stack direction="row" spacing={1} flexWrap="wrap">
       <Chip
-        label={`総対戦 ${stats.total}`}
+        label={t('matchManager.totalMatches', { count: stats.total })}
         sx={{ bgcolor: '#0d1026', color: '#fff', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
       />
       <Chip
-        label={`結果確定 ${stats.completed}`}
+        label={t('matchManager.completed', { count: stats.completed })}
         sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
       />
       <Chip
-        label={`結果待ち ${stats.pending}`}
+        label={t('matchManager.pending', { count: stats.pending })}
         sx={{ bgcolor: '#fff4e6', color: '#b66d1f', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
       />
       <Chip
-        label={`登録チーム ${stats.teamCount}`}
+        label={t('matchManager.registeredTeams', { count: stats.teamCount })}
         sx={{ bgcolor: '#f4f6fd', color: '#4a5162', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
       />
     </Stack>
@@ -493,7 +495,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           severity="error"
           action={
             <Button color="inherit" size="small" startIcon={<RefreshRoundedIcon />} onClick={loadRounds}>
-              再読み込み
+              {t('matchManager.reload')}
             </Button>
           }
         >
@@ -504,7 +506,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
           <CircularProgress />
           <Typography variant="body2" color="text.secondary">
-            ラウンドを読み込み中です…
+            {t('matchManager.loadingRounds')}
           </Typography>
         </Stack>
       ) : rounds.length === 0 ? (
@@ -517,9 +519,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
             textAlign: 'center',
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>まだラウンドが作成されていません</Typography>
+          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.noRoundsYet')}</Typography>
           <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 3 }}>
-            まずは第1回戦を作成して、対戦カードを登録しましょう。
+            {t('matchManager.createFirstRoundPrompt')}
           </Typography>
           <Button
             variant="contained"
@@ -539,7 +541,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               '&:hover': { bgcolor: '#181d3f' },
             }}
           >
-            第1回戦を作成
+            {t('matchManager.createFirstRound')}
           </Button>
         </Paper>
       ) : (
@@ -582,9 +584,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               {rounds.map((round) => (
                 <ToggleButton key={round.id} value={round.id}>
                   <Stack spacing={0.5} alignItems="center">
-                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{`第${round.number}回戦`}</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{t('matchManager.roundNumber', { number: round.number })}</Typography>
                     <Typography sx={{ fontSize: 11, color: '#7d8495' }}>
-                      {round.status === 'closed' ? '締め済み' : '進行中'}
+                      {round.status === 'closed' ? t('matchManager.closed') : t('matchManager.inProgress')}
                     </Typography>
                   </Stack>
                 </ToggleButton>
@@ -601,7 +603,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 }}
                 disabled={roundSubmitting}
               >
-                新しいラウンドを作成
+                {t('matchManager.createNewRound')}
               </Button>
               {selectedRound && selectedRound.status === 'closed' ? (
                 <Button
@@ -610,7 +612,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   onClick={handleReopenRound}
                   disabled={!canReopenRound}
                 >
-                  このラウンドを再開
+                  {t('matchManager.reopenThisRound')}
                 </Button>
               ) : (
                 <Button
@@ -619,7 +621,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   onClick={handleCloseRound}
                   disabled={!selectedRound || roundSubmitting}
                 >
-                  このラウンドを締める
+                  {t('matchManager.closeThisRound')}
                 </Button>
               )}
             </Stack>
@@ -627,7 +629,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           {selectedRound ? (
             <Stack direction="row" spacing={1} alignItems="center">
               <Typography sx={{ fontWeight: 700, color: '#2f3645' }}>
-                {`第${selectedRound.number}回戦`}
+                {t('matchManager.roundNumber', { number: selectedRound.number })}
                 {selectedRound.title ? `｜${selectedRound.title}` : ''}
               </Typography>
               {roundStatusChip}
@@ -636,8 +638,8 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           {selectedRound && selectedRound.status === 'closed' ? (
             <Alert severity="info" sx={{ borderRadius: 3 }}>
               {canReopenRound
-                ? 'このラウンドは締め切られています。必要であれば再開することができます。'
-                : 'このラウンドは締め切られており、後続のラウンドが存在するため再開できません。'}
+                ? t('matchManager.roundClosedCanReopen')
+                : t('matchManager.roundClosedCannotReopen')}
             </Alert>
           ) : null}
         </Stack>
@@ -709,7 +711,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         )}
         {isPending && (
           <Chip
-            label="結果待ち"
+            label={t('matchManager.awaitingResult')}
             size="small"
             sx={{
               bgcolor: '#f6f7fb',
@@ -759,7 +761,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   '& .MuiChip-label': { px: 1.75 },
                 }}
               />
-              <Tooltip title="対戦を編集" arrow>
+              <Tooltip title={t('matchManager.editMatch')} arrow>
                 <span>
                   <IconButton
                     size="small"
@@ -771,7 +773,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   </IconButton>
                 </span>
               </Tooltip>
-              <Tooltip title="対戦を削除" arrow>
+              <Tooltip title={t('matchManager.deleteMatch')} arrow>
                 <span>
                   <IconButton
                     size="small"
@@ -821,7 +823,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 '&:hover': { borderColor: '#181d3f', bgcolor: 'rgba(24,32,56,0.05)' },
               }}
             >
-              結果入力へ
+              {t('matchManager.toResultEntry')}
             </Button>
           </Box>
         </Stack>
@@ -844,7 +846,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           severity="error"
           action={
             <Button color="inherit" size="small" startIcon={<RefreshRoundedIcon />} onClick={loadMatches}>
-              再読み込み
+              {t('matchManager.reload')}
             </Button>
           }
           sx={{ borderRadius: 3 }}
@@ -865,9 +867,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
             textAlign: 'center',
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>対戦カードがまだ登録されていません</Typography>
+          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.noMatchesYet')}</Typography>
           <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 3 }}>
-            「対戦作成」からカードを作成すると、ここに表示されます。
+            {t('matchManager.createMatchPrompt')}
           </Typography>
           <Button
             variant="contained"
@@ -883,7 +885,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
             }}
           >
-            対戦を作成
+            {t('matchManager.createMatch')}
           </Button>
         </Paper>
       );
@@ -933,10 +935,10 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           <Stack spacing={2} sx={{ width: '100%', maxWidth: 420 }}>
             <Stack spacing={0.5}>
               <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#ff8c3d', letterSpacing: 1 }}>
-                対戦管理ツール
+                {t('matchManager.title')}
               </Typography>
               <Typography sx={{ fontSize: 13, color: '#6d7385', fontWeight: 600 }}>
-                チーム同士の対戦カードを一覧で確認できます
+                {t('matchManager.description')}
               </Typography>
             </Stack>
             <ToggleButtonGroup
@@ -970,8 +972,8 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 },
               }}
             >
-              <ToggleButton value="matches">対戦一覧</ToggleButton>
-              <ToggleButton value="participants">参加者管理</ToggleButton>
+              <ToggleButton value="matches">{t('matchManager.matchList')}</ToggleButton>
+              <ToggleButton value="participants">{t('matchManager.participantManagement')}</ToggleButton>
             </ToggleButtonGroup>
           </Stack>
         </Paper>
@@ -988,9 +990,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               }}
             >
               <Stack spacing={0.5}>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>対戦カード一覧</Typography>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>{t('matchManager.matchCardList')}</Typography>
                 <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-                  チーム VS チームのカード情報とスコアを確認できます。
+                  {t('matchManager.matchCardListDescription')}
                 </Typography>
               </Stack>
               <Button
@@ -1009,7 +1011,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
                 }}
               >
-                対戦作成
+                {t('matchManager.createMatch')}
               </Button>
             </Box>
             {renderStatsChips()}
@@ -1025,9 +1027,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 border: '1px dashed rgba(24, 32, 56, 0.16)',
               }}
             >
-              <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>参加者管理は準備中です</Typography>
+              <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.participantManagementComingSoon')}</Typography>
               <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-                参加メンバーの整理やシード設定など、管理機能を順次追加予定です。
+                {t('matchManager.participantManagementDescription')}
               </Typography>
             </Paper>
           )}
@@ -1043,16 +1045,16 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         roundId={selectedRound?.id ?? null}
       />
       <Dialog open={roundDialogOpen} onClose={() => (!roundSubmitting ? setRoundDialogOpen(false) : null)} maxWidth="sm" fullWidth>
-        <DialogTitle>ラウンドを作成</DialogTitle>
+        <DialogTitle>{t('matchManager.createRound')}</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={3}>
             {roundDialogError ? <Alert severity="error">{roundDialogError}</Alert> : null}
             <Typography variant="body2" color="text.secondary">
-              ラウンド名は任意です。未入力の場合は「第n回戦」という表記のみになります。
+              {t('matchManager.roundNameOptional')}
             </Typography>
             <TextField
-              label="ラウンド名（任意）"
-              placeholder="例: 準決勝、決勝 など"
+              label={t('matchManager.roundNameLabel')}
+              placeholder={t('matchManager.roundNamePlaceholder')}
               value={roundTitle}
               onChange={(event) => setRoundTitle(event.target.value)}
               fullWidth
@@ -1068,10 +1070,10 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
           }}
             disabled={roundSubmitting}
           >
-            キャンセル
+            {t('matchManager.cancel')}
           </Button>
           <Button onClick={handleCreateRound} variant="contained" disabled={roundSubmitting}>
-            {roundSubmitting ? '作成中...' : '作成する'}
+            {roundSubmitting ? t('matchManager.creating') : t('matchManager.create')}
           </Button>
       </DialogActions>
     </Dialog>
@@ -1081,16 +1083,16 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>対戦を削除</DialogTitle>
+        <DialogTitle>{t('matchManager.deleteMatchTitle')}</DialogTitle>
         <DialogContent dividers>
           {deleteError ? <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert> : null}
           <DialogContentText sx={{ color: '#4a5162' }}>
-            この対戦カードを削除しますか？この操作は元に戻せません。
+            {t('matchManager.deleteMatchConfirmation')}
           </DialogContentText>
           {deleteTarget ? (
             <Box sx={{ mt: 2, p: 2, bgcolor: '#f9fafc', borderRadius: 2 }}>
               <Typography fontWeight={700} sx={{ color: '#1f2937' }}>
-                {deleteTarget.team ?? 'チーム未設定'} vs {deleteTarget.opponentTeam ?? 'チーム未設定'}
+                {deleteTarget.team ?? t('matchManager.teamNotSet')} vs {deleteTarget.opponentTeam ?? t('matchManager.teamNotSet')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {formatDate(deleteTarget.date)}
@@ -1100,7 +1102,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog} disabled={deleteSubmitting}>
-            キャンセル
+            {t('matchManager.cancel')}
           </Button>
           <Button
             color="error"
@@ -1108,7 +1110,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
             onClick={handleDeleteMatch}
             disabled={deleteSubmitting}
           >
-            {deleteSubmitting ? '削除中...' : '削除する'}
+            {deleteSubmitting ? t('matchManager.deleting') : t('matchManager.delete')}
           </Button>
         </DialogActions>
       </Dialog>

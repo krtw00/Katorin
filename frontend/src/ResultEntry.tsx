@@ -26,6 +26,7 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
 
@@ -116,6 +117,7 @@ const getInitial = (value: string) => {
 };
 
 const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, onSaved }) => {
+  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
   const [form, setForm] = useState<MatchFormValues>(emptyForm);
   const [gameRows, setGameRows] = useState<GameRow[]>([]);
@@ -178,19 +180,19 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const scoreStatusMeta = statusMeta[scoreState];
   const scoreStatusLabel = useMemo(() => {
     if (!isFinalized) {
-      return gameRows.length === 0 ? '対戦未登録' : '結果未確定';
+      return gameRows.length === 0 ? t('resultEntry.notRegistered') : t('resultEntry.pending');
     }
     if (scoreState === 'homeWin') {
-      return `${form.team || 'ホームチーム'} 勝利`;
+      return `${form.team || t('resultEntry.homeTeam')} ${t('resultEntry.win')}`;
     }
     if (scoreState === 'awayWin') {
-      return `${form.opponentTeam || 'アウェイチーム'} 勝利`;
+      return `${form.opponentTeam || t('resultEntry.awayTeam')} ${t('resultEntry.win')}`;
     }
     if (scoreState === 'draw') {
-      return '引き分け';
+      return t('resultEntry.draw');
     }
-    return gameRows.length === 0 ? '対戦未登録' : '結果未確定';
-  }, [isFinalized, scoreState, form.team, form.opponentTeam, gameRows.length]);
+    return gameRows.length === 0 ? t('resultEntry.notRegistered') : t('resultEntry.pending');
+  }, [isFinalized, scoreState, form.team, form.opponentTeam, gameRows.length, t]);
 
   const snapshot = useMemo(() => makeSnapshot(form, gameRows), [form, gameRows, makeSnapshot]);
 
@@ -299,14 +301,14 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       }
     } catch (err) {
       console.error('Error fetching match:', err);
-      setError('対戦情報の取得に失敗しました。再度お試しください。');
+      setError(t('resultEntry.fetchError'));
       setInitialized(false);
       setIsFinalized(false);
       setPersistedScores({ home: '', away: '' });
     } finally {
       setLoading(false);
     }
-  }, [authFetch, makeSnapshot, matchId]);
+  }, [authFetch, makeSnapshot, matchId, t]);
 
   useEffect(() => {
     fetchMatch();
@@ -449,16 +451,16 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
           );
 
           if (mode === 'finalize') {
-            setSaveFeedback('結果を確定しました。');
+            setSaveFeedback(t('resultEntry.resultConfirmed'));
             onSaved();
           } else if (mode === 'unfinalize') {
-            setSaveFeedback('結果の確定を取り消しました。');
+            setSaveFeedback(t('resultEntry.resultUnconfirmed'));
             onSaved();
           }
         }
       } catch (err) {
         console.error('Error updating match:', err);
-        setError('結果の保存に失敗しました。入力内容を確認し、再度お試しください。');
+        setError(t('resultEntry.saveFailed'));
       } finally {
         if (isAuto) {
           setAutoSaving(false);
@@ -481,6 +483,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       isFinalized,
       persistedScores.home,
       persistedScores.away,
+      t,
+      tournament?.id,
     ]
   );
 
@@ -499,10 +503,10 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const disableEditing = disableInputs || isFinalized;
 
   const saveStatusText = useMemo(() => {
-    if (!matchId) return '対戦未選択';
-    if (autoSaving || saving) return '自動保存中...';
-    if (snapshot !== lastSavedSnapshot) return '未保存の変更があります';
-    const base = isFinalized ? '結果確定済み' : '結果未確定（自動保存済み）';
+    if (!matchId) return t('resultEntry.noMatchSelected');
+    if (autoSaving || saving) return t('resultEntry.autoSaving');
+    if (snapshot !== lastSavedSnapshot) return t('resultEntry.unsavedChanges');
+    const base = isFinalized ? t('resultEntry.finalized') : t('resultEntry.autoSaved');
     if (lastSavedAt) {
       return `${base} ${new Intl.DateTimeFormat('ja-JP', {
         hour: '2-digit',
@@ -510,7 +514,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       }).format(lastSavedAt)}`;
     }
     return base;
-  }, [matchId, autoSaving, saving, snapshot, lastSavedSnapshot, lastSavedAt, isFinalized]);
+  }, [matchId, autoSaving, saving, snapshot, lastSavedSnapshot, lastSavedAt, isFinalized, t]);
 
   const openCreateRowModal = () => {
     setRowModalState({
@@ -581,7 +585,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     >
       <Stack spacing={3}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#1a1d2f' }}>対戦スコア</Typography>
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#1a1d2f' }}>{t('resultEntry.matchScore')}</Typography>
           <Chip
             label={scoreStatusLabel}
             sx={{
@@ -641,7 +645,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
           textAlign: 'center',
         }}
       >
-        {teamName || 'チーム未設定'}
+        {teamName || t('resultEntry.teamNotSet')}
       </Typography>
     </Stack>
   );
@@ -658,14 +662,14 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     >
       <Stack spacing={3}>
         <Stack spacing={0.5}>
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#1a1d2f' }}>ラウンド一覧</Typography>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#1a1d2f' }}>{t('resultEntry.roundList')}</Typography>
           <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-            チームごとのラウンド詳細を編集すると、合計スコアに反映されます。
+            {t('resultEntry.roundListDescription')}
           </Typography>
         </Stack>
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1a1d2f' }}>対戦詳細</Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1a1d2f' }}>{t('resultEntry.matchDetails')}</Typography>
             <Button
               variant="contained"
               startIcon={<AddRoundedIcon />}
@@ -679,27 +683,27 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
                 '&:hover': { bgcolor: '#181d3f' },
               }}
             >
-              ラウンド追加
+              {t('resultEntry.addRound')}
             </Button>
           </Stack>
           <Table size="small" sx={{ borderSpacing: '0', borderCollapse: 'separate' }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={tableHeadSx}>#</TableCell>
-                <TableCell sx={tableHeadSx}>チーム</TableCell>
-                <TableCell sx={tableHeadSx}>選手</TableCell>
-                <TableCell sx={tableHeadSx}>デッキ</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.team')}</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.player')}</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.deck')}</TableCell>
                 <TableCell sx={tableHeadSx} align="center">
-                  スコア
+                  {t('resultEntry.score')}
                 </TableCell>
                 <TableCell sx={tableHeadSx} align="center">
-                  スコア
+                  {t('resultEntry.score')}
                 </TableCell>
-                <TableCell sx={tableHeadSx}>デッキ</TableCell>
-                <TableCell sx={tableHeadSx}>選手</TableCell>
-                <TableCell sx={tableHeadSx}>チーム</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.deck')}</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.player')}</TableCell>
+                <TableCell sx={tableHeadSx}>{t('resultEntry.team')}</TableCell>
                 <TableCell sx={tableHeadSx} align="right">
-                  操作
+                  {t('resultEntry.actions')}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -707,7 +711,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
               {gameRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} sx={{ textAlign: 'center', color: '#7e8494', py: 4 }}>
-                    ラウンドが登録されていません。右上の「ラウンド追加」から登録してください。
+                    {t('resultEntry.noRoundsMessage')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -736,7 +740,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
                           disabled={disableEditing}
                           sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
                         >
-                          編集
+                          {t('resultEntry.edit')}
                         </Button>
                         <Button
                           size="small"
@@ -747,7 +751,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
                           disabled={disableEditing}
                           sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
                         >
-                          削除
+                          {t('resultEntry.delete')}
                         </Button>
                       </Stack>
                     </TableCell>
@@ -771,7 +775,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
                 fontWeight: 700,
               }}
             >
-              {saving ? '取り消し中...' : '結果の確定を取り消す'}
+              {saving ? t('resultEntry.unfinalizing') : t('resultEntry.unfinalizeResult')}
             </Button>
           ) : (
             <Button
@@ -787,7 +791,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
                 '&:hover': { bgcolor: '#181d3f' },
               }}
             >
-              {saving ? '確定中...' : '結果を確定'}
+              {saving ? t('resultEntry.finalizing') : t('resultEntry.finalizeResult')}
             </Button>
           )}
         </Stack>
@@ -808,9 +812,9 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
             textAlign: 'center',
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1 }}>対戦を選択してください</Typography>
+          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1 }}>{t('resultEntry.selectMatchPrompt')}</Typography>
           <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-            対戦カード一覧から「結果入力へ」を押すと、この画面で詳細を編集できます。
+            {t('resultEntry.selectMatchDescription')}
           </Typography>
         </Paper>
       );
@@ -870,10 +874,10 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         >
           <Stack spacing={0.75}>
             <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#ff8c3d', letterSpacing: 1 }}>
-              結果入力
+              {t('resultEntry.title')}
             </Typography>
             <Typography sx={{ fontSize: 13, color: '#6d7385', fontWeight: 600 }}>
-              一つの対戦カードに紐づく詳細情報を編集します。
+              {t('resultEntry.description')}
             </Typography>
           </Stack>
           <Button
@@ -891,7 +895,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
               '&:hover': { borderColor: '#181d3f', bgcolor: 'rgba(24,32,56,0.05)' },
             }}
           >
-            対戦一覧へ戻る
+            {t('resultEntry.backToMatchList')}
           </Button>
         </Paper>
         {renderContent()}
@@ -906,14 +910,14 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         onSave={handleRowSave}
       />
       <Dialog open={deleteState.open} onClose={() => setDeleteState({ open: false })}>
-        <DialogTitle>ラウンドを削除</DialogTitle>
+        <DialogTitle>{t('resultEntry.deleteRoundTitle')}</DialogTitle>
         <DialogContent>
-          <DialogContentText>このラウンドを削除しますか？この操作は元に戻せません。</DialogContentText>
+          <DialogContentText>{t('resultEntry.deleteRoundConfirm')}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteState({ open: false })}>キャンセル</Button>
+          <Button onClick={() => setDeleteState({ open: false })}>{t('resultEntry.cancel')}</Button>
           <Button onClick={handleDeleteRow} color="error" variant="contained">
-            削除
+            {t('resultEntry.delete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -932,6 +936,7 @@ type GameRowModalProps = {
 };
 
 const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam, awayTeam, onClose, onSave }) => {
+  const { t } = useTranslation();
   const [values, setValues] = useState<GameRow>(draft);
 
   useEffect(() => {
@@ -957,11 +962,11 @@ const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{mode === 'create' ? 'ラウンドを追加' : 'ラウンドを編集'}</DialogTitle>
+      <DialogTitle>{mode === 'create' ? t('resultEntry.addRoundTitle') : t('resultEntry.editRoundTitle')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
           <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 0.5 }}>
-            チームごとのプレイヤー・デッキ・スコアを入力してください。
+            {t('resultEntry.roundModalDescription')}
           </Typography>
           <Box
             sx={{
@@ -971,32 +976,32 @@ const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam
             }}
           >
             <TextField
-              label="チーム"
+              label={t('resultEntry.team')}
               value={homeTeam}
               InputProps={{ readOnly: true, sx: { color: '#1a1d2f' } }}
               sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#1a1d2f' } }}
               disabled
             />
             <TextField
-              label="チーム"
+              label={t('resultEntry.team')}
               value={awayTeam}
               InputProps={{ readOnly: true, sx: { color: '#1a1d2f' } }}
               sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#1a1d2f' } }}
               disabled
             />
-            <TextField label="選手" value={values.homePlayer} onChange={handleChange('homePlayer')} />
-            <TextField label="選手" value={values.awayPlayer} onChange={handleChange('awayPlayer')} />
-            <TextField label="デッキ" value={values.homeDeck} onChange={handleChange('homeDeck')} />
-            <TextField label="デッキ" value={values.awayDeck} onChange={handleChange('awayDeck')} />
+            <TextField label={t('resultEntry.player')} value={values.homePlayer} onChange={handleChange('homePlayer')} />
+            <TextField label={t('resultEntry.player')} value={values.awayPlayer} onChange={handleChange('awayPlayer')} />
+            <TextField label={t('resultEntry.deck')} value={values.homeDeck} onChange={handleChange('homeDeck')} />
+            <TextField label={t('resultEntry.deck')} value={values.awayDeck} onChange={handleChange('awayDeck')} />
             <TextField
-              label="スコア"
+              label={t('resultEntry.score')}
               value={values.homeScore}
               onChange={handleChange('homeScore')}
               type="number"
               inputProps={{ min: 0, inputMode: 'numeric', pattern: '[0-9]*' }}
             />
             <TextField
-              label="スコア"
+              label={t('resultEntry.score')}
               value={values.awayScore}
               onChange={handleChange('awayScore')}
               type="number"
@@ -1006,9 +1011,9 @@ const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>キャンセル</Button>
+        <Button onClick={onClose}>{t('resultEntry.cancel')}</Button>
         <Button onClick={handleSubmit} variant="contained">
-          {mode === 'create' ? '追加' : '保存'}
+          {mode === 'create' ? t('resultEntry.add') : t('resultEntry.save')}
         </Button>
       </DialogActions>
     </Dialog>
