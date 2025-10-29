@@ -993,7 +993,15 @@ app.post('/api/password-reset', async (req, res) => {
 
     if (error) {
       console.error('[POST /api/password-reset] Supabase resetPasswordForEmail error:', error);
-      // エラーメッセージをユーザーに直接返さない方がセキュリティ上望ましい場合もある
+
+      // レート制限エラーの場合は具体的なメッセージを返す
+      if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+        return res.status(429).json({
+          error: 'パスワードリセットメールの送信回数が上限に達しました。しばらく時間をおいてから再度お試しください。'
+        });
+      }
+
+      // その他のエラーは汎用的なメッセージを返す（セキュリティのため）
       return res.status(500).json({ error: 'パスワードリセットメールの送信に失敗しました。' });
     }
 
