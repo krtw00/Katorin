@@ -168,17 +168,29 @@ npm run dev:frontend   # CRA 開発サーバー
 
 本番環境でパスワードリセット機能を使用するには、Supabase プロジェクトでメール送信を設定する必要があります。
 
-1. **Supabase ダッシュボード**にログイン
-2. **Authentication → Email Templates** でパスワードリセットメールのテンプレートをカスタマイズ（任意）
-3. **Project Settings → Auth → SMTP Settings** でカスタム SMTP を設定（推奨）
-   - または Supabase のデフォルトメールサービスを使用（制限あり）
+**📖 詳細な設定手順**: [Gmail SMTP 設定ガイド](./docs/gmail-smtp-setup.md)
 
-**SMTP 設定例**（Gmail を使用する場合）:
-- SMTP Host: `smtp.gmail.com`
-- SMTP Port: `587`
-- SMTP User: あなたの Gmail アドレス
-- SMTP Password: [App Password](https://support.google.com/accounts/answer/185833)
-- Sender email: あなたの Gmail アドレス
-- Sender name: `Katorin`
+#### クイックセットアップ（Gmail を使用）
 
-設定後、パスワードリセット機能が実際のメールアドレスにメールを送信するようになります。
+1. **Gmail でアプリパスワードを生成**
+   - https://myaccount.google.com/apppasswords
+   - 2段階認証が必要です
+   - 16桁のパスワードを取得
+
+2. **Supabase ダッシュボードで設定**
+   - Project Settings → Authentication → SMTP Settings
+   - SMTP Host: `smtp.gmail.com`
+   - SMTP Port: `587`
+   - SMTP User: あなたの Gmail アドレス
+   - SMTP Password: 生成したアプリパスワード
+   - Sender email: あなたの Gmail アドレス
+   - Sender name: `Katorin`
+
+3. **環境変数を設定**（本番環境）
+   ```bash
+   PASSWORD_RESET_REDIRECT_URL=https://your-app-domain.com/password-reset
+   ```
+
+**制限**: Gmail は1日500通まで送信可能です。大規模な大会の場合は SendGrid や Resend などの専用サービスの利用を検討してください。
+
+詳細な手順、トラブルシューティング、メールテンプレートのカスタマイズ方法については [Gmail SMTP 設定ガイド](./docs/gmail-smtp-setup.md) を参照してください。
