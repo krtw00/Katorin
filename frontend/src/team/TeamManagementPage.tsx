@@ -18,11 +18,14 @@ import {
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
-import { Delete, Edit, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
+import { CloudDownload, CloudUpload, Delete, Description, Edit, EditOff, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
+import { useRef } from 'react';
+import Papa from 'papaparse';
 
 interface Team {
   id: string;
@@ -54,16 +57,14 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [teamDialogError, setTeamDialogError] = useState<string | null>(null);
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
   const [teamName, setTeamName] = useState('');
+  const [teamUsername, setTeamUsername] = useState('');
+  const [teamPassword, setTeamPassword] = useState('');
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [teamSubmitting, setTeamSubmitting] = useState(false);
 
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const selectedTeam = useMemo(
-    () => teams.find((team) => team.id === selectedTeamId) ?? null,
-    [teams, selectedTeamId],
-  );
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [participantsLoading, setParticipantsLoading] = useState<boolean>(false);
@@ -74,6 +75,16 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [participantName, setParticipantName] = useState('');
   const [participantCanEdit, setParticipantCanEdit] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const selectedTeam = useMemo(
+    () => teams.find((team) => team.id === selectedTeamId) ?? null,
+    [teams, selectedTeamId],
+  );
 
   const authHeader = useMemo(() => {
     if (!session?.access_token) {
@@ -142,6 +153,103 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     [authHeader, t],
   );
 
+  const handleExportTeams = useCallback(async () => {
+    if (!authHeader) {
+      setExportError(t('teamManagement.exportError'));
+      return;
+    }
+    setExportError(null);
+    try {
+      const response = await fetch('/api/teams/export', {
+        headers: authHeader,
+      });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(errorText || t('teamManagement.exportError'));
+            }
+      
+            const csvText = await response.text();
+            const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'teams_and_participants.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);    } catch (err: any) {
+      console.error('Failed to export teams:', err);
+      setExportError(err.message || t('teamManagement.exportError'));
+    }
+  }, [authHeader, t]);
+
+  const handleDownloadTemplate = useCallback(() => {
+    const template = [
+      ['team_name', 'participant_name', 'can_edit'],
+      ['チームA', '田中太郎', 'yes'],
+      ['チームA', '鈴木一郎', 'no'],
+    ];
+    const csv = Papa.unparse(template);
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'team_participant_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }, []);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!authHeader) {
+      setImportError(t('teamManagement.importError'));
+      return;
+    }
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    setImportSuccess(null);
+    setTeamSubmitting(true); // Use teamSubmitting to disable buttons during import
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/teams/import', {
+        method: 'POST',
+        headers: {
+          ...authHeader,
+          // 'Content-Type': 'multipart/form-data' はfetchが自動で設定するため不要
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || t('teamManagement.importError'));
+      }
+
+      setImportSuccess(t('teamManagement.importSuccess', { teams: data.teamsCreatedCount, participants: data.participantsCreatedCount }));
+      await fetchTeams(); // Refresh team list after import
+    } catch (err: any) {
+      console.error('Failed to import teams:', err);
+      setImportError(err.message || t('teamManagement.importError'));
+    } finally {
+      setTeamSubmitting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; // Clear file input
+      }
+    }
+  }, [authHeader, fetchTeams, t]);
+
   useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);
@@ -165,6 +273,8 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const handleOpenEditTeam = (team: Team) => {
     setCurrentTeam(team);
     setTeamName(team.name);
+    setTeamUsername(team.username);
+    setTeamPassword('');
     setTeamDialogError(null);
     setTeamDialogOpen(true);
     setGeneratedPassword(null);
@@ -188,22 +298,39 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
   const handleSaveTeam = async () => {
     setTeamDialogError(null);
-    if (!teamName.trim()) {
-      setTeamDialogError(t('teamManagement.teamNameRequired'));
-      return;
-    }
     if (!authHeader) {
       setTeamDialogError(t('teamManagement.saveError'));
       return;
     }
-    setTeamSubmitting(true);
-    try {
-      const method = currentTeam ? 'PUT' : 'POST';
-      const url = currentTeam ? `/api/teams/${currentTeam.id}` : '/api/teams/register';
-      const body: Record<string, unknown> = {
+
+    const method = currentTeam ? 'PUT' : 'POST';
+    const url = currentTeam ? `/api/teams/${currentTeam.id}` : '/api/teams/register';
+    let body: Record<string, unknown>;
+
+    if (currentTeam) { // Edit mode
+      if (!teamName.trim() || !teamUsername.trim()) {
+        setTeamDialogError(t('teamManagement.allFieldsRequired'));
+        return;
+      }
+      body = {
+        name: teamName.trim(),
+        username: teamUsername.trim(),
+      };
+      if (teamPassword) {
+        body.password = teamPassword;
+      }
+    } else { // Create mode
+      if (!teamName.trim()) {
+        setTeamDialogError(t('teamManagement.teamNameRequired'));
+        return;
+      }
+      body = {
         name: teamName.trim(),
       };
+    }
 
+    setTeamSubmitting(true);
+    try {
       const response = await fetch(url, {
         method,
         headers: {
@@ -220,12 +347,11 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
       if (!currentTeam && data.generatedPassword) {
         setGeneratedPassword(data.generatedPassword);
+      } else {
+        setTeamDialogOpen(false);
       }
 
       await fetchTeams();
-      if (!generatedPassword) { // パスワードが生成された場合はダイアログを閉じない
-        setTeamDialogOpen(false);
-      }
     } catch (err: any) {
       console.error('Failed to save team:', err);
       setTeamDialogError(err.message || t('teamManagement.saveError'));
@@ -407,6 +533,37 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         <Stack direction="row" spacing={1}>
           <Button
             variant="outlined"
+            startIcon={<CloudDownload />}
+            onClick={handleExportTeams}
+            disabled={teamSubmitting}
+          >
+            {t('teamManagement.exportTeams')}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Description />}
+            onClick={handleDownloadTemplate}
+            disabled={teamSubmitting}
+          >
+            {t('teamManagement.downloadTemplate')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<CloudUpload />}
+            onClick={handleImportClick}
+            disabled={teamSubmitting}
+          >
+            {t('teamManagement.importTeams')}
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".csv"
+            style={{ display: 'none' }}
+          />
+          <Button
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchTeams}
             disabled={teamSubmitting}
@@ -423,6 +580,22 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
           </Button>
         </Stack>
       </Stack>
+
+      {importError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {importError}
+        </Alert>
+      ) : null}
+      {importSuccess ? (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {importSuccess}
+        </Alert>
+      ) : null}
+      {exportError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {exportError}
+        </Alert>
+      ) : null}
 
       {teamsError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -497,6 +670,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
                           {team.name}
                         </Typography>
                       }
+                      secondary={`@${team.username}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -577,14 +751,30 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
                     >
                       <ListItemText
                         primary={
-                          <Typography fontWeight={600} color="text.primary">
-                            {participant.name}
-                          </Typography>
-                        }
-                        secondary={
-                          participant.can_edit
-                            ? t('participantManagement.canEdit')
-                            : t('participantManagement.cannotEdit')
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography fontWeight={600} color="text.primary">
+                              {participant.name}
+                            </Typography>
+                            <Tooltip
+                              title={
+                                participant.can_edit
+                                  ? t('participantManagement.canEdit')
+                                  : t('participantManagement.cannotEdit')
+                              }
+                            >
+                              {participant.can_edit ? (
+                                <Edit
+                                  fontSize="small"
+                                  sx={{ color: 'success.main', verticalAlign: 'middle' }}
+                                />
+                              ) : (
+                                <EditOff
+                                  fontSize="small"
+                                  sx={{ color: 'text.disabled', verticalAlign: 'middle' }}
+                                />
+                              )}
+                            </Tooltip>
+                          </Stack>
                         }
                       />
                     </ListItem>
@@ -611,6 +801,27 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
               required
               disabled={teamSubmitting || !!generatedPassword}
             />
+            {currentTeam && (
+              <>
+                <TextField
+                  label={t('teamManagement.username')}
+                  fullWidth
+                  value={teamUsername}
+                  onChange={(event) => setTeamUsername(event.target.value)}
+                  required
+                  disabled={teamSubmitting}
+                />
+                <TextField
+                  label={t('teamManagement.password')}
+                  type="password"
+                  fullWidth
+                  value={teamPassword}
+                  onChange={(event) => setTeamPassword(event.target.value)}
+                  disabled={teamSubmitting}
+                  helperText={t('teamManagement.leaveBlankForNoChange')}
+                />
+              </>
+            )}
             {generatedPassword && (
               <Stack spacing={1}>
                 <Typography variant="subtitle2" color="text.secondary">
@@ -653,13 +864,13 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
           <Button onClick={handleCloseTeamDialog} disabled={teamSubmitting}>
             {t('common.cancel')}
           </Button>
-          {!generatedPassword ? (
-            <Button onClick={handleSaveTeam} variant="contained" disabled={teamSubmitting}>
-              {t('common.save')}
-            </Button>
-          ) : (
+          {generatedPassword ? (
             <Button onClick={handleCloseTeamDialog} variant="contained" disabled={teamSubmitting}>
               {t('common.close')}
+            </Button>
+          ) : (
+            <Button onClick={handleSaveTeam} variant="contained" disabled={teamSubmitting}>
+              {t('common.save')}
             </Button>
           )}
         </DialogActions>

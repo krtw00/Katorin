@@ -4,6 +4,11 @@ const jwt = require('jsonwebtoken');
 const { supabase, supabaseAdmin } = require('./supabaseClient');
 const { requireAuth, requireAdmin, requireTeamAuth } = require('./authMiddleware');
 const crypto = require('crypto');
+const multer = require('multer');
+const Papa = require('papaparse');
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage }); // CSVファイルをメモリに保存する
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // authMiddleware.js と同じシークレットを使用
 
@@ -192,29 +197,70 @@ app.put('/api/teams/:id', requireAuth, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const { id } = req.params;
-  const { name } = req.body ?? {};
+  const { name, username, password } = req.body ?? {};
 
   try {
-    const updatePayload = {};
-    if (name) updatePayload.name = name.trim();
-
-    if (Object.keys(updatePayload).length === 0) {
-      return res.status(400).json({ error: '更新するデータがありません。' });
-    }
-
-    const { data, error } = await client
+    // First, get the team to find its auth_user_id
+    const { data: team, error: fetchError } = await client
       .from('teams')
-      .update(updatePayload)
+      .select('id, username, auth_user_id, created_by')
       .eq('id', id)
-      .eq('created_by', req.user.id) // Ensure only creator can update
-      .select('id, name, username, created_at')
+      .eq('created_by', req.user.id) // Ensure only creator can access
       .single();
 
-    if (error || !data) {
-      console.error('[PUT /api/teams/:id] Supabase error:', error ?? 'team not found or not authorized');
+    if (fetchError || !team) {
+      console.error('[PUT /api/teams/:id] Supabase fetch error:', fetchError ?? 'team not found or not authorized');
       return res.status(404).json({ error: 'チームが見つからないか、更新する権限がありません。' });
     }
-    res.json(data);
+
+    const teamUpdatePayload = {};
+    if (name) teamUpdatePayload.name = name.trim();
+    if (username) teamUpdatePayload.username = username.trim();
+
+    const authUpdatePayload = {};
+    if (password) authUpdatePayload.password = password;
+    if (username && username.trim() !== team.username) {
+      // Construct the new pseudo-email
+      const creatorId = team.created_by.split('-')[0]; // Use a part of the creator's UUID for the domain
+      authUpdatePayload.email = `${username.trim()}@${creatorId}.teams.local`;
+    }
+
+    // Update Supabase Auth user if needed
+    if (Object.keys(authUpdatePayload).length > 0 && team.auth_user_id) {
+      const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
+        team.auth_user_id,
+        authUpdatePayload
+      );
+      if (authUpdateError) {
+        console.error('[PUT /api/teams/:id] Supabase Auth user update error:', authUpdateError);
+        return res.status(500).json({ error: authUpdateError.message });
+      }
+    }
+
+    // Update the teams table if needed
+    if (Object.keys(teamUpdatePayload).length > 0) {
+      const { data, error } = await client
+        .from('teams')
+        .update(teamUpdatePayload)
+        .eq('id', id)
+        .select('id, name, username, created_at')
+        .single();
+
+      if (error) {
+        console.error('[PUT /api/teams/:id] Supabase error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json(data);
+    }
+
+    // If only auth was updated, return a success message or the updated team info
+    const { data: updatedTeam } = await client
+      .from('teams')
+      .select('id, name, username, created_at')
+      .eq('id', id)
+      .single();
+
+    res.json(updatedTeam);
   } catch (err) {
     console.error('[PUT /api/teams/:id] Unexpected error:', err);
     res.status(500).json({ error: 'チームの更新に失敗しました。' });
@@ -267,6 +313,195 @@ app.delete('/api/teams/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[DELETE /api/teams/:id] Unexpected error:', err);
     res.status(500).json({ error: 'チームの削除に失敗しました。' });
+  }
+});
+
+// Export teams and participants to CSV
+app.get('/api/teams/export', requireAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+
+  try {
+    const { data: teams, error: teamsError } = await client
+      .from('teams')
+      .select('id, name, username, created_by')
+      .eq('created_by', req.user.id);
+
+    if (teamsError) {
+      console.error('[GET /api/teams/export] Supabase teams fetch error:', teamsError);
+      return res.status(500).json({ error: teamsError.message });
+    }
+
+    const { data: participants, error: participantsError } = await client
+      .from('participants')
+      .select('id, name, can_edit, team_id')
+      .in('team_id', teams.map((t) => t.id));
+
+    if (participantsError) {
+      console.error('[GET /api/teams/export] Supabase participants fetch error:', participantsError);
+      return res.status(500).json({ error: participantsError.message });
+    }
+
+    const csvData = [];
+    csvData.push(['team_name', 'team_username', 'participant_name', 'can_edit']);
+
+    teams.forEach((team) => {
+      const teamParticipants = participants.filter((p) => p.team_id === team.id);
+      if (teamParticipants.length === 0) {
+        csvData.push([team.name, team.username, '', '']);
+      } else {
+        teamParticipants.forEach((participant) => {
+          csvData.push([team.name, team.username, participant.name, participant.can_edit ? 'yes' : 'no']);
+        });
+      }
+    });
+
+    const csv = Papa.unparse(csvData);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="teams_and_participants.csv"');
+    res.status(200).send(csv);
+  } catch (err) {
+    console.error('[GET /api/teams/export] Unexpected error:', err);
+    res.status(500).json({ error: 'チームと参加者のエクスポートに失敗しました。' });
+  }
+});
+
+// Import teams and participants from CSV
+app.post('/api/teams/import', requireAuth, upload.single('file'), async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'CSVファイルをアップロードしてください。' });
+  }
+
+  const csvFile = req.file.buffer.toString('utf8');
+
+  try {
+    const parsed = Papa.parse(csvFile, { header: true, skipEmptyLines: true });
+    const rows = parsed.data;
+
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({ error: 'CSVファイルにデータがありません。' });
+    }
+
+    const importedTeams = new Map(); // Map<team_name, team_id>
+    let teamsCreatedCount = 0;
+    let participantsCreatedCount = 0;
+
+    // Use a transaction for atomicity
+    await client.rpc('start_transaction'); // Assuming you have a start_transaction RPC function
+
+    for (const row of rows) {
+      const teamName = row.team_name?.trim();
+      const participantName = row.participant_name?.trim();
+      const canEdit = row.can_edit?.trim()?.toLowerCase() === 'yes';
+
+      if (!teamName) {
+        await client.rpc('rollback_transaction');
+        return res.status(400).json({ error: 'チーム名は必須です。' });
+      }
+
+      let teamId = importedTeams.get(teamName);
+      let teamUsername;
+
+      if (!teamId) {
+        // Check if team already exists in DB
+        const { data: existingTeam, error: fetchTeamError } = await client
+          .from('teams')
+          .select('id, username')
+          .eq('name', teamName)
+          .eq('created_by', req.user.id)
+          .single();
+
+        if (existingTeam) {
+          teamId = existingTeam.id;
+          teamUsername = existingTeam.username;
+          importedTeams.set(teamName, teamId);
+        } else {
+          // Create new team
+          teamUsername = createSlugFrom(teamName);
+          const generatedPassword = crypto.randomBytes(8).toString('hex');
+          const teamEmail = `${teamUsername}@${req.user.id}.teams.local`;
+
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: teamEmail,
+            password: generatedPassword,
+            email_confirm: true,
+            app_metadata: { role: 'team', tournament_creator_id: req.user.id },
+          });
+
+          if (authError) {
+            console.error('[POST /api/teams/import] Supabase Auth user creation error:', authError);
+            await client.rpc('rollback_transaction');
+            return res.status(500).json({ error: authError.message });
+          }
+
+          const teamAuthUserId = authData.user.id;
+
+          const { data: newTeam, error: insertTeamError } = await client
+            .from('teams')
+            .insert({
+              name: teamName,
+              username: teamUsername,
+              created_by: req.user.id,
+              auth_user_id: teamAuthUserId,
+            })
+            .select('id')
+            .single();
+
+          if (insertTeamError) {
+            console.error('[POST /api/teams/import] Supabase team insert error:', insertTeamError);
+            await supabaseAdmin.auth.admin.deleteUser(teamAuthUserId);
+            await client.rpc('rollback_transaction');
+            return res.status(500).json({ error: insertTeamError.message });
+          }
+          teamId = newTeam.id;
+          importedTeams.set(teamName, teamId);
+          teamsCreatedCount++;
+        }
+      }
+
+      if (participantName && teamId) {
+        // Check if participant already exists for this team
+        const { data: existingParticipant, error: fetchParticipantError } = await client
+          .from('participants')
+          .select('id')
+          .eq('name', participantName)
+          .eq('team_id', teamId)
+          .single();
+
+        if (!existingParticipant) {
+          const { error: insertParticipantError } = await client
+            .from('participants')
+            .insert({
+              team_id: teamId,
+              name: participantName,
+              can_edit: canEdit,
+              created_by: req.user.id,
+            });
+
+          if (insertParticipantError) {
+            console.error('[POST /api/teams/import] Supabase participant insert error:', insertParticipantError);
+            await client.rpc('rollback_transaction');
+            return res.status(500).json({ error: insertParticipantError.message });
+          }
+          participantsCreatedCount++;
+        }
+      }
+    }
+
+    await client.rpc('commit_transaction');
+    res.status(200).json({ message: `${teamsCreatedCount} チームと ${participantsCreatedCount} 参加者をインポートしました。`, teamsCreatedCount, participantsCreatedCount });
+  } catch (err) {
+    console.error('[POST /api/teams/import] Unexpected error:', err);
+    await client.rpc('rollback_transaction'); // Ensure rollback on unexpected errors
+    res.status(500).json({ error: 'チームと参加者のインポートに失敗しました。' });
   }
 });
 
