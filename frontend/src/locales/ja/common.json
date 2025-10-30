@@ -17,6 +17,7 @@
       "adminCreateButton": "運営アカウントを追加",
       "adminCreatedSuccess": "運営アカウント（{{email}}）を作成しました。",
       "teamNameRequired": "チーム名を入力してください。",
+      "teamFieldsRequired": "大会コードとチーム名を入力してください。",
       "loginFailed": "ログインに失敗しました。"
     },
     "passwordReset": {
@@ -104,7 +105,10 @@
     "loading": "読み込み中...",
     "error": "エラー",
     "success": "成功",
-    "create": "作成"
+    "create": "作成",
+    "updating": "更新中...",
+    "creating": "作成中...",
+    "update": "更新"
   },
   "app": {
     "title": "Katorin Match Manager",
@@ -227,30 +231,31 @@
     "pending": "結果待ち {{count}}",
     "registeredTeams": "登録チーム {{count}}"
   },
-      "teamManagement": {
-        "title": "チーム管理",
-        "createTeam": "チームを作成",
-        "editTeam": "チームを編集",
-        "teamName": "チーム名",
-        "username": "ユーザー名",
-        "password": "パスワード",
-        "leaveBlankForNoChange": "変更しない場合は空欄のままにしてください",
-        "noTeams": "チームがまだ登録されていません",
-        "fetchError": "チーム情報の取得に失敗しました",
-        "saveError": "チームの保存に失敗しました",
-        "deleteError": "チームの削除に失敗しました",
-        "confirmDelete": "このチームを削除しますか？",
-        "allFieldsRequired": "すべての項目を入力してください",
-        "generatedPassword": "自動生成されたパスワード",
-        "copySuccess": "パスワードをコピーしました！",
-        "teamNameRequired": "チーム名を入力してください。",
-        "exportTeams": "チームをエクスポート",
-        "downloadTemplate": "テンプレートをダウンロード",
-        "importTeams": "チームをインポート",
-        "exportError": "チームのエクスポートに失敗しました。",
-        "importError": "チームのインポートに失敗しました。",
-        "importSuccess": "{{teams}} チームと {{participants}} 参加者をインポートしました。"
-      },  "participantManagement": {
+  "teamManagement": {
+    "title": "チーム管理",
+    "createTeam": "チームを作成",
+    "editTeam": "チームを編集",
+    "teamName": "チーム名",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "leaveBlankForNoChange": "変更しない場合は空欄のままにしてください",
+    "noTeams": "チームがまだ登録されていません",
+    "fetchError": "チーム情報の取得に失敗しました",
+    "saveError": "チームの保存に失敗しました",
+    "deleteError": "チームの削除に失敗しました",
+    "confirmDelete": "このチームを削除しますか？",
+    "allFieldsRequired": "すべての項目を入力してください",
+    "generatedPassword": "自動生成されたパスワード",
+    "copySuccess": "パスワードをコピーしました！",
+    "teamNameRequired": "チーム名を入力してください。",
+    "exportTeams": "チームをエクスポート",
+    "downloadTemplate": "テンプレートをダウンロード",
+    "importTeams": "チームをインポート",
+    "exportError": "チームのエクスポートに失敗しました。",
+    "importError": "チームのインポートに失敗しました。",
+    "importSuccess": "{{teams}} チームと {{participants}} 参加者をインポートしました。"
+  },
+  "participantManagement": {
     "title": "参加者管理",
     "titleForTeam": "{{teamName}} の参加者",
     "addParticipant": "参加者を追加",
@@ -270,13 +275,29 @@
     "nameRequired": "参加者名を入力してください",
     "teamIdMissing": "チームIDが指定されていません"
   },
-      "teamLoginForm": {
-        "title": "チームログイン",
-        "tournamentCodeLabel": "大会コード",
-        "username": "ユーザー名",    "password": "パスワード",
+  "teamLoginForm": {
+    "title": "チームログイン",
+    "username": "ユーザー名",
+    "password": "パスワード",
     "loginButton": "ログイン",
     "backToAdminLogin": "運営ログインに戻る",
     "loginFailed": "ログインに失敗しました",
-    "networkError": "ネットワークエラーが発生しました"
+    "networkError": "ネットワークエラーが発生しました",
+    "tournamentCodeLabel": "大会コード"
+  },
+  "matchCreateDialog": {
+    "createMatch": "対戦を作成",
+    "editMatch": "対戦を編集",
+    "createMatchDescription": "新しい対戦カードを作成します。",
+    "editMatchDescription": "対戦カードの詳細を編集します。",
+    "homeTeam": "ホームチーム",
+    "awayTeam": "相手チーム",
+    "selectTeam": "チームを選択",
+    "matchDate": "日付",
+    "fetchTeamsError": "チーム一覧の取得に失敗しました",
+    "roundNotSelected": "ラウンドが選択されていません",
+    "updateFailed": "対戦の更新に失敗しました",
+    "createFailed": "対戦の作成に失敗しました",
+    "noTeamsRegistered": "チームが登録されていません。先にチームを登録してください。"
   }
 }

@@ -57,8 +57,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
     try {
       if (mode === 'team') {
         if (!teamName.trim() || !tournamentSlug.trim()) {
-          // 翻訳キーを使う方が望ましいが、一旦直接メッセージを入れる
-          throw new Error('大会コードとチーム名を入力してください。');
+          throw new Error(t('auth.login.teamFieldsRequired'));
         }
         const teamEmail = `${teamName.trim()}@${tournamentSlug.trim()}.players.local`;
         await signInWithPassword({ email: teamEmail, password });

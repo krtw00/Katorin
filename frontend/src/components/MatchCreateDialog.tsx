@@ -34,8 +34,8 @@ type MatchRecord = {
 };
 
 type MatchFormValues = {
-  teamId: string;
-  opponentTeamId: string;
+  teamId: string | null;
+  opponentTeamId: string | null;
   date: string;
 };
 
@@ -45,8 +45,8 @@ interface Team {
 }
 
 const createInitialValues = (): MatchFormValues => ({
-  teamId: '',
-  opponentTeamId: '',
+  teamId: null,
+  opponentTeamId: null,
   date: '',
 });
 
@@ -99,8 +99,8 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
       fetchTeams();
       if (mode === 'edit' && match) {
         setValues({
-          teamId: match.team ?? '',
-          opponentTeamId: match.opponentTeam ?? '',
+          teamId: match.team ?? null,
+          opponentTeamId: match.opponentTeam ?? null,
           date: match.date ? match.date.slice(0, 10) : '',
         });
       } else {
@@ -215,37 +215,35 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
                 <TextField
                   select
                   label={t('matchCreateDialog.homeTeam')}
-                  value={values.teamId}
+                  value={values.teamId || ''}
                   onChange={handleChange('teamId')}
                   fullWidth
                   required
-                  SelectProps={{
-                    native: true,
-                  }}
                 >
-                  <option value="">{t('matchCreateDialog.selectTeam')}</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
+                  <MenuItem value="" disabled>
+                    <em>{t('matchCreateDialog.selectTeam')}</em>
+                  </MenuItem>
+                  {teams.filter(team => team.id !== values.opponentTeamId).map((team) => (
+                    <MenuItem key={team.id} value={team.id}>
                       {team.name}
-                    </option>
+                    </MenuItem>
                   ))}
                 </TextField>
                 <TextField
                   select
                   label={t('matchCreateDialog.awayTeam')}
-                  value={values.opponentTeamId}
+                  value={values.opponentTeamId || ''}
                   onChange={handleChange('opponentTeamId')}
                   fullWidth
                   required
-                  SelectProps={{
-                    native: true,
-                  }}
                 >
-                  <option value="">{t('matchCreateDialog.selectTeam')}</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
+                  <MenuItem value="" disabled>
+                    <em>{t('matchCreateDialog.selectTeam')}</em>
+                  </MenuItem>
+                  {teams.filter(team => team.id !== values.teamId).map((team) => (
+                    <MenuItem key={team.id} value={team.id}>
                       {team.name}
-                    </option>
+                    </MenuItem>
                   ))}
                 </TextField>
                 <TextField

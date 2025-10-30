@@ -30,6 +30,11 @@ import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
 
+interface Team {
+  id: string;
+  name: string;
+}
+
 type GameRow = {
   id: string;
   homeTeam: string;
@@ -137,6 +142,25 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState('');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  const fetchTeams = useCallback(async () => {
+    try {
+      const response = await authFetch('/api/teams');
+      if (!response.ok) {
+        throw new Error('Failed to fetch teams');
+      }
+      const data = await response.json();
+      setTeams(data);
+    } catch (err) {
+      console.error('Failed to fetch teams:', err);
+      // Handle error appropriately
+    }
+  }, [authFetch]);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
 
   const makeSnapshot = useCallback(
     (formValues: MatchFormValues, rows: GameRow[]) =>
@@ -206,7 +230,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     };
 
   const fetchMatch = useCallback(async () => {
-    if (!matchId) {
+    if (!matchId || teams.length === 0) { // teamsが読み込まれるまで待機
       setForm(emptyForm);
       setGameRows([]);
       setError(null);
@@ -229,9 +253,12 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         throw new Error(message || `HTTP ${response.status}`);
       }
       const data: MatchRecord = await response.json();
+      const homeTeamName = teams.find((t) => t.id === data.team)?.name ?? data.team ?? '';
+      const awayTeamName = teams.find((t) => t.id === data.opponentTeam)?.name ?? data.opponentTeam ?? '';
+
       const newFormState: MatchFormValues = {
-        team: data.team ?? '',
-        opponentTeam: data.opponentTeam ?? '',
+        team: homeTeamName,
+        opponentTeam: awayTeamName,
         date: data.date ? data.date.slice(0, 10) : '',
       };
       setForm(newFormState);
@@ -244,11 +271,11 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         if (Array.isArray(parsed)) {
           const mappedRows = parsed.map((row: any) => ({
             id: typeof row.id === 'string' ? row.id : generateId(),
-            homeTeam: row.homeTeam ?? (data.team ?? ''),
+            homeTeam: row.homeTeam ?? homeTeamName,
             homePlayer: row.homePlayer ?? '',
             homeDeck: row.homeDeck ?? '',
             homeScore: row.homeScore ?? '',
-            awayTeam: row.awayTeam ?? (data.opponentTeam ?? ''),
+            awayTeam: row.awayTeam ?? awayTeamName,
             awayPlayer: row.awayPlayer ?? '',
             awayDeck: row.awayDeck ?? '',
             awayScore: row.awayScore ?? '',
@@ -261,11 +288,11 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.rounds)) {
           const mappedRows = parsed.rounds.map((row: any) => ({
             id: typeof row.id === 'string' ? row.id : generateId(),
-            homeTeam: row.homeTeam ?? (data.team ?? ''),
+            homeTeam: row.homeTeam ?? homeTeamName,
             homePlayer: row.homePlayer ?? '',
             homeDeck: row.homeDeck ?? '',
             homeScore: row.homeScore ?? '',
-            awayTeam: row.awayTeam ?? (data.opponentTeam ?? ''),
+            awayTeam: row.awayTeam ?? awayTeamName,
             awayPlayer: row.awayPlayer ?? '',
             awayDeck: row.awayDeck ?? '',
             awayScore: row.awayScore ?? '',
@@ -311,8 +338,11 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   }, [authFetch, makeSnapshot, matchId, t]);
 
   useEffect(() => {
-    fetchMatch();
-  }, [fetchMatch]);
+    // This will run when matchId changes OR when teams array is populated
+    if (teams.length > 0) {
+      fetchMatch();
+    }
+  }, [teams, fetchMatch]);
 
   const handleSave = useCallback(
     async (mode: 'auto' | 'finalize' | 'unfinalize', snapshotValue: string) => {

@@ -15,6 +15,7 @@ auth.login.adminCreateSection,運営アカウントの作成,Create Admin Accoun
 auth.login.adminCreateButton,運営アカウントを追加,Add Admin Account
 auth.login.adminCreatedSuccess,運営アカウント（{{email}}）を作成しました。,Admin account ({{email}}) has been created.
 auth.login.teamNameRequired,チーム名を入力してください。,Please enter a team name.
+auth.login.teamFieldsRequired,大会コードとチーム名を入力してください。,Please enter Tournament Code and Team Name.
 auth.login.loginFailed,ログインに失敗しました。,Login failed.
 auth.passwordReset.title,パスワードリセット,Password Reset
 auth.passwordReset.emailLabel,メールアドレス,Email Address
@@ -207,6 +208,15 @@ teamManagement.saveError,チームの保存に失敗しました,Failed to save 
 teamManagement.deleteError,チームの削除に失敗しました,Failed to delete team
 teamManagement.confirmDelete,このチームを削除しますか？,Are you sure you want to delete this team?
 teamManagement.allFieldsRequired,すべての項目を入力してください,All fields are required
+teamManagement.generatedPassword,自動生成されたパスワード,Generated Password
+teamManagement.copySuccess,パスワードをコピーしました！,Password copied!
+teamManagement.teamNameRequired,チーム名を入力してください。,Please enter a team name.
+teamManagement.exportTeams,チームをエクスポート,Export Teams
+teamManagement.downloadTemplate,テンプレートをダウンロード,Download Template
+teamManagement.importTeams,チームをインポート,Import Teams
+teamManagement.exportError,チームのエクスポートに失敗しました。,Failed to export teams.
+teamManagement.importError,チームのインポートに失敗しました。,Failed to import teams.
+teamManagement.importSuccess,{{teams}} チームと {{participants}} 参加者をインポートしました。,Imported {{teams}} teams and {{participants}} participants.
 participantManagement.title,参加者管理,Participant Management
 participantManagement.titleForTeam,{{teamName}} の参加者,Participants of {{teamName}}
 participantManagement.addParticipant,参加者を追加,Add Participant
@@ -232,4 +242,21 @@ teamLoginForm.loginButton,ログイン,Login
 teamLoginForm.backToAdminLogin,運営ログインに戻る,Back to Admin Login
 teamLoginForm.loginFailed,ログインに失敗しました,Login failed
 teamLoginForm.networkError,ネットワークエラーが発生しました,Network error occurred
+teamLoginForm.tournamentCodeLabel,大会コード,Tournament Code
 common.create,作成,Create
+matchCreateDialog.createMatch,対戦を作成,Create Match
+matchCreateDialog.editMatch,対戦を編集,Edit Match
+matchCreateDialog.createMatchDescription,新しい対戦カードを作成します。,Create a new match card.
+matchCreateDialog.editMatchDescription,対戦カードの詳細を編集します。,Edit the details of the match card.
+matchCreateDialog.homeTeam,ホームチーム,Home Team
+matchCreateDialog.awayTeam,相手チーム,Away Team
+matchCreateDialog.selectTeam,チームを選択,Select Team
+matchCreateDialog.matchDate,日付,Date
+matchCreateDialog.fetchTeamsError,チーム一覧の取得に失敗しました,Failed to fetch teams
+matchCreateDialog.roundNotSelected,ラウンドが選択されていません,No round selected
+matchCreateDialog.updateFailed,対戦の更新に失敗しました,Failed to update match
+matchCreateDialog.createFailed,対戦の作成に失敗しました,Failed to create match
+matchCreateDialog.noTeamsRegistered,チームが登録されていません。先にチームを登録してください。,No teams are registered. Please register teams first.
+common.updating,更新中...,Updating...
+common.creating,作成中...,Creating...
+common.update,更新,Update

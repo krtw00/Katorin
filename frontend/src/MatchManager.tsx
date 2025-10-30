@@ -32,6 +32,10 @@ import type { Tournament } from './admin/TournamentCreateDialog';
 import MatchCreateDialog from './components/MatchCreateDialog';
 import { MatchRecord, DisplayMatch, CardStatus, MatchStats, formatDate, getInitial, parseScoreValue, determineStatus, statusMeta, toTimestamp } from './types/matchTypes';
 
+interface Team {
+  id: string;
+  name: string;
+}
 
 type MatchManagerProps = {
   tournament: Tournament;
@@ -69,7 +73,26 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const [deleteTarget, setDeleteTarget] = useState<MatchRecord | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState<boolean>(true);
   const authFetch = useAuthorizedFetch();
+
+  const fetchTeams = useCallback(async () => {
+    setTeamsLoading(true);
+    try {
+      const response = await authFetch('/api/teams');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || t('matchManager.fetchTeamsError'));
+      }
+      setTeams(data);
+    } catch (err: any) {
+      console.error('Failed to fetch teams:', err);
+      setError(err.message || t('matchManager.fetchTeamsError'));
+    } finally {
+      setTeamsLoading(false);
+    }
+  }, [authFetch, t]);
 
   const loadRounds = useCallback(async () => {
     setRoundsLoading(true);
@@ -149,7 +172,8 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
     setMatches([]);
     setRoundFeedback(null);
     loadRounds();
-  }, [loadRounds, tournament.id]);
+    fetchTeams();
+  }, [loadRounds, fetchTeams, tournament.id]);
 
   useEffect(() => {
     if (!selectedRoundId) {
@@ -160,9 +184,14 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   }, [loadMatches, reloadToken, selectedRoundId]);
 
   const displayMatches = useMemo<DisplayMatch[]>(() => {
+    const teamMap = new Map(teams.map(team => [team.id, team.name]));
+
     const normalizeName = (value?: string | null) => {
-      const trimmed = value?.trim();
-      return trimmed && trimmed.length > 0 ? trimmed : t('matchManager.teamNotSet');
+      if (!value) {
+        return t('matchManager.teamNotSet');
+      }
+      const teamName = teamMap.get(value);
+      return teamName ?? t('matchManager.teamNotSet');
     };
 
     return matches
