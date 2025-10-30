@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { Box, Button, TextField, Typography, Paper, Alert, CircularProgress, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../auth/AuthContext';
 
 const TeamLoginForm: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { signInWithPassword } = useAuth();
+  const [tournamentSlug, setTournamentSlug] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,28 +20,14 @@ const TeamLoginForm: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/teams/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+      const email = `${username}@${tournamentSlug}.players.local`;
+      await signInWithPassword({ email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || t('teamLoginForm.loginFailed'));
-        return;
-      }
-
-      localStorage.setItem('team_jwt_token', data.token);
-      localStorage.setItem('team_id', data.teamId);
-      localStorage.setItem('team_name', data.name);
-      navigate(`/team/${data.teamId}/participants`);
-    } catch (err) {
+      // Supabase Authがセッションを管理するため、localStorageの直接操作は不要
+      navigate('/'); // ログイン成功後はトップページにリダイレクト
+    } catch (err: any) {
       console.error('Team login error:', err);
-      setError(t('teamLoginForm.networkError'));
+      setError(err.message || t('teamLoginForm.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -63,6 +52,14 @@ const TeamLoginForm: React.FC = () => {
           {error && <Alert severity="error">{error}</Alert>}
           <form onSubmit={handleLogin}>
             <Stack spacing={2}>
+              <TextField
+                label={t('teamLoginForm.tournamentCodeLabel')}
+                variant="outlined"
+                fullWidth
+                value={tournamentSlug}
+                onChange={(e) => setTournamentSlug(e.target.value)}
+                required
+              />
               <TextField
                 label={t('teamLoginForm.username')}
                 variant="outlined"

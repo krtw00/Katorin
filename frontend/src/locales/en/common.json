@@ -262,10 +262,10 @@
     "nameRequired": "Please enter participant name",
     "teamIdMissing": "Team ID is missing"
   },
-  "teamLoginForm": {
-    "title": "Team Login",
-    "username": "Username",
-    "password": "Password",
+      "teamLoginForm": {
+        "title": "Team Login",
+        "tournamentCodeLabel": "Tournament Code",
+        "username": "Username",    "password": "Password",
     "loginButton": "Login",
     "backToAdminLogin": "Back to Admin Login",
     "loginFailed": "Login failed",

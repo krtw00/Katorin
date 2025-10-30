@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { supabase, supabaseAdmin } = require('./supabaseClient');
 const { requireAuth, requireAdmin, requireTeamAuth } = require('./authMiddleware');
+const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // authMiddleware.js と同じシークレットを使用
 
@@ -30,47 +31,68 @@ app.post('/api/teams/register', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { name, username, password } = req.body ?? {};
+  const { name } = req.body ?? {};
 
-  if (!name || !username || !password) {
-    return res.status(400).json({ error: 'チーム名、ユーザー名、パスワードは必須です。' });
+  if (!name) {
+    return res.status(400).json({ error: 'チーム名は必須です。' });
   }
 
+  const teamUsername = createSlugFrom(name);
+  const generatedPassword = crypto.randomBytes(8).toString('hex'); // 16文字のランダムなパスワード
+  const teamEmail = `${teamUsername}@${req.user.id}.teams.local`; // チーム専用の疑似メールアドレス
+
   try {
-    // Check if username already exists
+    // Supabase Authにユーザーを登録
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: teamEmail,
+      password: generatedPassword,
+      email_confirm: true,
+      app_metadata: { role: 'team', tournament_creator_id: req.user.id },
+    });
+
+    if (authError) {
+      console.error('[POST /api/teams/register] Supabase Auth user creation error:', authError);
+      return res.status(500).json({ error: authError.message });
+    }
+
+    const teamAuthUserId = authData.user.id;
+
+    // Check if username already exists in teams table
     const { data: existingTeam, error: fetchError } = await client
       .from('teams')
       .select('id')
-      .eq('username', username)
+      .eq('username', teamUsername)
       .single();
 
     if (existingTeam) {
-      return res.status(409).json({ error: 'このユーザー名は既に使用されています。' });
+      // If team username already exists, delete the auth user created above
+      await supabaseAdmin.auth.admin.deleteUser(teamAuthUserId);
+      return res.status(409).json({ error: 'このチーム名は既に使用されています。' });
     }
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error('[POST /api/teams/register] Supabase fetch error:', fetchError);
+      await supabaseAdmin.auth.admin.deleteUser(teamAuthUserId);
       return res.status(500).json({ error: fetchError.message });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     const { data, error } = await client
       .from('teams')
       .insert({
         name,
-        username,
-        password_hash: hashedPassword,
-        created_by: req.user.id, // Link team to the creating user
+        username: teamUsername,
+        created_by: req.user.id, // Link team to the creating admin user
+        auth_user_id: teamAuthUserId, // Link team to the Supabase Auth user
       })
       .select('id, name, username, created_at')
       .single();
 
     if (error) {
       console.error('[POST /api/teams/register] Supabase insert error:', error);
+      await supabaseAdmin.auth.admin.deleteUser(teamAuthUserId);
       return res.status(500).json({ error: error.message });
     }
 
-    res.status(201).json(data);
+    res.status(201).json({ ...data, generatedPassword });
   } catch (err) {
     console.error('[POST /api/teams/register] Unexpected error:', err);
     res.status(500).json({ error: 'チーム登録に失敗しました。' });
@@ -170,32 +192,11 @@ app.put('/api/teams/:id', requireAuth, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const { id } = req.params;
-  const { name, username, password } = req.body ?? {};
+  const { name } = req.body ?? {};
 
   try {
     const updatePayload = {};
-    if (name) updatePayload.name = name;
-    if (username) {
-      // Check for username uniqueness if changed
-      const { data: existingTeam, error: fetchError } = await client
-        .from('teams')
-        .select('id')
-        .eq('username', username)
-        .neq('id', id) // Exclude current team
-        .single();
-
-      if (existingTeam) {
-        return res.status(409).json({ error: 'このユーザー名は既に使用されています。' });
-      }
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('[PUT /api/teams/:id] Supabase fetch error:', fetchError);
-        return res.status(500).json({ error: fetchError.message });
-      }
-      updatePayload.username = username;
-    }
-    if (password) {
-      updatePayload.password_hash = await bcrypt.hash(password, 10);
-    }
+    if (name) updatePayload.name = name.trim();
 
     if (Object.keys(updatePayload).length === 0) {
       return res.status(400).json({ error: '更新するデータがありません。' });
@@ -228,11 +229,35 @@ app.delete('/api/teams/:id', requireAuth, async (req, res) => {
   }
   const { id } = req.params;
   try {
+    // First, get the team to find its auth_user_id
+    const { data: team, error: fetchError } = await client
+      .from('teams')
+      .select('id, auth_user_id, created_by')
+      .eq('id', id)
+      .eq('created_by', req.user.id) // Ensure only creator can delete
+      .single();
+
+    if (fetchError || !team) {
+      console.error('[DELETE /api/teams/:id] Supabase fetch error:', fetchError ?? 'team not found or not authorized');
+      return res.status(404).json({ error: 'チームが見つからないか、削除する権限がありません。' });
+    }
+
+    // Delete the Supabase Auth user
+    if (team.auth_user_id) {
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(team.auth_user_id);
+      if (authDeleteError) {
+        console.error('[DELETE /api/teams/:id] Supabase Auth user deletion error:', authDeleteError);
+        // Auth user deletion failed, but we might still want to delete the team record
+        // Depending on desired behavior, this could be a hard error or just a warning
+      }
+    }
+
+    // Then, delete the team record from the teams table
     const { error } = await client
       .from('teams')
       .delete()
       .eq('id', id)
-      .eq('created_by', req.user.id); // Ensure only creator can delete
+      .eq('created_by', req.user.id); // Double check authorization
 
     if (error) {
       console.error('[DELETE /api/teams/:id] Supabase error:', error);

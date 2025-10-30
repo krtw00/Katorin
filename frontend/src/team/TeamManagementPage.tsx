@@ -54,8 +54,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [teamDialogError, setTeamDialogError] = useState<string | null>(null);
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
   const [teamName, setTeamName] = useState('');
-  const [teamUsername, setTeamUsername] = useState('');
-  const [teamPassword, setTeamPassword] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [teamSubmitting, setTeamSubmitting] = useState(false);
 
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -156,30 +157,39 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const handleOpenCreateTeam = () => {
     setCurrentTeam(null);
     setTeamName('');
-    setTeamUsername('');
-    setTeamPassword('');
     setTeamDialogError(null);
     setTeamDialogOpen(true);
+    setGeneratedPassword(null);
   };
 
   const handleOpenEditTeam = (team: Team) => {
     setCurrentTeam(team);
     setTeamName(team.name);
-    setTeamUsername(team.username);
-    setTeamPassword('');
     setTeamDialogError(null);
     setTeamDialogOpen(true);
+    setGeneratedPassword(null);
   };
 
   const handleCloseTeamDialog = () => {
     if (teamSubmitting) return;
     setTeamDialogOpen(false);
+    setGeneratedPassword(null);
+    setShowPassword(false);
+    setCopySuccess(false);
+  };
+
+  const handleCopyPassword = () => {
+    if (generatedPassword) {
+      navigator.clipboard.writeText(generatedPassword);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
   };
 
   const handleSaveTeam = async () => {
     setTeamDialogError(null);
-    if (!teamName || !teamUsername || (!currentTeam && !teamPassword)) {
-      setTeamDialogError(t('teamManagement.allFieldsRequired'));
+    if (!teamName.trim()) {
+      setTeamDialogError(t('teamManagement.teamNameRequired'));
       return;
     }
     if (!authHeader) {
@@ -191,12 +201,8 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       const method = currentTeam ? 'PUT' : 'POST';
       const url = currentTeam ? `/api/teams/${currentTeam.id}` : '/api/teams/register';
       const body: Record<string, unknown> = {
-        name: teamName,
-        username: teamUsername,
+        name: teamName.trim(),
       };
-      if (teamPassword) {
-        body.password = teamPassword;
-      }
 
       const response = await fetch(url, {
         method,
@@ -212,8 +218,14 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         throw new Error(data.error || t('teamManagement.saveError'));
       }
 
+      if (!currentTeam && data.generatedPassword) {
+        setGeneratedPassword(data.generatedPassword);
+      }
+
       await fetchTeams();
-      setTeamDialogOpen(false);
+      if (!generatedPassword) { // パスワードが生成された場合はダイアログを閉じない
+        setTeamDialogOpen(false);
+      }
     } catch (err: any) {
       console.error('Failed to save team:', err);
       setTeamDialogError(err.message || t('teamManagement.saveError'));
@@ -485,7 +497,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
                           {team.name}
                         </Typography>
                       }
-                      secondary={`@${team.username}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -598,35 +609,59 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
               value={teamName}
               onChange={(event) => setTeamName(event.target.value)}
               required
-              disabled={teamSubmitting}
+              disabled={teamSubmitting || !!generatedPassword}
             />
-            <TextField
-              label={t('teamManagement.username')}
-              fullWidth
-              value={teamUsername}
-              onChange={(event) => setTeamUsername(event.target.value)}
-              required
-              disabled={!!currentTeam || teamSubmitting}
-            />
-            <TextField
-              label={t('teamManagement.password')}
-              type="password"
-              fullWidth
-              value={teamPassword}
-              onChange={(event) => setTeamPassword(event.target.value)}
-              required={!currentTeam}
-              disabled={teamSubmitting}
-              helperText={currentTeam ? t('teamManagement.leaveBlankForNoChange') : undefined}
-            />
+            {generatedPassword && (
+              <Stack spacing={1}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {t('teamManagement.generatedPassword')}
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={generatedPassword}
+                  type={showPassword ? 'text' : 'password'}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: (
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          onClick={handleCopyPassword}
+                          disabled={teamSubmitting}
+                          size="small"
+                          variant="outlined"
+                        >
+                          {t('common.copy')}
+                        </Button>
+                        <Button
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          disabled={teamSubmitting}
+                          size="small"
+                          variant="outlined"
+                        >
+                          {showPassword ? t('common.hide') : t('common.show')}
+                        </Button>
+                      </Stack>
+                    ),
+                  }}
+                />
+                {copySuccess && <Alert severity="success" sx={{ py: 0.5, px: 1, '& .MuiAlert-icon': { fontSize: 18 }, '& .MuiAlert-message': { fontSize: 13 } }}>{t('teamManagement.copySuccess')}</Alert>}
+              </Stack>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseTeamDialog} disabled={teamSubmitting}>
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleSaveTeam} variant="contained" disabled={teamSubmitting}>
-            {t('common.save')}
-          </Button>
+          {!generatedPassword ? (
+            <Button onClick={handleSaveTeam} variant="contained" disabled={teamSubmitting}>
+              {t('common.save')}
+            </Button>
+          ) : (
+            <Button onClick={handleCloseTeamDialog} variant="contained" disabled={teamSubmitting}>
+              {t('common.close')}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

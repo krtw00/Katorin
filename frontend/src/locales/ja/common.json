@@ -262,10 +262,10 @@
     "nameRequired": "参加者名を入力してください",
     "teamIdMissing": "チームIDが指定されていません"
   },
-  "teamLoginForm": {
-    "title": "チームログイン",
-    "username": "ユーザー名",
-    "password": "パスワード",
+      "teamLoginForm": {
+        "title": "チームログイン",
+        "tournamentCodeLabel": "大会コード",
+        "username": "ユーザー名",    "password": "パスワード",
     "loginButton": "ログイン",
     "backToAdminLogin": "運営ログインに戻る",
     "loginFailed": "ログインに失敗しました",

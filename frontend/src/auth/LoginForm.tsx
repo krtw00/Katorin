@@ -29,6 +29,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
   const { signInWithPassword } = useAuth();
   const [mode, setMode] = useState<LoginMode>('admin');
   const [email, setEmail] = useState('');
+  const [tournamentSlug, setTournamentSlug] = useState('');
   const [teamName, setTeamName] = useState('');
   const [password, setPassword] = useState('');
 
@@ -36,6 +37,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
     if (mode !== newMode) {
       setMode(newMode);
       setEmail('');
+      setTournamentSlug('');
       setTeamName('');
       setPassword('');
       setError(null);
@@ -54,10 +56,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
 
     try {
       if (mode === 'team') {
-        if (!teamName.trim()) {
-          throw new Error(t('auth.login.teamNameRequired'));
+        if (!teamName.trim() || !tournamentSlug.trim()) {
+          // 翻訳キーを使う方が望ましいが、一旦直接メッセージを入れる
+          throw new Error('大会コードとチーム名を入力してください。');
         }
-        await signInWithPassword({ email: teamName, password });
+        const teamEmail = `${teamName.trim()}@${tournamentSlug.trim()}.players.local`;
+        await signInWithPassword({ email: teamEmail, password });
       } else {
         await signInWithPassword({ email, password });
       }
@@ -132,14 +136,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
             ) : null}
             {error ? <Alert severity="error">{error}</Alert> : null}
             {mode === 'team' ? (
-              <TextField
-                label={t('auth.login.teamNameLabel')}
-                required
-                fullWidth
-                disabled={submitting}
-                value={teamName}
-                onChange={(event) => setTeamName(event.target.value)}
-              />
+              <>
+                <TextField
+                  label={t('teamLoginForm.tournamentCodeLabel')}
+                  required
+                  fullWidth
+                  disabled={submitting}
+                  value={tournamentSlug}
+                  onChange={(event) => setTournamentSlug(event.target.value)}
+                />
+                <TextField
+                  label={t('auth.login.teamNameLabel')}
+                  required
+                  fullWidth
+                  disabled={submitting}
+                  value={teamName}
+                  onChange={(event) => setTeamName(event.target.value)}
+                />
+              </>
             ) : (
               <TextField
                 label={t('auth.login.emailLabel')}

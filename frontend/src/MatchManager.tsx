@@ -51,7 +51,6 @@ type Round = {
 
 const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEntry, reloadToken }) => {
   const { t } = useTranslation();
-  const [view, setView] = useState<'matches' | 'participants'>('matches');
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -941,40 +940,6 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 {t('matchManager.description')}
               </Typography>
             </Stack>
-            <ToggleButtonGroup
-              exclusive
-              value={view}
-              onChange={(_, newView) => {
-                if (newView) setView(newView);
-              }}
-              sx={{
-                bgcolor: '#f6f7fb',
-                borderRadius: 999,
-                p: 0.5,
-                width: '100%',
-                boxShadow: 'inset 0 0 0 1px rgba(24, 32, 56, 0.08)',
-                '& .MuiToggleButton-root': {
-                  flex: 1,
-                  border: 'none',
-                  borderRadius: 999,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: '#6a7184',
-                },
-                '& .Mui-selected': {
-                  bgcolor: '#f4f7ff',
-                  color: '#1a1d2f',
-                  boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
-                },
-                '& .MuiToggleButton-root:hover': {
-                  bgcolor: 'rgba(30, 47, 103, 0.05)',
-                },
-              }}
-            >
-              <ToggleButton value="matches">{t('matchManager.matchList')}</ToggleButton>
-              <ToggleButton value="participants">{t('matchManager.participantManagement')}</ToggleButton>
-            </ToggleButtonGroup>
           </Stack>
         </Paper>
         <Box>
@@ -1016,23 +981,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
             </Box>
             {renderStatsChips()}
           </Stack>
-          {view === 'matches' ? (
-            renderMatchList()
-          ) : (
-            <Paper
-              sx={{
-                p: { xs: 3, md: 4 },
-                borderRadius: 4,
-                bgcolor: '#fff',
-                border: '1px dashed rgba(24, 32, 56, 0.16)',
-              }}
-            >
-              <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.participantManagementComingSoon')}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
-                {t('matchManager.participantManagementDescription')}
-              </Typography>
-            </Paper>
-          )}
+          {renderMatchList()}
         </Box>
       </Box>
       <MatchCreateDialog
