@@ -260,3 +260,66 @@ matchCreateDialog.noTeamsRegistered,チームが登録されていません。�
 common.updating,更新中...,Updating...
 common.creating,作成中...,Creating...
 common.update,更新,Update
+teamDashboard.title,チーム管理ダッシュボード,Team Management Dashboard
+teamDashboard.subtitle,{{teamName}} のメンバーと試合結果を管理します,Manage members and match results for {{teamName}}
+teamDashboard.noDate,日付未設定,No date set
+teamDashboard.loadTeamFailed,チーム情報の取得に失敗しました。,Failed to load team information.
+teamDashboard.loadParticipantsFailed,メンバー一覧の取得に失敗しました。,Failed to load members.
+teamDashboard.loadMatchesFailed,試合結果の取得に失敗しました。,Failed to load match results.
+teamDashboard.saveParticipantFailed,メンバーの保存に失敗しました。,Failed to save member.
+teamDashboard.deleteParticipantFailed,メンバーの削除に失敗しました。,Failed to delete member.
+teamDashboard.saveMatchFailed,試合結果の保存に失敗しました。,Failed to save match result.
+teamDashboard.deleteMatchFailed,試合結果の削除に失敗しました。,Failed to delete match result.
+teamDashboard.retry,再試行,Retry
+teamDashboard.memberCount,登録: {{total}} 名 (編集権限: {{editable}} 名),Members: {{total}} (Editors: {{editable}})
+teamDashboard.refresh,最新の状態に更新,Refresh
+teamDashboard.signOut,ログアウト,Sign out
+teamDashboard.membersTab,メンバー管理,Members
+teamDashboard.matchesTab,試合結果,Matches
+teamDashboard.membersSection,メンバー一覧,Team Members
+teamDashboard.membersDescription,チームメンバーを追加・編集し、編集権限を付与できます。,Add or edit team members and grant edit permissions.
+teamDashboard.addMember,メンバーを追加,Add member
+teamDashboard.noMembers,まだメンバーが登録されていません。,No members have been registered yet.
+teamDashboard.canEdit,編集権限あり,Can edit
+teamDashboard.cannotEdit,閲覧のみ,View only
+teamDashboard.updatedAt,最終更新: {{value}},Updated: {{value}}
+teamDashboard.memberNameRequired,メンバー名を入力してください。,Please enter a member name.
+teamDashboard.editMember,メンバーを編集,Edit member
+teamDashboard.deleteMember,メンバーを削除,Delete member
+teamDashboard.memberNameLabel,メンバー名,Member name
+teamDashboard.memberCanEditLabel,このメンバーに編集権限を付与,Allow this member to edit
+teamDashboard.cancel,キャンセル,Cancel
+teamDashboard.saving,保存中...,Saving...
+teamDashboard.save,保存,Save
+teamDashboard.confirmDeleteMember,{{name}} を削除しますか？,Delete {{name}}?
+teamDashboard.deleting,削除中...,Deleting...
+teamDashboard.delete,削除,Delete
+teamDashboard.matchesSection,試合一覧,Match Results
+teamDashboard.matchesDescription,自チームの試合結果を登録・更新できます。,Create and update match records for your team.
+teamDashboard.addMatch,試合結果を追加,Add match
+teamDashboard.noMatches,まだ試合結果が登録されていません。,No match results have been recorded yet.
+teamDashboard.unknownOpponent,対戦相手未設定,Opponent not set
+teamDashboard.matchScore,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
+teamDashboard.matchPlayer,担当: {{player}} / デッキ: {{deck}},Player: {{player}} / Deck: {{deck}}
+teamDashboard.noPlayer,プレイヤー未設定,Player not set
+teamDashboard.noDeck,デッキ未設定,Deck not set
+teamDashboard.editMatch,試合結果を編集,Edit match
+teamDashboard.deleteMatch,試合結果を削除,Delete match
+teamDashboard.matchPlayerLabel,自チームのプレイヤー,Your player
+teamDashboard.matchDeckLabel,使用デッキ,Deck
+teamDashboard.selfScoreLabel,自チームのスコア,Your score
+teamDashboard.opponentScoreLabel,相手のスコア,Opponent score
+teamDashboard.opponentTeamLabel,対戦相手チーム,Opponent team
+teamDashboard.opponentPlayerLabel,相手プレイヤー,Opponent player
+teamDashboard.opponentDeckLabel,相手デッキ,Opponent deck
+teamDashboard.matchDateLabel,試合日,Match date
+teamDashboard.tournamentIdLabel,大会ID (任意),Tournament ID (optional)
+teamDashboard.tournamentIdHelper,必要に応じて大会IDを関連付けます。,Link a tournament ID when needed.
+teamDashboard.roundIdLabel,ラウンドID (任意),Round ID (optional)
+teamDashboard.roundIdHelper,大会のラウンドIDがある場合は入力してください。,Set the round ID if the tournament uses one.
+teamDashboard.confirmDeleteMatch,この試合結果（相手: {{opponent}}）を削除しますか？,Delete this match result (opponent: {{opponent}})?
+matchManager.roundList.title,ラウンド一覧,Round List
+matchManager.roundList.noRounds,ラウンドがまだ作成されていません,No rounds have been created yet.
+matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
+teamDashboard.analyticsTab,分析,Analytics
+analytics.title,戦績分析,Match Analytics

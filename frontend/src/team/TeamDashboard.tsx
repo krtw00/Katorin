@@ -129,6 +129,8 @@ type TeamDashboardProps = {
   onSignOut?: () => void;
 };
 
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
+
 const TeamDashboard: React.FC<TeamDashboardProps> = ({ onSignOut }) => {
   const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
@@ -137,7 +139,7 @@ const TeamDashboard: React.FC<TeamDashboardProps> = ({ onSignOut }) => {
   const [teamLoading, setTeamLoading] = useState(true);
   const [teamError, setTeamError] = useState<string | null>(null);
 
-  const [tab, setTab] = useState<'members' | 'matches'>('members');
+  const [tab, setTab] = useState<'members' | 'matches' | 'analytics'>('members');
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [participantsLoading, setParticipantsLoading] = useState(false);
@@ -588,6 +590,7 @@ const TeamDashboard: React.FC<TeamDashboardProps> = ({ onSignOut }) => {
           >
             <Tab value="members" label={t('teamDashboard.membersTab')} />
             <Tab value="matches" label={t('teamDashboard.matchesTab')} />
+            <Tab value="analytics" label={t('teamDashboard.analyticsTab')} />
           </Tabs>
 
           <Box sx={{ mt: 3 }}>
@@ -672,7 +675,7 @@ const TeamDashboard: React.FC<TeamDashboardProps> = ({ onSignOut }) => {
                   </List>
                 )}
               </Stack>
-            ) : (
+            ) : tab === 'matches' ? (
               <Stack spacing={3}>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
                   <Stack spacing={0.5}>
@@ -747,6 +750,8 @@ const TeamDashboard: React.FC<TeamDashboardProps> = ({ onSignOut }) => {
                   </Stack>
                 )}
               </Stack>
+            ) : (
+              <AnalyticsDashboard />
             )}
           </Box>
         </Paper>
