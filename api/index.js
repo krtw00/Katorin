@@ -899,6 +899,301 @@ app.delete('/api/participants/:id', requireTeamAuth, async (req, res) => {
   }
 });
 
+// --- Team Self-service Endpoints (requireTeamAuth) ---
+
+// Team profile
+app.get('/api/team/me', requireTeamAuth, async (req, res) => {
+  try {
+    // Only expose minimal summary
+    const { id, name, username, created_at, updated_at } = req.team;
+    return res.json({ id, name, username, created_at, updated_at });
+  } catch (err) {
+    console.error('[GET /api/team/me] Unexpected error:', err);
+    return res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
+  }
+});
+
+// List participants for authenticated team
+app.get('/api/team/participants', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  try {
+    const { data, error } = await client
+      .from('participants')
+      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .eq('team_id', req.team.id)
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('[GET /api/team/participants] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data ?? []);
+  } catch (err) {
+    console.error('[GET /api/team/participants] Unexpected error:', err);
+    return res.status(500).json({ error: '参加者の取得に失敗しました。' });
+  }
+});
+
+// Create participant for authenticated team
+app.post('/api/team/participants', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const name = req.body?.name ? String(req.body.name).trim() : '';
+  const canEdit = Boolean(req.body?.canEdit ?? req.body?.can_edit ?? false);
+  if (!name) {
+    return res.status(400).json({ error: '参加者名は必須です。' });
+  }
+  try {
+    const { data, error } = await client
+      .from('participants')
+      .insert({ team_id: req.team.id, name, can_edit: canEdit, created_by: req.team.created_by })
+      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .single();
+    if (error) {
+      console.error('[POST /api/team/participants] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(201).json(data);
+  } catch (err) {
+    console.error('[POST /api/team/participants] Unexpected error:', err);
+    return res.status(500).json({ error: '参加者の追加に失敗しました。' });
+  }
+});
+
+// Update participant (owned by authenticated team)
+app.put('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { id } = req.params;
+  const name = req.body?.name ? String(req.body.name).trim() : undefined;
+  const canEdit = req.body?.canEdit ?? req.body?.can_edit;
+  try {
+    const { data: participant, error: fetchError } = await client
+      .from('participants')
+      .select('id, team_id')
+      .eq('id', id)
+      .single();
+    if (fetchError || !participant) {
+      console.error('[PUT /api/team/participants/:id] fetch error:', fetchError ?? 'participant not found');
+      return res.status(404).json({ error: '参加者が見つかりません。' });
+    }
+    if (participant.team_id !== req.team.id) {
+      return res.status(403).json({ error: 'この参加者を更新する権限がありません。' });
+    }
+    const updatePayload = {};
+    if (typeof name === 'string' && name.length > 0) updatePayload.name = name;
+    if (typeof canEdit === 'boolean') updatePayload.can_edit = canEdit;
+    if (Object.keys(updatePayload).length === 0) {
+      return res.status(400).json({ error: '更新するデータがありません。' });
+    }
+    const { data, error } = await client
+      .from('participants')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .single();
+    if (error) {
+      console.error('[PUT /api/team/participants/:id] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data);
+  } catch (err) {
+    console.error('[PUT /api/team/participants/:id] Unexpected error:', err);
+    return res.status(500).json({ error: '参加者の更新に失敗しました。' });
+  }
+});
+
+// Delete participant (owned by authenticated team)
+app.delete('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { id } = req.params;
+  try {
+    const { data: participant, error: fetchError } = await client
+      .from('participants')
+      .select('id, team_id')
+      .eq('id', id)
+      .single();
+    if (fetchError || !participant) {
+      console.error('[DELETE /api/team/participants/:id] fetch error:', fetchError ?? 'participant not found');
+      return res.status(404).json({ error: '参加者が見つかりません。' });
+    }
+    if (participant.team_id !== req.team.id) {
+      return res.status(403).json({ error: 'この参加者を削除する権限がありません。' });
+    }
+    const { error } = await client.from('participants').delete().eq('id', id);
+    if (error) {
+      console.error('[DELETE /api/team/participants/:id] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /api/team/participants/:id] Unexpected error:', err);
+    return res.status(500).json({ error: '参加者の削除に失敗しました。' });
+  }
+});
+
+// List matches for authenticated team
+app.get('/api/team/matches', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  try {
+    const { data, error } = await client
+      .from('matches')
+      .select('*')
+      .eq('team_id', req.team.id)
+      .order('date', { ascending: false });
+    if (error) {
+      console.error('[GET /api/team/matches] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data ?? []);
+  } catch (err) {
+    console.error('[GET /api/team/matches] Unexpected error:', err);
+    return res.status(500).json({ error: '試合結果の取得に失敗しました。' });
+  }
+});
+
+// Create match for authenticated team
+app.post('/api/team/matches', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const body = req.body ?? {};
+  const tournamentId = body.tournamentId ?? body.tournament_id;
+  const roundId = body.roundId ?? body.round_id;
+  if (!tournamentId) {
+    return res.status(400).json({ error: 'tournamentId を指定してください。' });
+  }
+  if (!roundId) {
+    return res.status(400).json({ error: 'roundId を指定してください。' });
+  }
+  const insertPayload = {
+    player: body.player ?? null,
+    deck: body.deck ?? null,
+    selfScore: body.selfScore ?? null,
+    opponentScore: body.opponentScore ?? null,
+    opponentTeam: body.opponentTeam ?? null,
+    opponentPlayer: body.opponentPlayer ?? null,
+    opponentDeck: body.opponentDeck ?? null,
+    date: body.date ?? null,
+    tournament_id: tournamentId,
+    round_id: roundId,
+    team_id: req.team.id,
+  };
+  try {
+    const { data, error } = await client
+      .from('matches')
+      .insert(insertPayload)
+      .select('*')
+      .single();
+    if (error) {
+      console.error('[POST /api/team/matches] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(201).json(data);
+  } catch (err) {
+    console.error('[POST /api/team/matches] Unexpected error:', err);
+    return res.status(500).json({ error: '試合結果の作成に失敗しました。' });
+  }
+});
+
+// Update match for authenticated team
+app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { id } = req.params;
+  const body = req.body ?? {};
+  try {
+    const { data: match, error: fetchError } = await client
+      .from('matches')
+      .select('id, team_id')
+      .eq('id', id)
+      .single();
+    if (fetchError || !match) {
+      console.error('[PUT /api/team/matches/:id] fetch error:', fetchError ?? 'match not found');
+      return res.status(404).json({ error: '試合結果が見つかりません。' });
+    }
+    if (match.team_id !== req.team.id) {
+      return res.status(403).json({ error: 'この試合結果を更新する権限がありません。' });
+    }
+    const updatePayload = {};
+    const m = body;
+    if ('player' in m) updatePayload.player = m.player;
+    if ('deck' in m) updatePayload.deck = m.deck;
+    if ('selfScore' in m) updatePayload.selfScore = m.selfScore;
+    if ('opponentScore' in m) updatePayload.opponentScore = m.opponentScore;
+    if ('opponentTeam' in m) updatePayload.opponentTeam = m.opponentTeam;
+    if ('opponentPlayer' in m) updatePayload.opponentPlayer = m.opponentPlayer;
+    if ('opponentDeck' in m) updatePayload.opponentDeck = m.opponentDeck;
+    if ('date' in m) updatePayload.date = m.date;
+    if ('tournamentId' in m || 'tournament_id' in m) updatePayload.tournament_id = m.tournamentId ?? m.tournament_id;
+    if ('roundId' in m || 'round_id' in m) updatePayload.round_id = m.roundId ?? m.round_id;
+    if (Object.keys(updatePayload).length === 0) {
+      return res.status(400).json({ error: '更新するデータがありません。' });
+    }
+    const { data, error } = await client
+      .from('matches')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) {
+      console.error('[PUT /api/team/matches/:id] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data);
+  } catch (err) {
+    console.error('[PUT /api/team/matches/:id] Unexpected error:', err);
+    return res.status(500).json({ error: '試合結果の更新に失敗しました。' });
+  }
+});
+
+// Delete match for authenticated team
+app.delete('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { id } = req.params;
+  try {
+    const { data: match, error: fetchError } = await client
+      .from('matches')
+      .select('id, team_id')
+      .eq('id', id)
+      .single();
+    if (fetchError || !match) {
+      console.error('[DELETE /api/team/matches/:id] fetch error:', fetchError ?? 'match not found');
+      return res.status(404).json({ error: '試合結果が見つかりません。' });
+    }
+    if (match.team_id !== req.team.id) {
+      return res.status(403).json({ error: 'この試合結果を削除する権限がありません。' });
+    }
+    const { error } = await client.from('matches').delete().eq('id', id);
+    if (error) {
+      console.error('[DELETE /api/team/matches/:id] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /api/team/matches/:id] Unexpected error:', err);
+    return res.status(500).json({ error: '試合結果の削除に失敗しました。' });
+  }
+});
+
 // Get all matches for a tournament (optionally filtered by round)
 app.get('/api/matches', requireAuth, async (req, res) => {
   const client = req.supabase;
