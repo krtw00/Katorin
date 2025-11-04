@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -77,7 +77,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
   const [teamsLoading, setTeamsLoading] = useState(true);
   const authFetch = useAuthorizedFetch();
 
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     setTeamsLoading(true);
     try {
       const response = await authFetch('/api/teams');
@@ -92,7 +92,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
     } finally {
       setTeamsLoading(false);
     }
-  };
+  }, [authFetch, t]);
 
   useEffect(() => {
     if (open) {
@@ -108,7 +108,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
       }
       setError(null);
     }
-  }, [open, mode, match]);
+  }, [open, mode, match, fetchTeams]);
 
   const handleChange =
     (field: keyof MatchFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

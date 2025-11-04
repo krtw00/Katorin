@@ -74,11 +74,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const [deleteSubmitting, setDeleteSubmitting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [teamsLoading, setTeamsLoading] = useState<boolean>(true);
   const authFetch = useAuthorizedFetch();
 
   const fetchTeams = useCallback(async () => {
-    setTeamsLoading(true);
     try {
       const response = await authFetch('/api/teams');
       const data = await response.json();
@@ -89,8 +87,6 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
     } catch (err: any) {
       console.error('Failed to fetch teams:', err);
       setError(err.message || t('matchManager.fetchTeamsError'));
-    } finally {
-      setTeamsLoading(false);
     }
   }, [authFetch, t]);
 
@@ -265,7 +261,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         };
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }, [matches, t]);
+  }, [matches, teams, t]);
 
   const stats = useMemo<MatchStats>(() => {
     const teams = new Set<string>();
