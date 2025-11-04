@@ -75,6 +75,8 @@
       "emailLabel": "メールアドレス",
       "passwordLabel": "パスワード（6文字以上）",
       "displayNameLabel": "表示名（任意）",
+      "tokenLabel": "登録コード（任意／運用時は必須）",
+      "tokenHelper": "`.env` の ADMIN_SIGNUP_TOKEN と一致させて入力してください。未設定の環境では空欄で作成できます。",
       "cancel": "キャンセル",
       "submit": "作成する",
       "submitting": "作成中...",

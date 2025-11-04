@@ -75,6 +75,8 @@
       "emailLabel": "Email Address",
       "passwordLabel": "Password (6+ characters)",
       "displayNameLabel": "Display Name (Optional)",
+      "tokenLabel": "Registration Code (required in prod)",
+      "tokenHelper": "Enter the same value as ADMIN_SIGNUP_TOKEN in `.env`. Leave empty if not set.",
       "cancel": "Cancel",
       "submit": "Create",
       "submitting": "Creating...",

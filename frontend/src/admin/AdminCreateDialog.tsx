@@ -25,6 +25,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [displayName, setDisplayName] = useState<string>('');
+  const [token, setToken] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -32,6 +33,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
     setEmail('');
     setPassword('');
     setDisplayName('');
+    setToken('');
     setError(null);
     setSubmitting(false);
   };
@@ -53,6 +55,7 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
           email,
           password,
           displayName: displayName.trim() || undefined,
+          token: token.trim() || undefined,
         }),
       });
       const contentType = response.headers.get('content-type') ?? '';
@@ -113,6 +116,13 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             disabled={submitting}
+          />
+          <TextField
+            label={t('admin.create.tokenLabel')}
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            disabled={submitting}
+            helperText={t('admin.create.tokenHelper')}
           />
         </Stack>
       </DialogContent>
