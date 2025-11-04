@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Katorin API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3001
+paths:
+  /api/matches:
+    get:
+      summary: List matches
+      parameters:
+        - in: query
+          name: tournamentId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: roundId
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create match
+      responses:
+        '201':
+          description: Created
+  /api/tournaments:
+    get:
+      summary: List tournaments
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create tournament (admin)
+      responses:
+        '201':
+          description: Created
