@@ -1,5 +1,5 @@
 import React from 'react';
-// TODO: Uncomment when recharts is added to dependencies
+// TODO: Uncomment when recharts is properly installed and configured
 // import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTranslation } from 'react-i18next';
 
