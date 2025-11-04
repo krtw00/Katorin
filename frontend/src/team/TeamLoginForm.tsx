@@ -20,11 +20,23 @@ const TeamLoginForm: React.FC = () => {
     setLoading(true);
 
     try {
-      const email = `${username}@${tournamentSlug}.players.local`;
-      await signInWithPassword({ email, password });
+      // チーム用の独自ログインAPIを使用
+      const resp = await fetch('/api/teams/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || 'Login failed');
+      }
 
-      // Supabase Authがセッションを管理するため、localStorageの直接操作は不要
-      navigate('/'); // ログイン成功後はトップページにリダイレクト
+      // JWT と teamId を保存
+      localStorage.setItem('team_jwt_token', data.token);
+      localStorage.setItem('team_id', data.teamId);
+      if (data.name) localStorage.setItem('team_name', data.name);
+
+      navigate('/team-dashboard');
     } catch (err: any) {
       console.error('Team login error:', err);
       setError(err.message || t('teamLoginForm.loginFailed'));

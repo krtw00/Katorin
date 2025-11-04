@@ -13,6 +13,8 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import TeamLoginForm from './team/TeamLoginForm';
 import TeamManagementPage from './team/TeamManagementPage';
 import ParticipantManagementPage from './team/ParticipantManagementPage';
+import TeamDashboard from './team/TeamDashboard';
+import MatchList from './matches/MatchList';
 
 const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
@@ -63,11 +65,23 @@ const AppRoutes: React.FC = () => {
   }, [selectedTournament]);
 
   const handleSignOut = () => {
+    clearTeamSession();
     signOut().catch((err) => {
       console.error('Sign-out failed:', err);
     });
   };
 
+  const clearTeamSession = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('team_jwt_token');
+        window.localStorage.removeItem('team_id');
+        window.localStorage.removeItem('team_name');
+      }
+    } catch (e) {
+      console.warn('Failed to clear team session', e);
+    }
+  };
   const isAdmin = useMemo(() => {
     const primaryRole = user?.app_metadata?.role;
     const roles = user?.app_metadata?.roles;
@@ -79,6 +93,22 @@ const AppRoutes: React.FC = () => {
       .map((value) => value.toString().toLowerCase());
     return normalized.includes('admin');
   }, [user]);
+
+  useEffect(() => {
+    // 管理者セッションがある時はチーム側セッションを常にクリアして衝突を防ぐ
+    if (session && isAdmin) {
+      clearTeamSession();
+    }
+  }, [session, isAdmin]);
+
+
+  const handleTeamSignOut = async () => {
+    try {
+      await signOut();
+    } catch {}
+    clearTeamSession();
+    navigate('/login');
+  };
 
   const handleTournamentSelected = (tournament: Tournament) => {
     setSelectedTournament(tournament);
@@ -242,8 +272,36 @@ const AppRoutes: React.FC = () => {
         </Box>
       ) : (
         <Routes>
-          <Route path="/login" element={session ? <Navigate to="/" /> : <LoginForm onShowPasswordReset={() => navigate('/password-reset')} />} />
-          <Route path="/password-reset" element={session ? <Navigate to="/" /> : <PasswordResetForm onBackToLogin={() => navigate('/login')} />} />
+          <Route
+            path="/login"
+            element={
+              session ? (
+                <Navigate to="/" />
+              ) : (
+                <LoginForm
+                  onShowPasswordReset={() => {
+                    clearTeamSession();
+                    navigate('/password-reset');
+                  }}
+                />
+              )
+            }
+          />
+          <Route
+            path="/password-reset"
+            element={
+              session ? (
+                <Navigate to="/" />
+              ) : (
+                <PasswordResetForm
+                  onBackToLogin={() => {
+                    clearTeamSession();
+                    navigate('/login');
+                  }}
+                />
+              )
+            }
+          />
           <Route
             path="/"
             element={
@@ -265,15 +323,16 @@ const AppRoutes: React.FC = () => {
                     />
                   )
                 ) : (
-                  renderParticipantPlaceholder()
+                  <Navigate to="/team-dashboard" />
                 )
               ) : (
                 <Navigate to="/login" />
               )
             }
           />
-          {/* Team Management Routes (Placeholders for now) */}
-          <Route path="/team-login" element={<TeamLoginForm />} />
+          {/* Team Management Routes */}
+          <Route path="/team-dashboard" element={<TeamDashboard onSignOut={handleTeamSignOut} />} />
+          <Route path="/matches" element={<MatchList />} />
           <Route path="/team-management" element={<TeamManagementPage />} />
           <Route path="/team/:teamId/participants" element={<ParticipantManagementPage />} />
           {/* Fallback for unknown routes */}
