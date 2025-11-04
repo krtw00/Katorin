@@ -20,12 +20,12 @@ Katorinは、トーナメント管理システムです。チーム管理、試�
 
 ### 3.1. フロントエンド
 - **言語**: TypeScript
-- **フレームワーク**: React 18
+- **フレームワーク**: React 18/19 系（Create React App ベース）
 - **UI ライブラリ**: Material-UI (MUI)
-- **ビルドツール**: Vite
+- **ビルド/開発**: Create React App（`react-scripts`）
 - **国際化**: react-i18next
 - **状態管理**: React Context API + Hooks
-- **テスト**: Vitest, React Testing Library
+- **テスト**: Jest（CRA 標準）+ React Testing Library
 
 ### 3.2. バックエンド
 - **BaaS**: Supabase
@@ -192,8 +192,9 @@ frontend/
 
 ### 10.4. 環境変数管理
 - `.env.local` ファイルで管理
-- 公開可能な変数のみ `VITE_` プレフィックス
-- GitHub Secretsで本番環境の変数を管理
+- フロントエンドは CRA の慣習に従い `REACT_APP_` プレフィックス（例: `REACT_APP_SUPABASE_URL`）
+- サーバーサイドは `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` など
+- GitHub Secrets で本番環境の変数を管理
 
 ## 11. テスト戦略
 

@@ -53,7 +53,7 @@
 ## 5. テスト
 
 ### 5.1. テストフレームワーク
-- **フロントエンド**: Vitest, React Testing Library
+- **フロントエンド**: Jest（CRA 標準）+ React Testing Library
 - **E2Eテスト**: Playwright または Cypress (検討中)
 
 ### 5.2. テスト要件
@@ -66,8 +66,8 @@
 - 重要な機能 (認証、決済など) は 90%以上を目指します。
 
 ### 5.4. テスト実行
-- ローカルでのテスト実行: `npm test`
-- CI/CDでの自動テスト実行 (後述)
+- ローカルでのテスト実行: `npm test --prefix frontend`
+- CI/CD での自動テスト実行（後述）
 
 ## 6. ドキュメンテーション
 - APIの変更や複雑なロジックには、適宜ドキュメントを更新または追加します。
@@ -97,11 +97,10 @@
 
 ### 8.2. 環境変数
 - 環境変数は `.env.local` ファイルで管理します。
-- `.env.local` はGit追跡対象外とし、`.env.example` にサンプルを記載します。
-- Supabase関連の環境変数:
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY` (サーバーサイドのみ、厳重管理)
+- `.env.local` は Git 追跡対象外とし、`.env.example` にサンプルを記載します。
+- Supabase 関連の環境変数:
+  - フロントエンド: `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`
+  - サーバーサイド: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ### 8.3. Supabase環境
 - ローカル開発: `npx supabase start` でローカルSupabaseを起動
