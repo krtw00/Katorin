@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack, Paper, Checkbox, FormControlLabel } from '@mui/material';
-import { Edit, Delete, PersonAdd, ArrowForward } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Edit, Delete, PersonAdd } from '@mui/icons-material';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 interface Participant {
@@ -20,7 +20,6 @@ interface Team {
 const ParticipantManagementPage: React.FC = () => {
   const { t } = useTranslation();
   const { teamId } = useParams<{ teamId: string }>();
-  const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [teams, setTeams] = useState<Team[]>([]); // For moving participants
   const [teamName, setTeamName] = useState<string | null>(null);

@@ -102,12 +102,6 @@ const parseScore = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const determineScoreStatus = (selfScore: number | null, opponentScore: number | null): ScoreStatus => {
-  if (selfScore === null || opponentScore === null) return 'pending';
-  if (selfScore > opponentScore) return 'homeWin';
-  if (selfScore < opponentScore) return 'awayWin';
-  return 'draw';
-};
 
 const statusMeta: Record<ScoreStatus, { chipBg: string; chipColor: string; homeHighlight: boolean; awayHighlight: boolean }> = {
   homeWin: { chipBg: '#e6f7ef', chipColor: '#1f8a5d', homeHighlight: true, awayHighlight: false },
@@ -160,7 +154,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
 
   useEffect(() => {
     fetchTeams();
-  }, [fetchTeams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const makeSnapshot = useCallback(
     (formValues: MatchFormValues, rows: GameRow[]) =>
@@ -219,15 +214,6 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   }, [isFinalized, scoreState, form.team, form.opponentTeam, gameRows.length, t]);
 
   const snapshot = useMemo(() => makeSnapshot(form, gameRows), [form, gameRows, makeSnapshot]);
-
-  const handleChange =
-    (field: keyof MatchFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { value } = event.target;
-      setForm((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
 
   const fetchMatch = useCallback(async () => {
     if (!matchId || teams.length === 0) { // teamsが読み込まれるまで待機
@@ -335,14 +321,15 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     } finally {
       setLoading(false);
     }
-  }, [authFetch, makeSnapshot, matchId, t]);
+  }, [authFetch, makeSnapshot, matchId, teams, t]);
 
   useEffect(() => {
     // This will run when matchId changes OR when teams array is populated
     if (teams.length > 0) {
       fetchMatch();
     }
-  }, [teams, fetchMatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, teams.length]);
 
   const handleSave = useCallback(
     async (mode: 'auto' | 'finalize' | 'unfinalize', snapshotValue: string) => {
