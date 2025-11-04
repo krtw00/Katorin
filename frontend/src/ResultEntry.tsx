@@ -154,7 +154,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
 
   useEffect(() => {
     fetchTeams();
-  }, [fetchTeams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const makeSnapshot = useCallback(
     (formValues: MatchFormValues, rows: GameRow[]) =>
@@ -327,7 +328,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     if (teams.length > 0) {
       fetchMatch();
     }
-  }, [teams, fetchMatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, teams.length]);
 
   const handleSave = useCallback(
     async (mode: 'auto' | 'finalize' | 'unfinalize', snapshotValue: string) => {
