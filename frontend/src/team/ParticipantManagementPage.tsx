@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack, Paper, Checkbox, FormControlLabel } from '@mui/material';
-import { Edit, Delete, PersonAdd, ArrowForward } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack, Paper } from '@mui/material';
+import { Edit, Delete, PersonAdd } from '@mui/icons-material';
+import { useParams } from 'react-router-dom';
+import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useTranslation } from 'react-i18next';
 
 interface Participant {
@@ -20,7 +21,6 @@ interface Team {
 const ParticipantManagementPage: React.FC = () => {
   const { t } = useTranslation();
   const { teamId } = useParams<{ teamId: string }>();
-  const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [teams, setTeams] = useState<Team[]>([]); // For moving participants
   const [teamName, setTeamName] = useState<string | null>(null);
@@ -29,20 +29,15 @@ const ParticipantManagementPage: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [participantName, setParticipantName] = useState('');
-  const [canEdit, setCanEdit] = useState(false);
+  // チーム側では編集権限の付与は不可（管理者のみ）
   const [newTeamId, setNewTeamId] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const teamToken = localStorage.getItem('team_jwt_token');
+  const authFetch = useAuthorizedFetch();
 
   const fetchTeamDetails = useCallback(async () => {
-    if (!teamId || !teamToken) return;
     try {
-      const response = await fetch(`/api/teams/${teamId}`, {
-        headers: {
-          Authorization: `Bearer ${teamToken}`,
-        },
-      });
+      const response = await authFetch(`/api/team/me`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('participantManagement.fetchTeamError'));
@@ -52,21 +47,13 @@ const ParticipantManagementPage: React.FC = () => {
       console.error('Failed to fetch team details:', err);
       setError(err.message || t('participantManagement.fetchTeamError'));
     }
-  }, [teamId, teamToken, t]);
+  }, [authFetch, t]);
 
   const fetchParticipants = useCallback(async () => {
-    if (!teamId || !teamToken) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/teams/${teamId}/participants`, {
-        headers: {
-          Authorization: `Bearer ${teamToken}`,
-        },
-      });
+      const response = await authFetch(`/api/team/participants`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('participantManagement.fetchError'));
@@ -78,17 +65,12 @@ const ParticipantManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [teamId, teamToken, t]);
+  }, [authFetch, t]);
 
   const fetchTeamsForMove = useCallback(async () => {
-    const adminToken = localStorage.getItem('sb:token'); // Assuming admin token is stored here
-    if (!adminToken) return;
+    // fetch teams using supabase auth
     try {
-      const response = await fetch('/api/teams', {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
+      const response = await authFetch('/api/teams');
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('participantManagement.fetchTeamsForMoveError'));
@@ -108,7 +90,7 @@ const ParticipantManagementPage: React.FC = () => {
   const handleOpenCreateDialog = () => {
     setCurrentParticipant(null);
     setParticipantName('');
-    setCanEdit(false);
+    // can_edit は常に付与不可
     setNewTeamId(teamId || null);
     setDialogError(null);
     setOpenDialog(true);
@@ -117,7 +99,7 @@ const ParticipantManagementPage: React.FC = () => {
   const handleOpenEditDialog = (participant: Participant) => {
     setCurrentParticipant(participant);
     setParticipantName(participant.name);
-    setCanEdit(participant.can_edit);
+    // can_edit は表示のみで編集不可
     setNewTeamId(participant.team_id);
     setDialogError(null);
     setOpenDialog(true);
@@ -141,18 +123,18 @@ const ParticipantManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const method = currentParticipant ? 'PUT' : 'POST';
-      const url = currentParticipant ? `/api/participants/${currentParticipant.id}` : `/api/teams/${teamId}/participants`;
-      const body: any = { name: participantName, can_edit: canEdit };
+      const url = currentParticipant
+        ? `/api/team/participants/${currentParticipant.id}`
+        : `/api/team/participants`;
+      // can_edit はチーム側から変更不可
+      const body: any = { name: participantName };
       if (currentParticipant && newTeamId && newTeamId !== currentParticipant.team_id) {
         body.team_id = newTeamId;
       }
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${teamToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
@@ -180,12 +162,7 @@ const ParticipantManagementPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/participants/${participantId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${teamToken}`,
-        },
-      });
+      const response = await authFetch(`/api/team/participants/${participantId}`, { method: 'DELETE' });
 
       if (!response.ok) {
         const data = await response.json();
@@ -259,10 +236,7 @@ const ParticipantManagementPage: React.FC = () => {
               onChange={(e) => setParticipantName(e.target.value)}
               required
             />
-            <FormControlLabel
-              control={<Checkbox checked={canEdit} onChange={(e) => setCanEdit(e.target.checked)} />}
-              label={t('participantManagement.grantEditPermission')}
-            />
+            {/* 編集権限の付与はチーム側では不可（管理者機能） */}
             {currentParticipant && (
               <TextField
                 select

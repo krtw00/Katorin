@@ -1,6 +1,16 @@
 # Katorin 開発メモ
 
-このリポジトリでは Supabase をデータストアとして利用し、`/api/matches` 経由でフロントエンドと連携します。ローカル Supabase を使った開発手順を以下にまとめます。
+このリポジトリでは Supabase をデータストアとして利用し、`/api/*` を介してフロントエンド（CRA）と連携します。本書は概要です。詳細は各ドキュメントを参照してください。
+
+## 📚 さらに詳しく（正規の参照先）
+- アーキテクチャ: `docs/architecture.md`
+- 開発規約/テスト指針: `docs/development_guidelines.md`, `docs/testing_guidelines.md`
+- API 仕様: `docs/api/endpoints.md`（正規）/ 将来: `docs/api/openapi.yaml`
+- DB スキーマ: `docs/db-schema.md`
+- RLS ポリシー: `docs/rls_policies.md`
+- デプロイ: `docs/deployment.md`
+- 運用 Runbook/インシデント: `docs/operational_runbooks.md`, `docs/incident_response.md`
+- メール送信（本番）: `docs/gmail-smtp-setup.md`
 
 ## 必要なツール
 
@@ -29,7 +39,7 @@ npm install --prefix frontend
    Studio URL: http://127.0.0.1:54323
    ```
 
-2. ルート直下に `.env.local` を作成し、バックエンド API 用の環境変数を設定します。
+2. ルート直下に `.env.local` を作成し、バックエンド API 用の環境変数を設定します（雛形は `.env.example` を参照）。
    ```bash
    # .env.local
    SUPABASE_URL=http://127.0.0.1:54321
@@ -38,7 +48,7 @@ npm install --prefix frontend
    ```
    ※ 上記のキーはローカル開発環境用のデフォルト値です。`npx supabase start` の出力に表示される値を使用してください。
 
-3. フロントエンド用の環境変数を設定します。`frontend/.env.local` を作成してください。
+3. フロントエンド用の環境変数を設定します。`frontend/.env.local` を作成してください（雛形は `frontend/.env.example` を参照）。
    ```bash
    # frontend/.env.local
    REACT_APP_SUPABASE_URL=http://127.0.0.1:54321
@@ -135,7 +145,7 @@ npm run dev:frontend   # CRA 開発サーバー
 - `POST /api/password-reset`
   パスワードリセットメールを送信します（認証不要）。本文に `email` を含めてください。ローカル開発環境では Mailpit（http://127.0.0.1:54324）でメールを確認できます。
 
-エラーが発生した場合はレスポンスにメッセージが含まれ、サーバーログにも詳細が出力されます。
+エラーが発生した場合はレスポンスにメッセージが含まれ、サーバーログにも詳細が出力されます。詳細な仕様とサンプルは `docs/api/endpoints.md` を参照してください。
 
 > ℹ️ 全ての `/api/matches` エンドポイントは Supabase 認証トークン（`Authorization: Bearer ...`）が必須です。さらに `GET /api/matches` では `tournamentId`（必要に応じて `roundId`）のクエリパラメータを指定してください。`POST /api/matches` や `PUT /api/matches/:id` の際は本文に `tournamentId` と `roundId` を含める必要があります。
 > 大会やラウンドの作成・締め操作（`POST /api/tournaments*`）、および管理者アカウント作成 (`POST /api/admin/users`) も同様に認証が必須で、Supabase ユーザーの `app_metadata.role` に `admin` が含まれている必要があります。
