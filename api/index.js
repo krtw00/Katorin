@@ -1865,15 +1865,9 @@ app.post('/api/admin/users', async (req, res) => {
       .json({ error: 'SERVICE ROLE KEY が設定されていないため管理者ユーザーを作成できません。' });
   }
 
-  const adminSignupToken = process.env.ADMIN_SIGNUP_TOKEN;
-
-  const { email, password, displayName, token } = req.body ?? {};
+  const { email, password, displayName } = req.body ?? {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedPassword = typeof password === 'string' ? password.trim() : '';
-
-  if (adminSignupToken && (typeof token !== 'string' || token.trim() !== adminSignupToken)) {
-    return res.status(403).json({ error: '無効な登録コードです。' });
-  }
 
   if (!normalizedEmail) {
     return res.status(400).json({ error: 'メールアドレスを入力してください。' });

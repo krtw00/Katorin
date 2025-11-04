@@ -59,8 +59,6 @@ admin.create.subtitle,作成したメールアドレスとパスワードでロ�
 admin.create.emailLabel,メールアドレス,Email Address
 admin.create.passwordLabel,パスワード（6文字以上）,Password (6+ characters)
 admin.create.displayNameLabel,表示名（任意）,Display Name (Optional)
-admin.create.tokenLabel,登録コード（任意／運用時は必須）,Registration Code (required in prod)
-admin.create.tokenHelper,`.env` の ADMIN_SIGNUP_TOKEN と一致させて入力してください。未設定の環境では空欄で作成できます。,Enter the same value as ADMIN_SIGNUP_TOKEN in `.env`. Leave empty if not set.
 admin.create.cancel,キャンセル,Cancel
 admin.create.submit,作成する,Create
 admin.create.submitting,作成中...,Creating...
