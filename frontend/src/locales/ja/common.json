@@ -108,7 +108,8 @@
     "create": "作成",
     "updating": "更新中...",
     "creating": "作成中...",
-    "update": "更新"
+    "update": "更新",
+    "inputResult": "結果入力"
   },
   "app": {
     "title": "Katorin Match Manager",
@@ -230,6 +231,14 @@
     "completed": "結果確定 {{count}}",
     "pending": "結果待ち {{count}}",
     "registeredTeams": "登録チーム {{count}}",
+    "setInputPermission": "入力権限を設定",
+    "inputPermissionTitle": "入力権限の設定",
+    "inputPermissionDescription": "この対戦の結果入力を許可する対象を選択してください。admin は運営のみ、特定チームを選ぶとそのチームのみ入力可能になります。",
+    "permissionNone": "未許可（入力不可）",
+    "permissionAdmin": "運営のみ（常時可）",
+    "updatePermissionFailed": "入力権限の更新に失敗しました。",
+    "saving": "保存中...",
+    "save": "保存",
     "roundList": {
       "title": "ラウンド一覧",
       "noRounds": "ラウンドがまだ作成されていません",
@@ -368,5 +377,16 @@
   },
   "analytics": {
     "title": "戦績分析"
+  },
+  "teamResultEntry": {
+    "title": "試合結果入力",
+    "loading": "読み込み中...",
+    "viewOnly": "この試合は参照のみです。",
+    "selfScore": "自チームスコア",
+    "opponentScore": "相手チームスコア",
+    "backToList": "一覧へ戻る",
+    "cancel": "取消",
+    "save": "保存",
+    "finalize": "確定"
   }
 }

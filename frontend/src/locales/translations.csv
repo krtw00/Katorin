@@ -195,6 +195,14 @@ matchManager.totalMatches,総対戦 {{count}},Total Matches {{count}}
 matchManager.completed,結果確定 {{count}},Completed {{count}}
 matchManager.pending,結果待ち {{count}},Pending {{count}}
 matchManager.registeredTeams,登録チーム {{count}},Registered Teams {{count}}
+matchManager.setInputPermission,入力権限を設定,Set Input Permission
+matchManager.inputPermissionTitle,入力権限の設定,Set Input Permission
+matchManager.inputPermissionDescription,この対戦の結果入力を許可する対象を選択してください。"admin" は運営のみ、特定チームを選ぶとそのチームのみ入力可能になります。,Select who can enter results for this match. "admin" allows admins only; choosing a specific team allows only that team to enter.
+matchManager.permissionNone,未許可（入力不可）,Not Allowed (No Input)
+matchManager.permissionAdmin,運営のみ（常時可）,Admin Only (Always Allowed)
+matchManager.updatePermissionFailed,入力権限の更新に失敗しました。,Failed to update input permission.
+matchManager.saving,保存中...,Saving...
+matchManager.save,保存,Save
 teamManagement.title,チーム管理,Team Management
 teamManagement.createTeam,チームを作成,Create Team
 teamManagement.editTeam,チームを編集,Edit Team
@@ -323,3 +331,13 @@ matchManager.roundList.noRounds,ラウンドがまだ作成されていません
 matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
 teamDashboard.analyticsTab,分析,Analytics
 analytics.title,戦績分析,Match Analytics
+teamResultEntry.title,試合結果入力,Result Entry
+teamResultEntry.loading,読み込み中...,Loading...
+teamResultEntry.viewOnly,この試合は参照のみです。,This match is view-only.
+teamResultEntry.selfScore,自チームスコア,Home Team Score
+teamResultEntry.opponentScore,相手チームスコア,Away Team Score
+teamResultEntry.backToList,一覧へ戻る,Back to List
+teamResultEntry.cancel,取消,Cancel
+teamResultEntry.save,保存,Save
+teamResultEntry.finalize,確定,Finalize
+common.inputResult,結果入力,Enter Result
