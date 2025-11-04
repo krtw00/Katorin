@@ -108,7 +108,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
       }
       setError(null);
     }
-  }, [open, mode, match]);
+  }, [open, mode, match, fetchTeams]);
 
   const handleChange =
     (field: keyof MatchFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

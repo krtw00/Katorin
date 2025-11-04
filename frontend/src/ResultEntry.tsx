@@ -102,12 +102,6 @@ const parseScore = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const determineScoreStatus = (selfScore: number | null, opponentScore: number | null): ScoreStatus => {
-  if (selfScore === null || opponentScore === null) return 'pending';
-  if (selfScore > opponentScore) return 'homeWin';
-  if (selfScore < opponentScore) return 'awayWin';
-  return 'draw';
-};
 
 const statusMeta: Record<ScoreStatus, { chipBg: string; chipColor: string; homeHighlight: boolean; awayHighlight: boolean }> = {
   homeWin: { chipBg: '#e6f7ef', chipColor: '#1f8a5d', homeHighlight: true, awayHighlight: false },
@@ -220,15 +214,6 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
 
   const snapshot = useMemo(() => makeSnapshot(form, gameRows), [form, gameRows, makeSnapshot]);
 
-  const handleChange =
-    (field: keyof MatchFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { value } = event.target;
-      setForm((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
-
   const fetchMatch = useCallback(async () => {
     if (!matchId || teams.length === 0) { // teamsが読み込まれるまで待機
       setForm(emptyForm);
@@ -335,7 +320,7 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     } finally {
       setLoading(false);
     }
-  }, [authFetch, makeSnapshot, matchId, t]);
+  }, [authFetch, makeSnapshot, matchId, teams, t]);
 
   useEffect(() => {
     // This will run when matchId changes OR when teams array is populated
