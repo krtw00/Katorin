@@ -1,14 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Grid,
-  Paper,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
