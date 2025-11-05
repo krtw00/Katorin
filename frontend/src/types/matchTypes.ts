@@ -12,6 +12,8 @@ export type MatchRecord = {
   created_at?: string | null;
   tournament_id?: string | null;
   round_id?: string | null;
+  input_allowed_team_id?: string | null; // 'admin' | team uuid | null
+  result_status?: 'draft' | 'finalized' | string | null;
 };
 
 export type MatchFormValues = {
