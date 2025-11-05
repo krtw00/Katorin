@@ -1,11 +1,8 @@
 -- Issue #33: Team match management groundwork
--- - Remove legacy deck columns
--- - Add timezone column
+-- - Add timezone column for team-submitted matches
 -- - Configure RLS for team users based on participants.can_edit
 
 alter table public.matches
-  drop column if exists "deck",
-  drop column if exists "opponentDeck",
   add column if not exists timezone text;
 
 -- Team-facing RLS policies

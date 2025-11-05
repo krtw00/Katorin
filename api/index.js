@@ -1611,7 +1611,7 @@ app.post('/api/matches', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { tournamentId, roundId, deck: _deck, opponentDeck: _opponentDeck, timezone, ...rest } = req.body ?? {};
+  const { tournamentId, roundId, timezone, ...rest } = req.body ?? {};
   if (!tournamentId) {
     return res.status(400).json({ error: 'tournamentId を指定してください。' });
   }
@@ -1624,8 +1624,8 @@ app.post('/api/matches', requireAuth, async (req, res) => {
     tournament_id: tournamentId,
     round_id: roundId,
   };
-  if (typeof timezone === 'string') {
-    insertPayload.timezone = timezone;
+  if (timezone !== undefined) {
+    insertPayload.timezone = typeof timezone === 'string' ? timezone : null;
   }
 
   const { data, error } = await client
@@ -1647,7 +1647,7 @@ app.put('/api/matches/:id', requireAuth, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const body = req.body ?? {};
-  const { tournamentId, roundId, deck: _deck, opponentDeck: _opponentDeck, timezone, ...rest } = body;
+  const { tournamentId, roundId, timezone, ...rest } = body;
   const updatePayload = { ...rest };
 
   if (roundId !== undefined) {
