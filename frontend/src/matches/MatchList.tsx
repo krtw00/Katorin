@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  Grid,
   IconButton,
   Pagination,
   Paper,
@@ -26,7 +27,6 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import { useTheme } from '@mui/material/styles';
@@ -271,7 +271,7 @@ const MatchList: React.FC = () => {
             {t('matchList.filters')}
           </Typography>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid xs={12} md={4}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label={t('matchList.searchPlayer')}
@@ -279,7 +279,7 @@ const MatchList: React.FC = () => {
                 onChange={(e) => setPlayerFilter(e.target.value)}
               />
             </Grid>
-            <Grid xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 label={t('matchList.dateFrom')}
@@ -289,7 +289,7 @@ const MatchList: React.FC = () => {
                 onChange={(e) => setStartDateFilter(e.target.value)}
               />
             </Grid>
-            <Grid xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 label={t('matchList.dateTo')}
