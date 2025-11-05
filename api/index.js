@@ -12,6 +12,31 @@ const upload = multer({ storage: storage }); // CSVファイルをメモリに�
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // authMiddleware.js と同じシークレットを使用
 
+const fetchTeamCanEdit = async (client, teamId) => {
+  const { data, error } = await client
+    .from('participants')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('can_edit', true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || '権限情報の取得に失敗しました。');
+  }
+
+  return Boolean(data);
+};
+
+const ensureTeamEditPermission = async (client, teamId) => {
+  const canEdit = await fetchTeamCanEdit(client, teamId);
+  if (!canEdit) {
+    const err = new Error('権限がありません。');
+    err.statusCode = 403;
+    throw err;
+  }
+};
+
 const createSlugFrom = (value) =>
   value
     .toString()
@@ -201,6 +226,29 @@ app.delete('/api/team/participants/:participantId', requireAuth, async (req, res
   } catch (err) {
     console.error('[DELETE /api/team/participants/:participantId] Unexpected error:', err);
     return res.status(500).json({ error: '参加者の削除に失敗しました。' });
+  }
+});
+
+// Get current team session meta including edit permission
+app.get('/api/team/current-user', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+
+  try {
+    const canEdit = await fetchTeamCanEdit(client, req.team.id);
+    return res.json({
+      id: req.team.id,
+      name: req.team.name,
+      can_edit: canEdit,
+    });
+  } catch (err) {
+    console.error('[GET /api/team/current-user] Unexpected error:', err);
+    if (err.statusCode === 403) {
+      return res.status(403).json({ error: '権限がありません。' });
+    }
+    return res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
   }
 });
 
@@ -1245,25 +1293,28 @@ app.post('/api/team/matches', requireTeamAuth, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const body = req.body ?? {};
-  const tournamentId = body.tournamentId ?? body.tournament_id;
-  const roundId = body.roundId ?? body.round_id;
-  if (!tournamentId) {
-    return res.status(400).json({ error: 'tournamentId を指定してください。' });
+
+  try {
+    await ensureTeamEditPermission(client, req.team.id);
+  } catch (err) {
+    if (err.statusCode === 403) {
+      return res.status(403).json({ error: '試合結果を登録する権限がありません。' });
+    }
+    console.error('[POST /api/team/matches] Permission check failed:', err);
+    return res.status(500).json({ error: '権限情報の取得に失敗しました。' });
   }
-  if (!roundId) {
-    return res.status(400).json({ error: 'roundId を指定してください。' });
-  }
+
   const insertPayload = {
+    team: body.team ?? null,
     player: body.player ?? null,
-    deck: body.deck ?? null,
     selfScore: body.selfScore ?? null,
     opponentScore: body.opponentScore ?? null,
     opponentTeam: body.opponentTeam ?? null,
     opponentPlayer: body.opponentPlayer ?? null,
-    opponentDeck: body.opponentDeck ?? null,
     date: body.date ?? null,
-    tournament_id: tournamentId,
-    round_id: roundId,
+    timezone: typeof body.timezone === 'string' ? body.timezone : null,
+    tournament_id: body.tournamentId ?? body.tournament_id ?? null,
+    round_id: body.roundId ?? body.round_id ?? null,
     team_id: req.team.id,
   };
   try {
@@ -1292,6 +1343,16 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
   const { id } = req.params;
   const body = req.body ?? {};
   try {
+    await ensureTeamEditPermission(client, req.team.id);
+  } catch (err) {
+    if (err.statusCode === 403) {
+      return res.status(403).json({ error: '試合結果を更新する権限がありません。' });
+    }
+    console.error('[PUT /api/team/matches/:id] Permission check failed:', err);
+    return res.status(500).json({ error: '権限情報の取得に失敗しました。' });
+  }
+
+  try {
     const { data: match, error: fetchError } = await client
       .from('matches')
       .select('id, team_id, result_status')
@@ -1309,14 +1370,14 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
     }
     const updatePayload = {};
     const m = body;
+    if ('team' in m) updatePayload.team = m.team;
     if ('player' in m) updatePayload.player = m.player;
-    if ('deck' in m) updatePayload.deck = m.deck;
     if ('selfScore' in m) updatePayload.selfScore = m.selfScore;
     if ('opponentScore' in m) updatePayload.opponentScore = m.opponentScore;
     if ('opponentTeam' in m) updatePayload.opponentTeam = m.opponentTeam;
     if ('opponentPlayer' in m) updatePayload.opponentPlayer = m.opponentPlayer;
-    if ('opponentDeck' in m) updatePayload.opponentDeck = m.opponentDeck;
     if ('date' in m) updatePayload.date = m.date;
+    if ('timezone' in m && typeof m.timezone === 'string') updatePayload.timezone = m.timezone;
     if ('tournamentId' in m || 'tournament_id' in m) updatePayload.tournament_id = m.tournamentId ?? m.tournament_id;
     if ('roundId' in m || 'round_id' in m) updatePayload.round_id = m.roundId ?? m.round_id;
     if (Object.keys(updatePayload).length === 0) {
@@ -1352,6 +1413,16 @@ app.post('/api/team/matches/:id/result', requireTeamAuth, async (req, res) => {
 
   if (!['save', 'finalize', 'cancel'].includes(action)) {
     return res.status(400).json({ error: 'action は save / finalize / cancel のいずれかを指定してください。' });
+  }
+
+  try {
+    await ensureTeamEditPermission(client, req.team.id);
+  } catch (err) {
+    if (err.statusCode === 403) {
+      return res.status(403).json({ error: '試合結果を更新する権限がありません。' });
+    }
+    console.error('[POST /api/team/matches/:id/result] Permission check failed:', err);
+    return res.status(500).json({ error: '権限情報の取得に失敗しました。' });
   }
 
   try {
@@ -1413,13 +1484,12 @@ app.post('/api/team/matches/:id/result', requireTeamAuth, async (req, res) => {
       const m = payload;
       if ('team' in m) updatePayload.team = m.team;
       if ('player' in m) updatePayload.player = m.player;
-      if ('deck' in m) updatePayload.deck = m.deck;
       if ('selfScore' in m) updatePayload.selfScore = m.selfScore;
       if ('opponentScore' in m) updatePayload.opponentScore = m.opponentScore;
       if ('opponentTeam' in m) updatePayload.opponentTeam = m.opponentTeam;
       if ('opponentPlayer' in m) updatePayload.opponentPlayer = m.opponentPlayer;
-      if ('opponentDeck' in m) updatePayload.opponentDeck = m.opponentDeck;
       if ('date' in m) updatePayload.date = m.date;
+      if ('timezone' in m && typeof m.timezone === 'string') updatePayload.timezone = m.timezone;
     }
 
     if (action === 'save') {
@@ -1457,6 +1527,15 @@ app.delete('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const { id } = req.params;
+  try {
+    await ensureTeamEditPermission(client, req.team.id);
+  } catch (err) {
+    if (err.statusCode === 403) {
+      return res.status(403).json({ error: '試合結果を削除する権限がありません。' });
+    }
+    console.error('[DELETE /api/team/matches/:id] Permission check failed:', err);
+    return res.status(500).json({ error: '権限情報の取得に失敗しました。' });
+  }
   try {
     const { data: match, error: fetchError } = await client
       .from('matches')
@@ -1532,20 +1611,26 @@ app.post('/api/matches', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { tournamentId, roundId, ...rest } = req.body ?? {};
+  const { tournamentId, roundId, timezone, ...rest } = req.body ?? {};
   if (!tournamentId) {
     return res.status(400).json({ error: 'tournamentId を指定してください。' });
   }
   if (!roundId) {
     return res.status(400).json({ error: 'roundId を指定してください。' });
   }
+
+  const insertPayload = {
+    ...rest,
+    tournament_id: tournamentId,
+    round_id: roundId,
+  };
+  if (timezone !== undefined) {
+    insertPayload.timezone = typeof timezone === 'string' ? timezone : null;
+  }
+
   const { data, error } = await client
     .from('matches')
-    .insert({
-      ...rest,
-      tournament_id: tournamentId,
-      round_id: roundId,
-    })
+    .insert(insertPayload)
     .select()
     .single();
   if (error) {
@@ -1561,16 +1646,20 @@ app.put('/api/matches/:id', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { tournamentId, roundId, ...rest } = req.body ?? {};
-  const updatePayload = {
-    ...rest,
-  };
-  if (roundId) {
+  const body = req.body ?? {};
+  const { tournamentId, roundId, timezone, ...rest } = body;
+  const updatePayload = { ...rest };
+
+  if (roundId !== undefined) {
     updatePayload.round_id = roundId;
   }
-  if (tournamentId) {
+  if (tournamentId !== undefined) {
     updatePayload.tournament_id = tournamentId;
   }
+  if ('timezone' in body) {
+    updatePayload.timezone = typeof timezone === 'string' ? timezone : null;
+  }
+
   const { data, error } = await client
     .from('matches')
     .update(updatePayload)

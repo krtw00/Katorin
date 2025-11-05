@@ -78,6 +78,7 @@ const requireTeamAuth = async (req, res, next) => {
 
     req.team = team;
     req.teamId = teamId;
+    req.supabase = supabaseAdmin ?? supabase;
     return next();
   } catch (err) {
     console.error('[teamAuth] Unexpected error during team auth verification:', err);
