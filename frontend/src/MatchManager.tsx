@@ -13,7 +13,10 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  MenuItem,
   Paper,
+  Select,
+  SelectChangeEvent,
   Stack,
   TextField,
   ToggleButton,
@@ -26,6 +29,7 @@ import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
@@ -74,6 +78,11 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const [deleteSubmitting, setDeleteSubmitting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [permDialog, setPermDialog] = useState<{ open: boolean; matchId: string | null; value: string }>(
+    { open: false, matchId: null, value: 'none' },
+  );
+  const [permSaving, setPermSaving] = useState(false);
+  const [permError, setPermError] = useState<string | null>(null);
   const authFetch = useAuthorizedFetch();
 
   const fetchTeams = useCallback(async () => {
@@ -785,6 +794,24 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   '& .MuiChip-label': { px: 1.75 },
                 }}
               />
+              <Tooltip title={t('matchManager.setInputPermission')} arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      // matches は生データを持っているので、現在値を見にいく
+                      const raw = matches.find((m) => m.id === match.id);
+                      const current = raw?.input_allowed_team_id ?? null;
+                      setPermError(null);
+                      setPermDialog({ open: true, matchId: match.id, value: current ?? 'none' });
+                    }}
+                    disabled={!canCreateMatch}
+                    sx={{ color: '#4a5162' }}
+                  >
+                    <LockOpenRoundedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Tooltip title={t('matchManager.editMatch')} arrow>
                 <span>
                   <IconButton
@@ -1018,6 +1045,75 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         tournamentId={tournament.id}
         roundId={selectedRound?.id ?? null}
       />
+      {/* 入力権限設定モーダル */}
+      <Dialog
+        open={permDialog.open}
+        onClose={() => (!permSaving ? setPermDialog({ open: false, matchId: null, value: 'none' }) : null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('matchManager.inputPermissionTitle')}</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            {permError ? <Alert severity="error">{permError}</Alert> : null}
+            <Typography variant="body2" color="text.secondary">
+              {t('matchManager.inputPermissionDescription')}
+            </Typography>
+            <Select
+              size="small"
+              value={permDialog.value}
+              onChange={(e: SelectChangeEvent<string>) => setPermDialog((p) => ({ ...p, value: e.target.value }))}
+              disabled={permSaving}
+            >
+              <MenuItem value="none">{t('matchManager.permissionNone')}</MenuItem>
+              <MenuItem value="admin">{t('matchManager.permissionAdmin')}</MenuItem>
+              <MenuItem disabled value="__sep__">──────────</MenuItem>
+              {teams.map((team) => (
+                <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
+              ))}
+            </Select>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPermDialog({ open: false, matchId: null, value: 'none' })} disabled={permSaving}>
+            {t('matchManager.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            disabled={permSaving || !permDialog.matchId}
+            onClick={async () => {
+              if (!permDialog.matchId) return;
+              setPermSaving(true);
+              setPermError(null);
+              try {
+                const value = permDialog.value;
+                const input_allowed_team_id = value === 'none' ? null : value; // 'admin' または teamId
+                const response = await authFetch(`/api/matches/${permDialog.matchId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ input_allowed_team_id }),
+                });
+                const contentType = response.headers.get('content-type') ?? '';
+                if (!response.ok) {
+                  const message = contentType.includes('application/json')
+                    ? (await response.json()).error ?? `HTTP ${response.status}`
+                    : await response.text();
+                  throw new Error(message || `HTTP ${response.status}`);
+                }
+                await loadMatches();
+                setPermDialog({ open: false, matchId: null, value: 'none' });
+              } catch (err: any) {
+                console.error('Failed to update input permission:', err);
+                setPermError(err?.message || t('matchManager.updatePermissionFailed'));
+              } finally {
+                setPermSaving(false);
+              }
+            }}
+          >
+            {permSaving ? t('matchManager.saving') : t('matchManager.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={roundDialogOpen} onClose={() => (!roundSubmitting ? setRoundDialogOpen(false) : null)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('matchManager.createRound')}</DialogTitle>
         <DialogContent dividers>

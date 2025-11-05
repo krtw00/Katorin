@@ -1294,7 +1294,7 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
   try {
     const { data: match, error: fetchError } = await client
       .from('matches')
-      .select('id, team_id')
+      .select('id, team_id, result_status')
       .eq('id', id)
       .single();
     if (fetchError || !match) {
@@ -1303,6 +1303,9 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
     }
     if (match.team_id !== req.team.id) {
       return res.status(403).json({ error: 'この試合結果を更新する権限がありません。' });
+    }
+    if (match.result_status === 'finalized') {
+      return res.status(409).json({ error: 'この試合結果は確定済みのため編集できません。' });
     }
     const updatePayload = {};
     const m = body;
@@ -1332,6 +1335,117 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
     return res.json(data);
   } catch (err) {
     console.error('[PUT /api/team/matches/:id] Unexpected error:', err);
+    return res.status(500).json({ error: '試合結果の更新に失敗しました。' });
+  }
+});
+
+// Result input with permission and lock control
+// POST /api/team/matches/:id/result
+// body: { action: 'save' | 'finalize' | 'cancel', payload?: { ...既存の試合フィールド... } }
+app.post('/api/team/matches/:id/result', requireTeamAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+  const { id } = req.params;
+  const { action, payload } = req.body ?? {};
+
+  if (!['save', 'finalize', 'cancel'].includes(action)) {
+    return res.status(400).json({ error: 'action は save / finalize / cancel のいずれかを指定してください。' });
+  }
+
+  try {
+    const { data: match, error: fetchError } = await client
+      .from('matches')
+      .select('id, team_id, input_allowed_team_id, result_status, locked_by, locked_at')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !match) {
+      console.error('[POST /api/team/matches/:id/result] fetch error:', fetchError ?? 'match not found');
+      return res.status(404).json({ error: '試合結果が見つかりません。' });
+    }
+
+    // 入力可否: NULL=不可, 'admin'=管理者のみ, uuid文字列=そのチームのみ
+    if (!match.input_allowed_team_id) {
+      return res.status(403).json({ error: 'この試合は現在、結果入力が許可されていません。' });
+    }
+    if (match.input_allowed_team_id === 'admin') {
+      // チームAPIでは管理者指定は不可。管理者UI/エンドポイントで実施。
+      return res.status(403).json({ error: 'この試合は運営のみが入力可能です。' });
+    }
+    if (match.input_allowed_team_id !== req.team.id) {
+      return res.status(403).json({ error: 'この試合結果を入力する権限がありません。' });
+    }
+
+    // 既に確定済みの場合は編集不可
+    if (match.result_status === 'finalized' && action !== 'cancel') {
+      return res.status(409).json({ error: 'この試合結果は既に確定されています。' });
+    }
+
+    // 簡易ロック: 他者がロック中か
+    if (match.locked_by && match.locked_by !== req.team.id && action !== 'cancel') {
+      return res.status(409).json({ error: '他のクライアントが編集中です。しばらくしてから再度お試しください。' });
+    }
+
+    const updatePayload = {};
+
+    if (action === 'cancel') {
+      // ロック解除のみ（またはドラフトへ戻す）
+      updatePayload.locked_by = null;
+      updatePayload.locked_at = null;
+      // ドラフトへ戻す操作は明示リクエスト時のみとし、ここでは状態は維持
+      const { data, error } = await client
+        .from('matches')
+        .update(updatePayload)
+        .eq('id', id)
+        .select('*')
+        .single();
+      if (error) {
+        console.error('[POST /api/team/matches/:id/result] cancel error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json(data);
+    }
+
+    // save / finalize の場合はフィールド更新を許可
+    if (payload && typeof payload === 'object') {
+      const m = payload;
+      if ('team' in m) updatePayload.team = m.team;
+      if ('player' in m) updatePayload.player = m.player;
+      if ('deck' in m) updatePayload.deck = m.deck;
+      if ('selfScore' in m) updatePayload.selfScore = m.selfScore;
+      if ('opponentScore' in m) updatePayload.opponentScore = m.opponentScore;
+      if ('opponentTeam' in m) updatePayload.opponentTeam = m.opponentTeam;
+      if ('opponentPlayer' in m) updatePayload.opponentPlayer = m.opponentPlayer;
+      if ('opponentDeck' in m) updatePayload.opponentDeck = m.opponentDeck;
+      if ('date' in m) updatePayload.date = m.date;
+    }
+
+    if (action === 'save') {
+      updatePayload.result_status = 'draft';
+      updatePayload.locked_by = req.team.id;
+      updatePayload.locked_at = new Date().toISOString();
+    } else if (action === 'finalize') {
+      updatePayload.result_status = 'finalized';
+      updatePayload.locked_by = null;
+      updatePayload.locked_at = null;
+      updatePayload.finalized_at = new Date().toISOString();
+    }
+
+    const { data, error } = await client
+      .from('matches')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) {
+      console.error('[POST /api/team/matches/:id/result] Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json(data);
+  } catch (err) {
+    console.error('[POST /api/team/matches/:id/result] Unexpected error:', err);
     return res.status(500).json({ error: '試合結果の更新に失敗しました。' });
   }
 });
@@ -1751,15 +1865,9 @@ app.post('/api/admin/users', async (req, res) => {
       .json({ error: 'SERVICE ROLE KEY が設定されていないため管理者ユーザーを作成できません。' });
   }
 
-  const adminSignupToken = process.env.ADMIN_SIGNUP_TOKEN;
-
-  const { email, password, displayName, token } = req.body ?? {};
+  const { email, password, displayName } = req.body ?? {};
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedPassword = typeof password === 'string' ? password.trim() : '';
-
-  if (adminSignupToken && (typeof token !== 'string' || token.trim() !== adminSignupToken)) {
-    return res.status(403).json({ error: '無効な登録コードです。' });
-  }
 
   if (!normalizedEmail) {
     return res.status(400).json({ error: 'メールアドレスを入力してください。' });

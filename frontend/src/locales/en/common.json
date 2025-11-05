@@ -108,7 +108,8 @@
     "create": "Create",
     "updating": "Updating...",
     "creating": "Creating...",
-    "update": "Update"
+    "update": "Update",
+    "inputResult": "Enter Result"
   },
   "app": {
     "title": "Katorin Match Manager",
@@ -230,6 +231,14 @@
     "completed": "Completed {{count}}",
     "pending": "Pending {{count}}",
     "registeredTeams": "Registered Teams {{count}}",
+    "setInputPermission": "Set Input Permission",
+    "inputPermissionTitle": "Set Input Permission",
+    "inputPermissionDescription": "Select who can enter results for this match. admin allows admins only; choosing a specific team allows only that team to enter.",
+    "permissionNone": "Not Allowed (No Input)",
+    "permissionAdmin": "Admin Only (Always Allowed)",
+    "updatePermissionFailed": "Failed to update input permission.",
+    "saving": "Saving...",
+    "save": "Save",
     "roundList": {
       "title": "Round List",
       "noRounds": "No rounds have been created yet.",
@@ -368,5 +377,16 @@
   },
   "analytics": {
     "title": "Match Analytics"
+  },
+  "teamResultEntry": {
+    "title": "Result Entry",
+    "loading": "Loading...",
+    "viewOnly": "This match is view-only.",
+    "selfScore": "Home Team Score",
+    "opponentScore": "Away Team Score",
+    "backToList": "Back to List",
+    "cancel": "Cancel",
+    "save": "Save",
+    "finalize": "Finalize"
   }
 }

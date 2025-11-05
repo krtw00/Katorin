@@ -15,6 +15,7 @@ import TeamManagementPage from './team/TeamManagementPage';
 import ParticipantManagementPage from './team/ParticipantManagementPage';
 import TeamDashboard from './team/TeamDashboard';
 import MatchList from './matches/MatchList';
+import TeamResultEntryPage from './team/TeamResultEntryPage';
 
 const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
@@ -333,6 +334,7 @@ const AppRoutes: React.FC = () => {
           {/* Team Management Routes */}
           <Route path="/team-dashboard" element={<TeamDashboard onSignOut={handleTeamSignOut} />} />
           <Route path="/matches" element={<MatchList />} />
+          <Route path="/team/matches/:matchId/entry" element={<TeamResultEntryPage />} />
           <Route path="/team-management" element={<TeamManagementPage />} />
           <Route path="/team/:teamId/participants" element={<ParticipantManagementPage />} />
           {/* Fallback for unknown routes */}
