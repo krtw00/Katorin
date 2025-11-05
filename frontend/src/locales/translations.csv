@@ -372,6 +372,49 @@ matchManager.teamDeleting,削除中...,Deleting...
 matchManager.roundList.title,ラウンド一覧,Round List
 matchManager.roundList.noRounds,ラウンドがまだ作成されていません,No rounds have been created yet.
 matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
+matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
+matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
+matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.
+matchManager.teamReload,再読み込み,Reload
+matchManager.teamTitle,対戦管理,Match Manager
+matchManager.teamQuickInputTitle,クイック入力（運営専用）,Quick Entry (Organizers)
+matchManager.teamQuickInputDescription,選手とスコア、相手チーム情報を入力して即座に記録できます。,Record a match quickly by selecting a player, scores, and opponent information.
+matchManager.teamPlayerLabel,選手,Player
+matchManager.teamSelfScoreLabel,自チームスコア,Team Score
+matchManager.teamOpponentScoreLabel,相手スコア,Opponent Score
+matchManager.teamOpponentTeamLabel,相手チーム,Opponent Team
+matchManager.teamOpponentPlayerLabel,相手選手,Opponent Player
+matchManager.teamRecordButton,記録する,Record
+matchManager.teamRecording,記録中...,Recording...
+matchManager.teamReadOnlyNotice,試合結果の入力権限がありません。運営に権限付与を依頼してください。,You don't have permission to enter results. Please contact the organizer.
+matchManager.teamCreateFailed,試合結果の登録に失敗しました。,Failed to record the match.
+matchManager.teamStatsTitle,チーム戦績,Team Stats
+matchManager.teamStatsTotal,総試合数 {{count}},Total Matches {{count}}
+matchManager.teamStatsWins,勝利 {{count}},Wins {{count}}
+matchManager.teamStatsLosses,敗北 {{count}},Losses {{count}}
+matchManager.teamStatsWinRate,勝率 {{rate}}%,Win Rate {{rate}}%
+matchManager.teamTodayMatches,本日の試合結果,Today's Matches
+matchManager.teamNoMatchesToday,本日の試合はまだ登録されていません。,No matches have been recorded for today yet.
+matchManager.teamUnknownPlayer,選手未設定,Player Not Set
+matchManager.teamUnknownTeam,相手チーム未設定,Opponent Not Set
+matchManager.teamScoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
+matchManager.teamOpponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
+matchManager.teamOutcomeWin,勝利,Win
+matchManager.teamOutcomeLose,敗北,Loss
+matchManager.teamOutcomeDraw,引き分け,Draw
+matchManager.teamOutcomePending,試合中,In Progress
+matchManager.teamUpdateFailed,試合結果の更新に失敗しました。,Failed to update match.
+matchManager.teamTimezoneLabel,タイムゾーン,Timezone
+matchManager.teamDateLabel,日付,Date
+matchManager.teamEditTitle,試合結果を編集,Edit Match
+matchManager.teamCancel,キャンセル,Cancel
+matchManager.teamSave,保存,Save
+matchManager.teamSaving,保存中...,Saving...
+matchManager.teamDeleteTitle,試合結果の削除,Delete Match
+matchManager.teamDeleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
+matchManager.teamDeleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
+matchManager.teamDelete,削除する,Delete
+matchManager.teamDeleting,削除中...,Deleting...
 teamDashboard.analyticsTab,分析,Analytics
 analytics.title,戦績分析,Match Analytics
 teamResultEntry.title,試合結果入力,Result Entry
