@@ -375,17 +375,17 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
           {managementCardContent()}
         </Paper>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} lg={4}>
+          <Grid xs={12} sm={6} lg={4}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {summaryCardContent()}
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} lg={4}>
+          <Grid xs={12} sm={6} lg={4}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {participantsCardContent()}
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} lg={4}>
+          <Grid xs={12} sm={6} lg={4}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {historyCardContent()}
             </Paper>
