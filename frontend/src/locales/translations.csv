@@ -326,6 +326,49 @@ teamDashboard.tournamentIdHelper,必要に応じて大会IDを関連付けます
 teamDashboard.roundIdLabel,ラウンドID (任意),Round ID (optional)
 teamDashboard.roundIdHelper,大会のラウンドIDがある場合は入力してください。,Set the round ID if the tournament uses one.
 teamDashboard.confirmDeleteMatch,この試合結果（相手: {{opponent}}）を削除しますか？,Delete this match result (opponent: {{opponent}})?
+matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
+matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
+matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.
+matchManager.teamReload,再読み込み,Reload
+matchManager.teamTitle,対戦管理,Match Manager
+matchManager.teamQuickInputTitle,クイック入力（運営専用）,Quick Entry (Organizers)
+matchManager.teamQuickInputDescription,選手とスコア、相手チーム情報を入力して即座に記録できます。,Record a match quickly by selecting a player, scores, and opponent information.
+matchManager.teamPlayerLabel,選手,Player
+matchManager.teamSelfScoreLabel,自チームスコア,Team Score
+matchManager.teamOpponentScoreLabel,相手スコア,Opponent Score
+matchManager.teamOpponentTeamLabel,相手チーム,Opponent Team
+matchManager.teamOpponentPlayerLabel,相手選手,Opponent Player
+matchManager.teamRecordButton,記録する,Record
+matchManager.teamRecording,記録中...,Recording...
+matchManager.teamReadOnlyNotice,試合結果の入力権限がありません。運営に権限付与を依頼してください。,You don't have permission to enter results. Please contact the organizer.
+matchManager.teamCreateFailed,試合結果の登録に失敗しました。,Failed to record the match.
+matchManager.teamStatsTitle,チーム戦績,Team Stats
+matchManager.teamStatsTotal,総試合数 {{count}},Total Matches {{count}}
+matchManager.teamStatsWins,勝利 {{count}},Wins {{count}}
+matchManager.teamStatsLosses,敗北 {{count}},Losses {{count}}
+matchManager.teamStatsWinRate,勝率 {{rate}}%,Win Rate {{rate}}%
+matchManager.teamTodayMatches,本日の試合結果,Today's Matches
+matchManager.teamNoMatchesToday,本日の試合はまだ登録されていません。,No matches have been recorded for today yet.
+matchManager.teamUnknownPlayer,選手未設定,Player Not Set
+matchManager.teamUnknownTeam,相手チーム未設定,Opponent Not Set
+matchManager.teamScoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
+matchManager.teamOpponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
+matchManager.teamOutcomeWin,勝利,Win
+matchManager.teamOutcomeLose,敗北,Loss
+matchManager.teamOutcomeDraw,引き分け,Draw
+matchManager.teamOutcomePending,試合中,In Progress
+matchManager.teamUpdateFailed,試合結果の更新に失敗しました。,Failed to update match.
+matchManager.teamTimezoneLabel,タイムゾーン,Timezone
+matchManager.teamDateLabel,日付,Date
+matchManager.teamEditTitle,試合結果を編集,Edit Match
+matchManager.teamCancel,キャンセル,Cancel
+matchManager.teamSave,保存,Save
+matchManager.teamSaving,保存中...,Saving...
+matchManager.teamDeleteTitle,試合結果の削除,Delete Match
+matchManager.teamDeleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
+matchManager.teamDeleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
+matchManager.teamDelete,削除する,Delete
+matchManager.teamDeleting,削除中...,Deleting...
 matchManager.roundList.title,ラウンド一覧,Round List
 matchManager.roundList.noRounds,ラウンドがまだ作成されていません,No rounds have been created yet.
 matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
@@ -384,3 +427,45 @@ teamResultEntry.cancel,取消,Cancel
 teamResultEntry.save,保存,Save
 teamResultEntry.finalize,確定,Finalize
 common.inputResult,結果入力,Enter Result
+matchList.title,試合履歴,Match History
+matchList.reload,最新の状態に更新,Refresh
+matchList.filters,フィルター,Filters
+matchList.searchPlayer,選手名で検索,Search by player
+matchList.dateFrom,開始日,Start Date
+matchList.dateTo,終了日,End Date
+matchList.filter,検索,Apply
+matchList.clear,クリア,Clear
+matchList.summary,サマリー,Summary
+matchList.totalMatches,対象試合数 {{count}},Matches {{count}}
+matchList.winCount,勝利 {{count}},Wins {{count}}
+matchList.lossCount,敗北 {{count}},Losses {{count}}
+matchList.noMatches,該当する試合が見つかりませんでした。,No matches found.
+matchList.unknownPlayer,選手未設定,Player Not Set
+matchList.unknownTeam,チーム未設定,Team Not Set
+matchList.scoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
+matchList.opponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
+matchList.statusLabel,状態: {{status}},Status: {{status}}
+matchList.statusFinalized,確定,Finalized
+matchList.statusDraft,未確定,Draft
+matchList.date,日付,Date
+matchList.player,選手,Player
+matchList.score,スコア,Score
+matchList.opponentTeam,相手チーム,Opponent Team
+matchList.opponentPlayer,相手選手,Opponent Player
+matchList.result,結果,Result
+matchList.status,状態,Status
+matchList.actions,操作,Actions
+matchList.resultWin,勝利,Win
+matchList.resultLose,敗北,Loss
+matchList.resultDraw,引き分け,Draw
+matchList.resultPending,試合中,In Progress
+matchList.retry,再試行,Retry
+matchList.loadFailed,試合一覧の取得に失敗しました。時間をおいて再度お試しください。,Failed to load matches. Please try again later.
+matchList.loadPermissionFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
+matchList.loadParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
+matchList.deleteTitle,試合結果の削除,Delete Match
+matchList.deleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
+matchList.deleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
+matchList.delete,削除する,Delete
+matchList.deleting,削除中...,Deleting...
+matchList.cancel,キャンセル,Cancel

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 type FetchArgs = Parameters<typeof fetch>;
 
 /**
- * チーム用JWTを Authorization ヘッダーに付与して API を呼び出すためのユーティリティ。
+ * チーム用JWTを Authorization ヘッダーに付与して API を呼び出すためのヘルパー。
  */
 export const useTeamApi = () => {
   return useCallback(

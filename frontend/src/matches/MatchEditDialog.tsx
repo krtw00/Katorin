@@ -152,7 +152,11 @@ const MatchEditDialog: React.FC<Props> = ({ open, match, participants, onClose, 
                 setPlayerInput(name);
               }}
               renderInput={(params) => (
-                <TextField {...params} label={t('matchManager.teamPlayerLabel')} placeholder={t('matchManager.teamPlayerLabel')} />
+                <TextField
+                  {...params}
+                  label={t('matchManager.teamPlayerLabel')}
+                  placeholder={t('matchManager.teamPlayerLabel')}
+                />
               )}
               freeSolo
             />

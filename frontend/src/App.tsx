@@ -10,7 +10,6 @@ import TournamentSelection from './admin/TournamentSelection';
 import TournamentCreateDialog, { Tournament } from './admin/TournamentCreateDialog';
 import PasswordResetForm from './auth/PasswordResetForm';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import TeamLoginForm from './team/TeamLoginForm';
 import TeamManagementPage from './team/TeamManagementPage';
 import ParticipantManagementPage from './team/ParticipantManagementPage';
 import TeamDashboard from './team/TeamDashboard';
@@ -238,22 +237,6 @@ const AppRoutes: React.FC = () => {
           )}
         </Stack>
       </Box>
-    </Stack>
-  );
-
-  const renderParticipantPlaceholder = () => (
-    <Stack sx={{ minHeight: '100vh', bgcolor: '#f4f6fb', alignItems: 'center', justifyContent: 'center', p: 4 }}>
-      <Stack spacing={2} alignItems="center">
-        <Typography variant="h5" fontWeight="bold">
-          {t('app.participantScreenComingSoonTitle')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={360}>
-          {t('app.participantScreenComingSoonDescription')}
-        </Typography>
-        <Button variant="outlined" onClick={handleSignOut}>
-          {t('app.logout')}
-        </Button>
-      </Stack>
     </Stack>
   );
 

@@ -79,7 +79,7 @@ const ParticipantManagementPage: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to fetch teams for move:', err);
     }
-  }, [t]);
+  }, [authFetch, t]);
 
   useEffect(() => {
     fetchTeamDetails();
