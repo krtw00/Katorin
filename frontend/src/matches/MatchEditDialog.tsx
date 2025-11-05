@@ -137,9 +137,9 @@ const MatchEditDialog: React.FC<Props> = ({ open, match, participants, onClose, 
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             {error ? <Alert severity="error">{error}</Alert> : null}
-            <Autocomplete
+            <Autocomplete<Participant, false, false, true>
               options={participants}
-              getOptionLabel={(option) => option.name}
+              getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
               value={selectedParticipant}
               inputValue={playerInput}
               onInputChange={(_, value) => {
@@ -147,7 +147,7 @@ const MatchEditDialog: React.FC<Props> = ({ open, match, participants, onClose, 
                 setPlayerName(value);
               }}
               onChange={(_, option) => {
-                const name = option?.name ?? '';
+                const name = typeof option === 'string' ? option : option?.name ?? '';
                 setPlayerName(name);
                 setPlayerInput(name);
               }}

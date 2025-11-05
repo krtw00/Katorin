@@ -306,9 +306,9 @@ const MatchManager: React.FC = () => {
                 {t('matchManager.teamQuickInputDescription')}
               </Typography>
               {formError ? <Alert severity="error">{formError}</Alert> : null}
-              <Autocomplete
+              <Autocomplete<Participant, false, false, true>
                 options={participants}
-                getOptionLabel={(option) => option.name}
+                getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
                 value={participants.find((p) => p.name === playerName) ?? null}
                 inputValue={playerInput}
                 onInputChange={(_, value) => {
@@ -316,7 +316,7 @@ const MatchManager: React.FC = () => {
                   setPlayerName(value);
                 }}
                 onChange={(_, option) => {
-                  const name = option?.name ?? '';
+                  const name = typeof option === 'string' ? option : option?.name ?? '';
                   setPlayerName(name);
                   setPlayerInput(name);
                 }}
