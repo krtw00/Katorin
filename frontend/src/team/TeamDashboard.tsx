@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Alert, Box, Button, Paper, Skeleton, Stack, Typography, Grid } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
@@ -375,17 +374,17 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
           {managementCardContent()}
         </Paper>
         <Grid container spacing={2}>
-          <Grid xs={12} sm={6} lg={4}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {summaryCardContent()}
             </Paper>
           </Grid>
-          <Grid xs={12} sm={6} lg={4}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {participantsCardContent()}
             </Paper>
           </Grid>
-          <Grid xs={12} sm={6} lg={4}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               {historyCardContent()}
             </Paper>
