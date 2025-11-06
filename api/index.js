@@ -1,8 +1,6 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { supabase, supabaseAdmin } = require('./supabaseClient');
-const { requireAuth, requireAdmin, requireTeamAuth } = require('./authMiddleware');
+const { requireAuth, requireAdmin, attachTeam } = require('./authMiddleware');
 const crypto = require('crypto');
 const multer = require('multer');
 const Papa = require('papaparse');
@@ -12,14 +10,6 @@ const { logger, requestLogger } = require('./config/logger');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }); // CSVファイルをメモリに保存する
-
-// JWT_SECRETは必須: セキュリティのため環境変数から取得
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error(
-    'JWT_SECRET environment variable is required. Please set it in your .env file.'
-  );
-}
 
 const createSlugFrom = (value) =>
   value
@@ -297,6 +287,7 @@ app.post('/api/teams/register', requireAuth, async (req, res) => {
 });
 
 // Team login (厳格なレート制限を適用)
+// Supabase Auth方式: usernameからauth_user_idを取得し、そのemailでログイン
 app.post('/api/teams/login', strictLimiter, async (req, res) => {
   const { username, password } = req.body ?? {};
 
@@ -305,29 +296,51 @@ app.post('/api/teams/login', strictLimiter, async (req, res) => {
   }
 
   try {
-    const { data: team, error } = await supabase
+    // 1. usernameからteamsテーブルでauth_user_idを取得
+    const { data: team, error: teamError } = await supabase
       .from('teams')
-      .select('id, name, username, password_hash')
+      .select('id, name, username, auth_user_id')
       .eq('username', username)
       .single();
 
-    if (error || !team) {
-      console.error('[POST /api/teams/login] Supabase fetch error:', error ?? 'team not found');
+    if (teamError || !team || !team.auth_user_id) {
+      logger.warn('Team login failed: team not found or missing auth_user_id', { username });
       return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, team.password_hash);
+    // 2. auth_user_idからauth.usersのemailを取得
+    const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(team.auth_user_id);
 
-    if (!passwordMatch) {
+    if (authUserError || !authUser?.user?.email) {
+      logger.error('Failed to get auth user for team login', {
+        authUserId: team.auth_user_id,
+        error: authUserError?.message
+      });
       return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
     }
 
-    // Generate JWT token for the team
-    const token = jwt.sign({ teamId: team.id, username: team.username }, JWT_SECRET, { expiresIn: '1h' });
+    // 3. Supabase Authでログイン
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: authUser.user.email,
+      password: password,
+    });
 
-    res.status(200).json({ teamId: team.id, name: team.name, username: team.username, token });
+    if (signInError || !signInData?.session) {
+      logger.warn('Team login failed: invalid credentials', { username, email: authUser.user.email });
+      return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
+    }
+
+    // 4. Supabase Authのアクセストークンを返す
+    res.status(200).json({
+      teamId: team.id,
+      name: team.name,
+      username: team.username,
+      token: signInData.session.access_token,
+      refreshToken: signInData.session.refresh_token,
+      expiresAt: signInData.session.expires_at,
+    });
   } catch (err) {
-    console.error('[POST /api/teams/login] Unexpected error:', err);
+    logger.error('Unexpected error during team login', { error: err.message, stack: err.stack });
     res.status(500).json({ error: 'チームログインに失敗しました。' });
   }
 });
@@ -912,8 +925,8 @@ app.delete('/api/admin/participants/:id', requireAuth, async (req, res) => {
 // --- Participant Management Endpoints (Team) ---
 
 // Add a participant to a team (requires team auth)
-app.post('/api/teams/:teamId/participants', requireTeamAuth, async (req, res) => {
-  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireTeamAuth
+app.post('/api/teams/:teamId/participants', requireAuth, attachTeam, async (req, res) => {
+  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireAuth, attachTeam
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
@@ -953,8 +966,8 @@ app.post('/api/teams/:teamId/participants', requireTeamAuth, async (req, res) =>
 });
 
 // Get participants for a specific team (requires team auth)
-app.get('/api/teams/:teamId/participants', requireTeamAuth, async (req, res) => {
-  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireTeamAuth
+app.get('/api/teams/:teamId/participants', requireAuth, attachTeam, async (req, res) => {
+  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireAuth, attachTeam
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
@@ -984,8 +997,8 @@ app.get('/api/teams/:teamId/participants', requireTeamAuth, async (req, res) => 
 });
 
 // Update a participant (requires team auth)
-app.put('/api/participants/:id', requireTeamAuth, async (req, res) => {
-  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireTeamAuth
+app.put('/api/participants/:id', requireAuth, attachTeam, async (req, res) => {
+  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireAuth, attachTeam
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
@@ -1051,8 +1064,8 @@ app.put('/api/participants/:id', requireTeamAuth, async (req, res) => {
 });
 
 // Delete a participant (requires team auth)
-app.delete('/api/participants/:id', requireTeamAuth, async (req, res) => {
-  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireTeamAuth
+app.delete('/api/participants/:id', requireAuth, attachTeam, async (req, res) => {
+  const client = req.supabase; // Using the client from requireAuth, but teamId is from requireAuth, attachTeam
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
@@ -1091,10 +1104,10 @@ app.delete('/api/participants/:id', requireTeamAuth, async (req, res) => {
   }
 });
 
-// --- Team Self-service Endpoints (requireTeamAuth) ---
+// --- Team Self-service Endpoints (requireAuth, attachTeam) ---
 
 // Team profile
-app.get('/api/team/me', requireTeamAuth, async (req, res) => {
+app.get('/api/team/me', requireAuth, attachTeam, async (req, res) => {
   try {
     // Only expose minimal summary
     const { id, name, username, created_at, updated_at } = req.team;
@@ -1106,7 +1119,7 @@ app.get('/api/team/me', requireTeamAuth, async (req, res) => {
 });
 
 // List participants for authenticated team
-app.get('/api/team/participants', requireTeamAuth, async (req, res) => {
+app.get('/api/team/participants', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1129,7 +1142,7 @@ app.get('/api/team/participants', requireTeamAuth, async (req, res) => {
 });
 
 // Create participant for authenticated team
-app.post('/api/team/participants', requireTeamAuth, async (req, res) => {
+app.post('/api/team/participants', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1157,7 +1170,7 @@ app.post('/api/team/participants', requireTeamAuth, async (req, res) => {
 });
 
 // Update participant (owned by authenticated team)
-app.put('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
+app.put('/api/team/participants/:id', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1202,7 +1215,7 @@ app.put('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
 });
 
 // Delete participant (owned by authenticated team)
-app.delete('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
+app.delete('/api/team/participants/:id', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1234,7 +1247,7 @@ app.delete('/api/team/participants/:id', requireTeamAuth, async (req, res) => {
 });
 
 // List matches for authenticated team
-app.get('/api/team/matches', requireTeamAuth, async (req, res) => {
+app.get('/api/team/matches', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1257,7 +1270,7 @@ app.get('/api/team/matches', requireTeamAuth, async (req, res) => {
 });
 
 // Create match for authenticated team
-app.post('/api/team/matches', requireTeamAuth, async (req, res) => {
+app.post('/api/team/matches', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1302,7 +1315,7 @@ app.post('/api/team/matches', requireTeamAuth, async (req, res) => {
 });
 
 // Update match for authenticated team
-app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
+app.put('/api/team/matches/:id', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1360,7 +1373,7 @@ app.put('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
 // Result input with permission and lock control
 // POST /api/team/matches/:id/result
 // body: { action: 'save' | 'finalize' | 'cancel', payload?: { ...既存の試合フィールド... } }
-app.post('/api/team/matches/:id/result', requireTeamAuth, async (req, res) => {
+app.post('/api/team/matches/:id/result', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -1469,7 +1482,7 @@ app.post('/api/team/matches/:id/result', requireTeamAuth, async (req, res) => {
 });
 
 // Delete match for authenticated team
-app.delete('/api/team/matches/:id', requireTeamAuth, async (req, res) => {
+app.delete('/api/team/matches/:id', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });

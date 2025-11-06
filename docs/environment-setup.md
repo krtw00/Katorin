@@ -92,10 +92,6 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 # パスワードリセット用
 PASSWORD_RESET_REDIRECT_URL=http://localhost:3000/password-reset
 
-# JWT Secret (REQUIRED for team authentication)
-# セキュアなランダム文字列を生成: openssl rand -base64 32
-JWT_SECRET=your-secure-jwt-secret-key-here
-
 # CORS設定: 許可するオリジン（カンマ区切り）
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5000
 ```
