@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const Papa = require('papaparse');
 const { cors, helmetConfig, generalLimiter, strictLimiter } = require('./config/security');
+const { ApiError, errorHandler, asyncHandler } = require('./middleware/errorHandler');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }); // CSVファイルをメモリに保存する
@@ -1959,6 +1960,9 @@ app.post('/api/admin/users/:userId/reset-password', requireAuth, requireAdmin, a
     res.status(500).json({ error: 'パスワードのリセットに失敗しました。' });
   }
 });
+
+// エラーハンドリングミドルウェア（全てのルートの後に配置）
+app.use(errorHandler);
 
 // Export the app for Vercel
 module.exports = app;
