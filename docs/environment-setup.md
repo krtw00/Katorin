@@ -91,6 +91,9 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 
 # パスワードリセット用
 PASSWORD_RESET_REDIRECT_URL=http://localhost:3000/password-reset
+
+# CORS設定: 許可するオリジン（カンマ区切り）
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5000
 ```
 
 **注意**: 上記の `SUPABASE_ANON_KEY` と `SUPABASE_SERVICE_ROLE_KEY` は、ローカル開発環境用のデフォルト値です。`npx supabase start` の出力に表示される値を使用してください。
