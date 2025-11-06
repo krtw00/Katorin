@@ -8,6 +8,7 @@ const multer = require('multer');
 const Papa = require('papaparse');
 const { cors, helmetConfig, generalLimiter, strictLimiter } = require('./config/security');
 const { ApiError, errorHandler, asyncHandler } = require('./middleware/errorHandler');
+const { logger, requestLogger } = require('./config/logger');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }); // CSVファイルをメモリに保存する
@@ -34,6 +35,9 @@ const app = express();
 app.use(helmetConfig);
 app.use(cors);
 app.use(express.json());
+
+// リクエストロギング
+app.use(requestLogger);
 
 // 一般的なAPIエンドポイントにレート制限を適用
 app.use('/api', generalLimiter);
