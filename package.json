@@ -5,7 +5,10 @@
   "scripts": {
     "dev:api": "nodemon --config nodemon.json",
     "dev:frontend": "npm start --prefix frontend",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
@@ -21,6 +24,10 @@
     "winston": "^3.18.3"
   },
   "devDependencies": {
-    "@types/papaparse": "^5.3.16"
+    "@types/jest": "^30.0.0",
+    "@types/papaparse": "^5.3.16",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
   }
 }
