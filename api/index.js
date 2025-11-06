@@ -6,11 +6,18 @@ const { requireAuth, requireAdmin, requireTeamAuth } = require('./authMiddleware
 const crypto = require('crypto');
 const multer = require('multer');
 const Papa = require('papaparse');
+const { cors, helmetConfig, generalLimiter, strictLimiter } = require('./config/security');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }); // CSVファイルをメモリに保存する
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // authMiddleware.js と同じシークレットを使用
+// JWT_SECRETは必須: セキュリティのため環境変数から取得
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET environment variable is required. Please set it in your .env file.'
+  );
+}
 
 const createSlugFrom = (value) =>
   value
@@ -22,7 +29,13 @@ const createSlugFrom = (value) =>
 
 const app = express();
 
+// セキュリティミドルウェアの適用
+app.use(helmetConfig);
+app.use(cors);
 app.use(express.json());
+
+// 一般的なAPIエンドポイントにレート制限を適用
+app.use('/api', generalLimiter);
 
 app.get('/api', (req, res) => {
   res.send('Hello from Node.js backend!');
@@ -278,8 +291,8 @@ app.post('/api/teams/register', requireAuth, async (req, res) => {
   }
 });
 
-// Team login
-app.post('/api/teams/login', async (req, res) => {
+// Team login (厳格なレート制限を適用)
+app.post('/api/teams/login', strictLimiter, async (req, res) => {
   const { username, password } = req.body ?? {};
 
   if (!username || !password) {

@@ -1,7 +1,13 @@
 const { supabase, createSupabaseClientForToken, supabaseAdmin } = require('./supabaseClient');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // 環境変数から取得、またはデフォルト値
+// JWT_SECRETは必須: セキュリティのため環境変数から取得
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET environment variable is required. Please set it in your .env file.'
+  );
+}
 
 /**
  * Express middleware that verifies Supabase JWT access tokens.
