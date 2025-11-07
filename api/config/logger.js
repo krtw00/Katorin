@@ -1,5 +1,4 @@
 const winston = require('winston');
-const path = require('path');
 
 // ログレベルの設定（環境変数または'info'がデフォルト）
 const logLevel = process.env.LOG_LEVEL || 'info';
@@ -50,23 +49,9 @@ const logger = winston.createLogger({
   ],
 });
 
-// 本番環境ではファイルにもログを出力
-if (process.env.NODE_ENV === 'production') {
-  // エラーログファイル
-  logger.add(new winston.transports.File({
-    filename: path.join(__dirname, '../../logs/error.log'),
-    level: 'error',
-    maxsize: 5242880, // 5MB
-    maxFiles: 5,
-  }));
-
-  // 全てのログファイル
-  logger.add(new winston.transports.File({
-    filename: path.join(__dirname, '../../logs/combined.log'),
-    maxsize: 5242880, // 5MB
-    maxFiles: 5,
-  }));
-}
+// 注意: Vercelのサーバーレス環境では、ファイルシステムは読み取り専用（/tmpを除く）
+// そのため、本番環境でもファイル出力は行わず、Console出力のみを使用する
+// Vercelは自動的にコンソールログを収集・保存するため、別途ファイル出力は不要
 
 // HTTPリクエストログ用のミドルウェア
 const requestLogger = (req, res, next) => {
