@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run ESLint
+        run: npm run lint --prefix frontend
+        continue-on-error: false
+
+      - name: Run TypeScript type check
+        run: npm run typecheck --prefix frontend || npx tsc --noEmit --project frontend/tsconfig.json
+        continue-on-error: false
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --watchAll=false --passWithNoTests --prefix frontend
+        env:
+          CI: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Build frontend
+        run: npm run build --prefix frontend
+        env:
+          CI: true
+          # React App環境変数（ビルド時にダミー値を使用）
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL || 'https://example.supabase.co' }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY || 'dummy-key-for-build' }}
+
+      - name: Check build output
+        run: |
+          if [ ! -d "frontend/build" ]; then
+            echo "Build directory not found!"
+            exit 1
+          fi
+          echo "Build completed successfully"
+          ls -lh frontend/build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build
+          retention-days: 7
+
+  api-check:
+    name: API Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install API dependencies
+        run: npm ci
+
+      - name: Check API syntax
+        run: node -c api/index.js
+
+      - name: Check for security vulnerabilities
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
