@@ -29,7 +29,8 @@ jobs:
           npm ci --prefix frontend
 
       - name: Run tests
-        run: npm test -- --watchAll=false --passWithNoTests --prefix frontend
+        run: npm test -- --watchAll=false --passWithNoTests
+        working-directory: frontend
         env:
           CI: true
 

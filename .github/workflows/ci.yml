@@ -62,7 +62,8 @@ jobs:
         run: npm ci --prefix frontend
 
       - name: Run tests with coverage
-        run: npm test -- --coverage --watchAll=false --passWithNoTests --prefix frontend
+        run: npm test -- --coverage --watchAll=false --passWithNoTests
+        working-directory: frontend
         env:
           CI: true
 
