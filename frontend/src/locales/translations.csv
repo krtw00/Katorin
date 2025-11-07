@@ -426,7 +426,13 @@ teamResultEntry.backToList,一覧へ戻る,Back to List
 teamResultEntry.cancel,取消,Cancel
 teamResultEntry.save,保存,Save
 teamResultEntry.finalize,確定,Finalize
+teamResultEntry.finalized,確定済,Finalized
+teamResultEntry.draft,未確定,Draft
 common.inputResult,結果入力,Enter Result
+common.useAuthError,useAuth は AuthProvider 内でのみ使用できます。,useAuth can only be used within AuthProvider.
+teamManagement.sampleTeamA,チームA,Team A
+teamManagement.samplePlayerTanaka,田中太郎,Taro Tanaka
+teamManagement.samplePlayerSuzuki,鈴木一郎,Ichiro Suzuki
 matchList.title,試合履歴,Match History
 matchList.reload,最新の状態に更新,Refresh
 matchList.filters,フィルター,Filters
