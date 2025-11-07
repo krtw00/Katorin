@@ -1,5 +1,5 @@
-const { supabase, createSupabaseClientForToken, supabaseAdmin } = require('./supabaseClient');
-const { logger } = require('./config/logger');
+const { supabase, createSupabaseClientForToken, supabaseAdmin } = require('../config/supabaseClient');
+const { logger } = require('../config/logger');
 
 /**
  * Express middleware that verifies Supabase JWT access tokens.

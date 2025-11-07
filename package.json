@@ -6,7 +6,7 @@
     "dev:api": "nodemon --config nodemon.json",
     "dev:frontend": "npm start --prefix frontend",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
-    "seed:dummy": "node api/seed-dummy-data.js",
+    "seed:dummy": "node scripts/seed-dummy-data.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

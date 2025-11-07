@@ -1,0 +1,32 @@
+# テストファイル
+**/__tests__
+**/*.test.js
+**/*.test.tsx
+**/*.test.ts
+
+# 設定ファイル
+api/jest.config.js
+jest.config.js
+nodemon.json
+
+# バックアップファイル
+**/*.backup
+
+# ローカル開発専用ファイル
+api/server.js
+
+# スクリプト（デプロイ不要）
+scripts/
+
+# ドキュメント
+docs/
+*.md
+!README.md
+
+# その他の開発ファイル
+.env.local
+.env.example
+coding-rules.md
+rules-checklist.md
+sources.md
+.mcp_cache/

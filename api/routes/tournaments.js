@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireAdmin } = require('../authMiddleware');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
 const createSlugFrom = (value) =>

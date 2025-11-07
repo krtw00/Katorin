@@ -7,10 +7,10 @@
  * - 各チームに紐づく複数の参加者（participants）
  * - ランダムな数の対戦（matches）
  *
- * 実行方法: node api/seed-dummy-data.js
+ * 実行方法: node scripts/seed-dummy-data.js
  */
 
-const { supabaseAdmin } = require('./supabaseClient');
+const { supabaseAdmin } = require('../api/supabaseClient');
 
 // ランダムな整数を生成
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
