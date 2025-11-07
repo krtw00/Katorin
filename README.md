@@ -20,12 +20,12 @@ Katorinは、トーナメント運営を効率化するための管理システ�
 ### フロントエンド
 
 - **言語**: TypeScript
-- **フレームワーク**: React 18
+- **フレームワーク**: React 19
 - **UIライブラリ**: Material-UI (MUI)
-- **ビルドツール**: Vite
+- **ビルドツール**: Create React App (react-scripts)
 - **国際化**: react-i18next
 - **状態管理**: React Context API + Hooks
-- **テスト**: Vitest, React Testing Library
+- **テスト**: Jest, React Testing Library
 
 ### バックエンド
 
@@ -208,10 +208,15 @@ Supabase Studio (http://127.0.0.1:54323) にアクセスし、以下の手順で
 
 本プロジェクトにおける開発の進め方やルールについては、以下のドキュメントを参照してください。
 
+📖 **[すべてのドキュメントを見る](docs/README.md)** - ドキュメント索引
+
+### 主要ドキュメント
+
 - **[環境構築ガイド](docs/environment-setup.md)**: 詳細な環境構築手順とトラブルシューティング。
 - **[コーディング規約](docs/coding-conventions.md)**: フォーマット、命名規則、開発フローなど、コードを記述する際の規約を記載しています。
 - **[アーキテクチャ設計書](docs/architecture.md)**: システム全体の設計、技術スタック、データベース設計について記載しています。
 - **[テストガイドライン](docs/testing_guidelines.md)**: テスト戦略、テストフレームワーク、テストのベストプラクティスについて説明します。
+- **[APIエンドポイント一覧](docs/api/endpoints.md)**: 全46個のAPIエンドポイントの詳細仕様。
 
 ## デプロイ
 
