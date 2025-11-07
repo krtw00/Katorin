@@ -20,12 +20,12 @@ Katorinは、トーナメント運営を効率化するための管理システ�
 ### フロントエンド
 
 - **言語**: TypeScript
-- **フレームワーク**: React 18
+- **フレームワーク**: React 19
 - **UIライブラリ**: Material-UI (MUI)
-- **ビルドツール**: Vite
+- **ビルドツール**: Create React App (react-scripts)
 - **国際化**: react-i18next
 - **状態管理**: React Context API + Hooks
-- **テスト**: Vitest, React Testing Library
+- **テスト**: Jest, React Testing Library
 
 ### バックエンド
 
