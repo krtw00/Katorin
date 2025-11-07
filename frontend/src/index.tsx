@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import reportWebVitals from './reportWebVitals';
 import './i18n';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -13,6 +14,7 @@ root.render(
   <React.StrictMode>
     <AuthProvider>
       <App />
+      <SpeedInsights />
     </AuthProvider>
   </React.StrictMode>
 );
