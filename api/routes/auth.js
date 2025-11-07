@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { supabase, supabaseAdmin } = require('../supabaseClient');
-const { requireAuth, requireAdmin, attachTeam } = require('../authMiddleware');
+const { supabase, supabaseAdmin } = require('../config/supabaseClient');
+const { requireAuth, requireAdmin, attachTeam } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
 // Get current team info (for team users)

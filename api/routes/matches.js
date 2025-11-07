@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, attachTeam } = require('../authMiddleware');
+const { requireAuth, attachTeam } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
 // --- Team-specific Match Endpoints ---
