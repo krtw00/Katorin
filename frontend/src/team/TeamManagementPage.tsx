@@ -187,8 +187,8 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const handleDownloadTemplate = useCallback(() => {
     const template = [
       ['team_name', 'participant_name', 'can_edit'],
-      ['チームA', '田中太郎', 'yes'],
-      ['チームA', '鈴木一郎', 'no'],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerTanaka'), 'yes'],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerSuzuki'), 'no'],
     ];
     const csv = Papa.unparse(template);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
