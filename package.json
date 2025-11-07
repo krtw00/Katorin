@@ -5,7 +5,8 @@
   "scripts": {
     "dev:api": "nodemon --config nodemon.json",
     "dev:frontend": "npm start --prefix frontend",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "seed:dummy": "node api/seed-dummy-data.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
