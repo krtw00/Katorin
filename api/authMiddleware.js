@@ -1,7 +1,5 @@
 const { supabase, createSupabaseClientForToken, supabaseAdmin } = require('./supabaseClient');
-const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'; // 環境変数から取得、またはデフォルト値
+const { logger } = require('./config/logger');
 
 /**
  * Express middleware that verifies Supabase JWT access tokens.
@@ -21,7 +19,7 @@ const requireAuth = async (req, res, next) => {
 
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data?.user) {
-      console.error('[auth] Failed to verify Supabase session:', error ?? 'user not found');
+      logger.error('Failed to verify Supabase session', { error: error?.message, context: 'auth' });
       return res.status(401).json({ error: '認証に失敗しました。' });
     }
 
@@ -41,50 +39,8 @@ const requireAuth = async (req, res, next) => {
     }
     return next();
   } catch (err) {
-    console.error('[auth] Unexpected error during auth verification:', err);
+    logger.error('Unexpected error during auth verification', { error: err.message, stack: err.stack });
     return res.status(500).json({ error: '認証処理中にエラーが発生しました。' });
-  }
-};
-
-/**
- * Express middleware that verifies Team JWT access tokens.
- * Attaches the authenticated team to `req.team` when successful.
- */
-const requireTeamAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return res.status(401).json({ error: 'チーム認証が必要です。' });
-    }
-
-    const token = authHeader.slice(7).trim();
-    if (!token) {
-      return res.status(401).json({ error: 'チーム認証トークンが無効です。' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const teamId = decoded.teamId;
-
-    if (!teamId) {
-      return res.status(401).json({ error: 'チーム認証トークンにチームIDが含まれていません。' });
-    }
-
-    const { data: team, error } = await supabase.from('teams').select('*').eq('id', teamId).single();
-
-    if (error || !team) {
-      console.error('[teamAuth] Failed to fetch team for token:', error ?? 'team not found');
-      return res.status(401).json({ error: 'チーム認証に失敗しました。' });
-    }
-
-    req.team = team;
-    req.teamId = teamId;
-    return next();
-  } catch (err) {
-    console.error('[teamAuth] Unexpected error during team auth verification:', err);
-    if (err instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error: '無効なチーム認証トークンです。' });
-    }
-    return res.status(500).json({ error: 'チーム認証処理中にエラーが発生しました。' });
   }
 };
 
@@ -107,4 +63,40 @@ const requireRole = (role) => (req, res, next) => {
 
 const requireAdmin = requireRole('admin');
 
-module.exports = { requireAuth, requireAdmin, requireRole, requireTeamAuth };
+/**
+ * ミドルウェア: 認証済みユーザーに紐づくチームを取得してreq.teamに設定
+ * requireAuthの後に使用する
+ */
+const attachTeam = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: '認証が必要です。' });
+  }
+
+  try {
+    const { data: team, error } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('auth_user_id', req.user.id)
+      .single();
+
+    if (error || !team) {
+      logger.error('Failed to fetch team for authenticated user', {
+        userId: req.user.id,
+        error: error?.message,
+      });
+      return res.status(404).json({ error: 'チームが見つかりません。' });
+    }
+
+    req.team = team;
+    req.teamId = team.id;
+    return next();
+  } catch (err) {
+    logger.error('Unexpected error while attaching team', {
+      error: err.message,
+      stack: err.stack,
+    });
+    return res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
+  }
+};
+
+module.exports = { requireAuth, requireAdmin, requireRole, attachTeam };

@@ -28,14 +28,15 @@
 ## 3. テストフレームワーク
 
 ### 3.1. 使用ツール
-- **テストランナー**: Vitest
+- **テストランナー**: Jest (Create React App標準)
 - **Reactコンポーネントテスト**: React Testing Library
-- **モック**: Vitest (vi.fn(), vi.mock())
+- **モック**: Jest (jest.fn(), jest.mock())
 - **E2Eテスト**: Playwright または Cypress (検討中)
 
 ### 3.2. 設定ファイル
-- `vitest.config.ts`: Vitestの設定
+- Create React Appではデフォルトで設定済み
 - `setupTests.ts`: テスト環境のセットアップ
+- カスタマイズが必要な場合は `package.json` の `jest` セクション、または `jest.config.js` を作成
 
 ## 4. 単体テスト (Unit Test)
 
@@ -57,19 +58,18 @@
 ### 4.4. コンポーネントテストの例
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import LoginForm from './LoginForm';
 
 describe('LoginForm', () => {
   it('should render email and password inputs', () => {
-    render(<LoginForm onSubmit={vi.fn()} />);
+    render(<LoginForm onSubmit={jest.fn()} />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
   });
 
   it('should call onSubmit when form is submitted', () => {
-    const mockSubmit = vi.fn();
+    const mockSubmit = jest.fn();
     render(<LoginForm onSubmit={mockSubmit} />);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
@@ -91,7 +91,6 @@ describe('LoginForm', () => {
 ### 4.5. カスタムHooksテストの例
 ```typescript
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
 import { useAuth } from './useAuth';
 
 describe('useAuth', () => {
@@ -115,7 +114,6 @@ describe('useAuth', () => {
 
 ### 4.6. ユーティリティ関数テストの例
 ```typescript
-import { describe, it, expect } from 'vitest';
 import { formatDate, calculateScore } from './utils';
 
 describe('formatDate', () => {
@@ -142,23 +140,21 @@ describe('calculateScore', () => {
 
 ### 5.2. Supabaseのモック
 ```typescript
-import { vi } from 'vitest';
-
 // Supabaseクライアントのモック
-vi.mock('./lib/supabaseClient', () => ({
+jest.mock('./lib/supabaseClient', () => ({
   supabase: {
     auth: {
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      getUser: vi.fn()
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+      getUser: jest.fn()
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn()
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn()
     }))
   }
 }));
@@ -167,13 +163,12 @@ vi.mock('./lib/supabaseClient', () => ({
 ### 5.3. API呼び出しを含むテスト
 ```typescript
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from './lib/supabaseClient';
 import TournamentList from './TournamentList';
 
 describe('TournamentList', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should fetch and display tournaments', async () => {
@@ -182,8 +177,8 @@ describe('TournamentList', () => {
       { id: 2, name: 'Tournament 2' }
     ];
 
-    vi.mocked(supabase.from).mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: mockTournaments, error: null })
+    (supabase.from as jest.Mock).mockReturnValue({
+      select: jest.fn().mockResolvedValue({ data: mockTournaments, error: null })
     } as any);
 
     render(<TournamentList />);
@@ -296,7 +291,7 @@ npm test -- --coverage
 
 ### 8.2. カバレッジレポート
 - `coverage/` ディレクトリに出力されます。
-- `coverage/index.html` をブラウザで開いて確認します。
+- `coverage/lcov-report/index.html` をブラウザで開いて確認します。
 
 ### 8.3. カバレッジ目標
 - **ステートメントカバレッジ**: 70%以上
@@ -325,6 +320,9 @@ npm test -- LoginForm.test.tsx
 
 # カバレッジ付きで実行
 npm test -- --coverage
+
+# カバレッジ付き＆監視モードなし（CI用）
+npm test -- --coverage --watchAll=false
 ```
 
 ### 9.2. CI/CD環境での実行
@@ -382,6 +380,6 @@ npm test -- --coverage
 
 ## 13. 参考リソース
 
-- [Vitest 公式ドキュメント](https://vitest.dev/)
+- [Jest 公式ドキュメント](https://jestjs.io/)
 - [React Testing Library 公式ドキュメント](https://testing-library.com/react)
 - [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
