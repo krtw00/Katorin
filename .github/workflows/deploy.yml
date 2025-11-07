@@ -1,0 +1,95 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pre-deploy-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix frontend
+
+      - name: Run tests
+        run: npm test -- --watchAll=false --passWithNoTests
+        working-directory: frontend
+        env:
+          CI: true
+
+      - name: Build verification
+        run: npm run build --prefix frontend
+        env:
+          CI: true
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL || 'https://example.supabase.co' }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY || 'dummy-key' }}
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  deploy-notification:
+    name: Deployment Notification
+    needs: pre-deploy-checks
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+
+      - name: Deployment started
+        run: |
+          echo "🚀 Deployment initiated for commit ${{ steps.commit.outputs.sha_short }}"
+          echo "📝 Commit message: ${{ steps.commit.outputs.message }}"
+          echo "👤 Author: ${{ steps.commit.outputs.author }}"
+          echo ""
+          echo "ℹ️  Vercel will automatically deploy this commit."
+          echo "📊 Check deployment status at: https://vercel.com/dashboard"
+
+  verify-deployment:
+    name: Verify Deployment
+    needs: deploy-notification
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Wait for Vercel deployment
+        run: |
+          echo "⏳ Waiting for Vercel to complete deployment..."
+          echo "Note: Vercel handles deployment automatically via GitHub integration"
+          sleep 30
+
+      - name: Deployment complete
+        run: |
+          echo "✅ Deployment pipeline completed"
+          echo ""
+          echo "Next steps:"
+          echo "1. Verify frontend is accessible"
+          echo "2. Check API endpoints are responding"
+          echo "3. Test authentication flow"
+          echo "4. Verify database migrations were applied (check release.yml workflow)"
