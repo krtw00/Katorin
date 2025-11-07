@@ -4,12 +4,12 @@
 このドキュメントは、Katorinプロジェクトにおけるコーディング規約と開発フローを定めます。一貫性のあるコードベースを維持し、可読性と保守性を高めることを目的とします。
 
 ## 2. 言語とフレームワーク
-- **フロントエンド**: TypeScript, React 18, Material-UI (MUI)
+- **フロントエンド**: TypeScript, React 19, Material-UI (MUI)
 - **バックエンド**: Supabase (Auth, Database, Storage, Edge Functions)
 - **データベース**: PostgreSQL (Supabase)
-- **ビルドツール**: Vite
+- **ビルドツール**: Create React App (react-scripts)
 - **国際化**: react-i18next
-- **テスト**: Vitest, React Testing Library
+- **テスト**: Jest, React Testing Library
 
 ## 3. 一般的な規約
 
@@ -124,7 +124,7 @@
 ### 8.2. 環境変数・シークレット
 - APIキー、パスワードなどは環境変数で管理します。
 - `.env.local` ファイルはGit追跡対象外とします。
-- フロントエンドに公開してよい環境変数のみ `VITE_` プレフィックスを付けます。
+- フロントエンドに公開してよい環境変数のみ `REACT_APP_` プレフィックスを付けます（Create React Appの規約）。
 - サービスロールキーなどの機密情報は、フロントエンドで使用しません。
 
 ### 8.3. XSS対策

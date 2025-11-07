@@ -1,0 +1,14 @@
+{
+  "name": "katorin-api",
+  "version": "1.0.0",
+  "description": "Katorin API Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  }
+}
