@@ -6,6 +6,7 @@
 /frontend/build
 
 # Logs and temporary files
+logs/
 *.log
 *.tmp
 npm-debug.log*
@@ -36,3 +37,5 @@ frontend/.env.local
 
 # Claude Code configuration
 .claude/
+.mcp_cache/
+.serena/
