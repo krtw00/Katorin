@@ -274,6 +274,8 @@ teamDashboard.noDate,日付未設定,No date set
 teamDashboard.loadTeamFailed,チーム情報の取得に失敗しました。,Failed to load team information.
 teamDashboard.loadParticipantsFailed,メンバー一覧の取得に失敗しました。,Failed to load members.
 teamDashboard.loadMatchesFailed,試合結果の取得に失敗しました。,Failed to load match results.
+teamDashboard.loadPermissionFailed,権限情報の取得に失敗しました。,Failed to load permission information.
+teamDashboard.loadDashboardFailed,ダッシュボードの読み込みに失敗しました。,Failed to load dashboard.
 teamDashboard.saveParticipantFailed,メンバーの保存に失敗しました。,Failed to save member.
 teamDashboard.deleteParticipantFailed,メンバーの削除に失敗しました。,Failed to delete member.
 teamDashboard.saveMatchFailed,試合結果の保存に失敗しました。,Failed to save match result.
@@ -326,6 +328,21 @@ teamDashboard.tournamentIdHelper,必要に応じて大会IDを関連付けます
 teamDashboard.roundIdLabel,ラウンドID (任意),Round ID (optional)
 teamDashboard.roundIdHelper,大会のラウンドIDがある場合は入力してください。,Set the round ID if the tournament uses one.
 teamDashboard.confirmDeleteMatch,この試合結果（相手: {{opponent}}）を削除しますか？,Delete this match result (opponent: {{opponent}})?
+teamDashboard.matchManagementAdminTitle,対戦管理,Match management
+teamDashboard.matchManagementViewerTitle,試合状況,Match overview
+teamDashboard.matchManagementAdminDescription,試合結果を登録・編集し、入力権限を管理できます。,Record and edit match results while managing input permissions.
+teamDashboard.matchManagementViewerDescription,登録済みの試合結果を閲覧できます。,Browse the match results recorded by your team.
+teamDashboard.matchManagementAdminButton,対戦を管理する,Open match manager
+teamDashboard.matchManagementViewerButton,試合結果を表示,View match list
+teamDashboard.todaySummaryTitle,本日の戦績,Today's summary
+teamDashboard.todayMatchesLabel,本日の試合数: {{count}} 件,Matches today: {{count}}
+teamDashboard.todayRecordValue,勝ち: {{wins}} / 負け: {{losses}},Wins: {{wins}} / Losses: {{losses}}
+teamDashboard.todayRecordEmpty,本日の試合はまだありません。,No matches recorded today.
+teamDashboard.participantsCountLabel,登録メンバー: {{count}} 名,Registered members: {{count}}
+teamDashboard.manageParticipantsButton,メンバーを管理,Manage members
+teamDashboard.historySectionTitle,過去の試合結果,Match history
+teamDashboard.historySectionDescription,投稿済みの試合結果一覧を確認します。,Review previously submitted match results.
+teamDashboard.historyButton,一覧を開く,Open list
 matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
 matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
 matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.

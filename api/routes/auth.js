@@ -14,6 +14,42 @@ router.get('/team/me', requireAuth, attachTeam, async (req, res) => {
   }
 });
 
+// Get current team user summary (with can_edit flag)
+router.get('/team/current-user', requireAuth, attachTeam, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+
+  try {
+    const { data: editors, error } = await client
+      .from('participants')
+      .select('id')
+      .eq('team_id', req.team.id)
+      .eq('can_edit', true)
+      .limit(1);
+
+    if (error) {
+      logger.error('Failed to resolve team can_edit flag', { error: error.message, teamId: req.team.id });
+      return res.status(500).json({ error: 'チーム権限の確認に失敗しました。' });
+    }
+
+    const response = {
+      id: req.team.id,
+      name: req.team.name,
+      username: req.team.username,
+      can_edit: Array.isArray(editors) && editors.length > 0,
+      tournament_id: req.team.tournament_id ?? null,
+      created_at: req.team.created_at,
+    };
+
+    res.json(response);
+  } catch (err) {
+    logger.error('Unexpected error fetching current team user', { error: err.message });
+    res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
+  }
+});
+
 // Request password reset email
 router.post('/password-reset', async (req, res) => {
   const { email } = req.body ?? {};

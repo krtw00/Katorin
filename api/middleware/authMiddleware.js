@@ -73,7 +73,13 @@ const attachTeam = async (req, res, next) => {
   }
 
   try {
-    const { data: team, error } = await supabase
+    const client = req.supabase ?? supabaseAdmin ?? supabase;
+    if (!client) {
+      logger.error('No Supabase client available for attachTeam');
+      return res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
+    }
+
+    const { data: team, error } = await client
       .from('teams')
       .select('*')
       .eq('auth_user_id', req.user.id)

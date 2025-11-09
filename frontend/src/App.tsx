@@ -57,10 +57,12 @@ const AppRoutes: React.FC = () => {
     if (selectedTournament) {
       window.localStorage.setItem('katorin:selectedTournamentId', selectedTournament.id);
       window.localStorage.setItem('katorin:selectedTournamentName', selectedTournament.name);
+      window.localStorage.setItem('katorin:selectedTournamentSlug', selectedTournament.slug);
       window.dispatchEvent(new CustomEvent('katorin:tournamentChanged', { detail: selectedTournament }));
     } else {
       window.localStorage.removeItem('katorin:selectedTournamentId');
       window.localStorage.removeItem('katorin:selectedTournamentName');
+      window.localStorage.removeItem('katorin:selectedTournamentSlug');
       window.dispatchEvent(new CustomEvent('katorin:tournamentCleared'));
     }
   }, [selectedTournament]);
@@ -320,7 +322,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/match-manager" element={<TeamMatchManager />} />
           <Route path="/matches" element={<MatchList />} />
           <Route path="/team/matches/:matchId/entry" element={<TeamResultEntryPage />} />
-          <Route path="/team-management" element={<TeamManagementPage />} />
+          <Route path="/team-management" element={<TeamManagementPage tournament={selectedTournament ?? undefined} />} />
           <Route path="/team/:teamId/participants" element={<ParticipantManagementPage />} />
           {/* Fallback for unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />

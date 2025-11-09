@@ -18,6 +18,18 @@ interface Team {
   name: string;
 }
 
+const getStoredTournamentId = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    return window.localStorage.getItem('katorin:selectedTournamentId');
+  } catch (err) {
+    console.warn('Failed to read stored tournament id', err);
+    return null;
+  }
+};
+
 const ParticipantManagementPage: React.FC = () => {
   const { t } = useTranslation();
   const { teamId } = useParams<{ teamId: string }>();
@@ -70,7 +82,9 @@ const ParticipantManagementPage: React.FC = () => {
   const fetchTeamsForMove = useCallback(async () => {
     // fetch teams using supabase auth
     try {
-      const response = await authFetch('/api/teams');
+      const storedTournamentId = getStoredTournamentId();
+      const query = storedTournamentId ? `?tournament_id=${encodeURIComponent(storedTournamentId)}` : '';
+      const response = await authFetch(`/api/teams${query}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('participantManagement.fetchTeamsForMoveError'));

@@ -56,6 +56,8 @@ type TeamManagementPageProps = {
 const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false, tournament }) => {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const tournamentId = tournament?.id ?? null;
+  const tournamentSlug = tournament?.slug ?? null;
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsLoading, setTeamsLoading] = useState<boolean>(true);
@@ -87,6 +89,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const missingTournamentContext = !tournamentId || !tournamentSlug;
 
   const selectedTeam = useMemo(
     () => teams.find((team) => team.id === selectedTeamId) ?? null,
@@ -106,10 +109,17 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setTeamsError(t('teamManagement.fetchError'));
       return;
     }
+    if (!tournamentId) {
+      setTeamsLoading(false);
+      setTeamsError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     setTeamsLoading(true);
     setTeamsError(null);
     try {
-      const response = await fetch('/api/teams', {
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await fetch(`/api/teams?${params.toString()}`, {
         headers: authHeader,
       });
       const data = await response.json();
@@ -129,7 +139,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     } finally {
       setTeamsLoading(false);
     }
-  }, [authHeader, t]);
+  }, [authHeader, t, tournamentId]);
 
   const fetchParticipants = useCallback(
     async (teamId: string) => {
@@ -165,9 +175,15 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setExportError(t('teamManagement.exportError'));
       return;
     }
+    if (!tournamentId) {
+      setExportError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     setExportError(null);
     try {
-      const response = await fetch('/api/teams/export', {
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await fetch(`/api/teams/export?${params.toString()}`, {
         headers: authHeader,
       });
 
@@ -189,7 +205,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       console.error('Failed to export teams:', err);
       setExportError(err.message || t('teamManagement.exportError'));
     }
-  }, [authHeader, t]);
+  }, [authHeader, t, tournamentId]);
 
   const handleDownloadTemplate = useCallback(() => {
     const template = [
@@ -218,7 +234,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setImportError(t('teamManagement.importError'));
       return;
     }
-    if (!tournament?.slug) {
+    if (!tournamentSlug) {
       setImportError(t('teamManagement.tournamentSlugRequired'));
       return;
     }
@@ -231,7 +247,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('tournament_slug', tournament.slug);
+    formData.append('tournament_slug', tournamentSlug);
 
     try {
       const response = await fetch('/api/teams/import', {
@@ -260,7 +276,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         fileInputRef.current.value = ''; // Clear file input
       }
     }
-  }, [authHeader, fetchTeams, t, tournament?.slug]);
+  }, [authHeader, fetchTeams, t, tournamentSlug]);
 
   useEffect(() => {
     fetchTeams();
@@ -328,8 +344,8 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         name: teamName.trim(),
         username: teamUsername.trim(),
       };
-      if (tournament?.slug) {
-        body.tournament_slug = tournament.slug;
+      if (tournamentSlug) {
+        body.tournament_slug = tournamentSlug;
       }
       if (teamPassword) {
         body.password = teamPassword;
@@ -339,13 +355,13 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         setTeamDialogError(t('teamManagement.teamNameRequired'));
         return;
       }
-      if (!tournament?.slug) {
+      if (!tournamentSlug) {
         setTeamDialogError(t('teamManagement.tournamentSlugRequired'));
         return;
       }
       body = {
         name: teamName.trim(),
-        tournament_slug: tournament.slug,
+        tournament_slug: tournamentSlug,
       };
     }
 
@@ -555,7 +571,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="outlined"
             startIcon={<CloudDownload />}
             onClick={handleExportTeams}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.exportTeams')}
           </Button>
@@ -571,7 +587,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="contained"
             startIcon={<CloudUpload />}
             onClick={handleImportClick}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.importTeams')}
           </Button>
@@ -586,7 +602,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchTeams}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('common.refresh')}
           </Button>
@@ -594,12 +610,18 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="contained"
             startIcon={<GroupAdd />}
             onClick={handleOpenCreateTeam}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.createTeam')}
           </Button>
         </Stack>
       </Stack>
+
+      {missingTournamentContext ? (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t('teamManagement.tournamentSlugRequired')}
+        </Alert>
+      ) : null}
 
       {importError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
