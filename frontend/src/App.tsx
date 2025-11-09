@@ -233,7 +233,7 @@ const AppRoutes: React.FC = () => {
               />
             )
           ) : (
-            <TeamManagementPage embedded />
+            <TeamManagementPage embedded tournament={selectedTournament ?? undefined} />
           )}
         </Stack>
       </Box>

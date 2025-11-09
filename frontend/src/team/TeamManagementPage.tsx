@@ -42,11 +42,18 @@ interface Participant {
   team_id?: string;
 }
 
+interface Tournament {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 type TeamManagementPageProps = {
   embedded?: boolean;
+  tournament?: Tournament;
 };
 
-const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false }) => {
+const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false, tournament }) => {
   const { t } = useTranslation();
   const { session } = useAuth();
 
@@ -211,6 +218,10 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setImportError(t('teamManagement.importError'));
       return;
     }
+    if (!tournament?.slug) {
+      setImportError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -220,6 +231,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('tournament_slug', tournament.slug);
 
     try {
       const response = await fetch('/api/teams/import', {
@@ -316,6 +328,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         name: teamName.trim(),
         username: teamUsername.trim(),
       };
+      if (tournament?.slug) {
+        body.tournament_slug = tournament.slug;
+      }
       if (teamPassword) {
         body.password = teamPassword;
       }
@@ -324,8 +339,13 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         setTeamDialogError(t('teamManagement.teamNameRequired'));
         return;
       }
+      if (!tournament?.slug) {
+        setTeamDialogError(t('teamManagement.tournamentSlugRequired'));
+        return;
+      }
       body = {
         name: teamName.trim(),
+        tournament_slug: tournament.slug,
       };
     }
 

@@ -25,15 +25,20 @@ router.post('/register', requireAuth, async (req, res) => {
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
-  const { name } = req.body ?? {};
+  const { name, tournament_slug } = req.body ?? {};
 
   if (!name) {
     return res.status(400).json({ error: 'チーム名は必須です。' });
   }
 
+  if (!tournament_slug) {
+    return res.status(400).json({ error: 'トーナメントスラッグは必須です。' });
+  }
+
   const teamUsername = createSlugFrom(name);
   const generatedPassword = crypto.randomBytes(8).toString('hex'); // 16文字のランダムなパスワード
-  const teamEmail = `${teamUsername}@${req.user.id}.teams.local`; // チーム専用の疑似メールアドレス
+  // メールフォーマットを統一: {username}@{tournamentSlug}.players.local
+  const teamEmail = `${teamUsername}@${tournament_slug}.players.local`;
 
   try {
     // Supabase Authにユーザーを登録
@@ -41,7 +46,7 @@ router.post('/register', requireAuth, async (req, res) => {
       email: teamEmail,
       password: generatedPassword,
       email_confirm: true,
-      app_metadata: { role: 'team', tournament_creator_id: req.user.id },
+      app_metadata: { role: 'team', tournament_slug, tournament_creator_id: req.user.id },
     });
 
     if (authError) {
@@ -93,64 +98,15 @@ router.post('/register', requireAuth, async (req, res) => {
   }
 });
 
-// Team login (厳格なレート制限を適用)
-// Supabase Auth方式: usernameからauth_user_idを取得し、そのemailでログイン
-router.post('/login', strictLimiter, async (req, res) => {
-  const { username, password } = req.body ?? {};
-
-  if (!username || !password) {
-    return res.status(400).json({ error: 'ユーザー名とパスワードは必須です。' });
-  }
-
-  try {
-    // 1. usernameからteamsテーブルでauth_user_idを取得
-    const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .select('id, name, username, auth_user_id')
-      .eq('username', username)
-      .single();
-
-    if (teamError || !team || !team.auth_user_id) {
-      logger.warn('Team login failed: team not found or missing auth_user_id', { username });
-      return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
-    }
-
-    // 2. auth_user_idからauth.usersのemailを取得
-    const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(team.auth_user_id);
-
-    if (authUserError || !authUser?.user?.email) {
-      logger.error('Failed to get auth user for team login', {
-        authUserId: team.auth_user_id,
-        error: authUserError?.message
-      });
-      return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
-    }
-
-    // 3. Supabase Authでログイン
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: authUser.user.email,
-      password: password,
-    });
-
-    if (signInError || !signInData?.session) {
-      logger.warn('Team login failed: invalid credentials', { username, email: authUser.user.email });
-      return res.status(401).json({ error: '無効なユーザー名またはパスワードです。' });
-    }
-
-    // 4. Supabase Authのアクセストークンを返す
-    res.status(200).json({
-      teamId: team.id,
-      name: team.name,
-      username: team.username,
-      token: signInData.session.access_token,
-      refreshToken: signInData.session.refresh_token,
-      expiresAt: signInData.session.expires_at,
-    });
-  } catch (err) {
-    logger.error('Unexpected error during team login', { error: err.message, stack: err.stack });
-    res.status(500).json({ error: 'チームログインに失敗しました。' });
-  }
-});
+// ⚠️ NOTE: Team login is now handled by Supabase Auth directly via LoginForm.tsx
+// The client-side calls signInWithPassword with email format: {username}@{tournamentSlug}.players.local
+// This endpoint is DEPRECATED and kept only for backward compatibility
+// TODO: Remove this endpoint in v2.0
+//
+// router.post('/login', strictLimiter, async (req, res) => {
+//   // DEPRECATED: Use Supabase Auth signInWithPassword instead
+//   return res.status(410).json({ error: 'Team login via this endpoint is deprecated. Use Supabase Auth directly.' });
+// });
 
 // Get all teams created by the authenticated user
 router.get('/', requireAuth, async (req, res) => {
@@ -243,8 +199,10 @@ router.put('/:id', requireAuth, async (req, res) => {
       }
 
       // Update Supabase Auth user email if username changed
-      if (existingTeam.auth_user_id) {
-        const newEmail = `${newUsername}@${req.user.id}.teams.local`;
+      // Get tournament_slug from request or fetch from existing team data
+      const { tournament_slug } = req.body ?? {};
+      if (existingTeam.auth_user_id && tournament_slug) {
+        const newEmail = `${newUsername}@${tournament_slug}.players.local`;
         const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
           existingTeam.auth_user_id,
           { email: newEmail }
@@ -354,6 +312,11 @@ router.post('/import', requireAuth, upload.single('file'), async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
 
+  const { tournament_slug } = req.body ?? {};
+  if (!tournament_slug) {
+    return res.status(400).json({ error: 'トーナメントスラッグは必須です。' });
+  }
+
   if (!req.file) {
     return res.status(400).json({ error: 'CSVファイルが必要です。' });
   }
@@ -383,7 +346,8 @@ router.post('/import', requireAuth, upload.single('file'), async (req, res) => {
 
     const teamUsername = createSlugFrom(name);
     const generatedPassword = crypto.randomBytes(8).toString('hex');
-    const teamEmail = `${teamUsername}@${req.user.id}.teams.local`;
+    // メールフォーマットを統一: {username}@{tournamentSlug}.players.local
+    const teamEmail = `${teamUsername}@${tournament_slug}.players.local`;
 
     try {
       // Create Supabase Auth user
@@ -391,7 +355,7 @@ router.post('/import', requireAuth, upload.single('file'), async (req, res) => {
         email: teamEmail,
         password: generatedPassword,
         email_confirm: true,
-        app_metadata: { role: 'team', tournament_creator_id: req.user.id },
+        app_metadata: { role: 'team', tournament_slug, tournament_creator_id: req.user.id },
       });
 
       if (authError) {
