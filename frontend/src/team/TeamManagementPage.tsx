@@ -207,7 +207,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
-  }, []);
+  }, [t]);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -260,7 +260,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         fileInputRef.current.value = ''; // Clear file input
       }
     }
-  }, [authHeader, fetchTeams, t]);
+  }, [authHeader, fetchTeams, t, tournament?.slug]);
 
   useEffect(() => {
     fetchTeams();

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
-import { useTranslation } from 'react-i18next';
 
 type Team = {
   id: string;
@@ -21,7 +20,6 @@ type MatchRecord = {
 };
 
 export const useResultEntry = (matchId: string | null) => {
-  const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
 
   // State

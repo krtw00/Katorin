@@ -6,8 +6,8 @@ import {
   determineStatus,
   getInitial,
   type MatchFormValues,
-  type DisplayMatch,
 } from './matchTypes';
+// DisplayMatch型はテストに直接使用していないため、不要
 
 describe('matchTypes utilities', () => {
   describe('createInitialValues', () => {
