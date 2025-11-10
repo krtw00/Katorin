@@ -5,18 +5,39 @@ const { logger } = require('../config/logger');
 
 // --- Team-specific Match Endpoints ---
 
-// Get all matches for authenticated team
+// Get matches for authenticated team (optionally include finalized ones)
 router.get('/team/matches', requireAuth, attachTeam, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
+
+  const status = String(req.query.status || 'open').toLowerCase();
+  const limitParam = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 500) : null;
+
   try {
-    const { data, error } = await client
+    let query = client
       .from('matches')
       .select('*')
       .eq('team_id', req.team.id)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    if (status === 'finalized') {
+      query = query.eq('result_status', 'finalized');
+    } else if (status === 'all') {
+      // no additional filter
+    } else {
+      // default: only matches that still need attention
+      query = query.neq('result_status', 'finalized');
+    }
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
     if (error) {
       logger.error('Failed to fetch team matches', { error: error.message, teamId: req.team.id });
       return res.status(500).json({ error: error.message });
@@ -269,6 +290,95 @@ router.delete('/team/matches/:id', requireAuth, attachTeam, async (req, res) => 
   } catch (err) {
     logger.error('Unexpected error deleting team match', { error: err.message, matchId: id });
     return res.status(500).json({ error: '試合結果の削除に失敗しました。' });
+  }
+});
+
+// Completed match feed (all teams, finalized results only)
+router.get('/completed', requireAuth, async (req, res) => {
+  const client = req.supabase;
+  if (!client) {
+    return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
+  }
+
+  const pageParam = Number.parseInt(req.query.page, 10);
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+  const pageSizeParam = Number.parseInt(req.query.pageSize, 10);
+  const pageSize = Number.isFinite(pageSizeParam)
+    ? Math.min(Math.max(pageSizeParam, 1), 100)
+    : 25;
+  const search = (req.query.search ?? '').toString().trim();
+  const tournamentId = (req.query.tournamentId ?? '').toString().trim();
+  const dateFrom = (req.query.dateFrom ?? '').toString().trim();
+  const dateTo = (req.query.dateTo ?? '').toString().trim();
+
+  const rangeFrom = (page - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
+  const toISO = (value, endOfDay = false) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) {
+      return null;
+    }
+    if (endOfDay) {
+      date.setHours(23, 59, 59, 999);
+    }
+    return date.toISOString();
+  };
+
+  try {
+    let query = client
+      .from('matches')
+      .select('*', { count: 'exact' })
+      .eq('result_status', 'finalized')
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .range(rangeFrom, rangeTo);
+
+    if (tournamentId) {
+      query = query.eq('tournament_id', tournamentId);
+    }
+
+    const fromISO = toISO(dateFrom, false);
+    if (fromISO) {
+      query = query.gte('date', fromISO);
+    }
+
+    const toISOValue = toISO(dateTo, true);
+    if (toISOValue) {
+      query = query.lte('date', toISOValue);
+    }
+
+    if (search) {
+      const sanitized = search.replace(/[,]/g, ' ').trim();
+      if (sanitized.length > 0) {
+        const pattern = `*${sanitized.replace(/\s+/g, ' ').trim()}*`;
+        query = query.or(
+          [
+            `team.ilike.${pattern}`,
+            `opponentTeam.ilike.${pattern}`,
+            `player.ilike.${pattern}`,
+            `opponentPlayer.ilike.${pattern}`,
+          ].join(','),
+        );
+      }
+    }
+
+    const { data, error, count } = await query;
+    if (error) {
+      logger.error('Failed to fetch completed matches', { error: error.message });
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({
+      data: data ?? [],
+      total: count ?? data?.length ?? 0,
+      page,
+      pageSize,
+    });
+  } catch (err) {
+    logger.error('Unexpected error fetching completed matches', { error: err.message });
+    return res.status(500).json({ error: '完了済み対戦の取得に失敗しました。' });
   }
 });
 
