@@ -14,7 +14,7 @@ router.get('/team/participants', requireAuth, attachTeam, async (req, res) => {
   try {
     const { data, error } = await client
       .from('participants')
-      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .select('id, team_id, name, created_at, updated_at')
       .eq('team_id', req.team.id)
       .order('name', { ascending: true });
     if (error) {
@@ -35,15 +35,14 @@ router.post('/team/participants', requireAuth, attachTeam, async (req, res) => {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const name = req.body?.name ? String(req.body.name).trim() : '';
-  const canEdit = Boolean(req.body?.canEdit ?? req.body?.can_edit ?? false);
   if (!name) {
     return res.status(400).json({ error: '参加者名は必須です。' });
   }
   try {
-    const { data, error } = await client
+    const { data, error} = await client
       .from('participants')
-      .insert({ team_id: req.team.id, name, can_edit: canEdit, created_by: req.team.created_by })
-      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .insert({ team_id: req.team.id, name, created_by: req.team.created_by })
+      .select('id, team_id, name, created_at, updated_at')
       .single();
     if (error) {
       logger.error('Failed to create team participant', { error: error.message });
@@ -64,7 +63,6 @@ router.put('/team/participants/:id', requireAuth, attachTeam, async (req, res) =
   }
   const { id } = req.params;
   const name = req.body?.name ? String(req.body.name).trim() : undefined;
-  const canEdit = req.body?.canEdit ?? req.body?.can_edit;
   try {
     const { data: participant, error: fetchError } = await client
       .from('participants')
@@ -78,17 +76,14 @@ router.put('/team/participants/:id', requireAuth, attachTeam, async (req, res) =
     if (participant.team_id !== req.team.id) {
       return res.status(403).json({ error: 'この参加者を更新する権限がありません。' });
     }
-    const updatePayload = {};
-    if (typeof name === 'string' && name.length > 0) updatePayload.name = name;
-    if (typeof canEdit === 'boolean') updatePayload.can_edit = canEdit;
-    if (Object.keys(updatePayload).length === 0) {
-      return res.status(400).json({ error: '更新するデータがありません。' });
+    if (!name || name.length === 0) {
+      return res.status(400).json({ error: '参加者名は必須です。' });
     }
     const { data, error } = await client
       .from('participants')
-      .update(updatePayload)
+      .update({ name })
       .eq('id', id)
-      .select('id, team_id, name, can_edit, created_at, updated_at')
+      .select('id, team_id, name, created_at, updated_at')
       .single();
     if (error) {
       logger.error('Failed to update team participant', { error: error.message, participantId: id });
@@ -161,7 +156,7 @@ router.get('/admin/teams/:teamId/participants', requireAuth, requireAdminOrEdito
 
     const { data, error } = await client
       .from('participants')
-      .select('id, name, can_edit, created_at')
+      .select('id, name, created_at')
       .eq('team_id', teamId)
       .order('name', { ascending: true });
 
@@ -184,7 +179,7 @@ router.post('/admin/teams/:teamId/participants', requireAuth, requireAdminOrEdit
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const { teamId } = req.params;
-  const { name, can_edit } = req.body ?? {};
+  const { name } = req.body ?? {};
 
   if (!name) {
     return res.status(400).json({ error: '参加者名は必須です。' });
@@ -211,10 +206,9 @@ router.post('/admin/teams/:teamId/participants', requireAuth, requireAdminOrEdit
       .insert({
         team_id: teamId,
         name,
-        can_edit: Boolean(can_edit),
         created_by: req.user.id,
       })
-      .select('id, name, can_edit, created_at')
+      .select('id, name, created_at')
       .single();
 
     if (error || !data) {
@@ -236,7 +230,7 @@ router.put('/admin/participants/:id', requireAuth, requireAdminOrEditor, async (
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
   }
   const { id } = req.params;
-  const { name, can_edit, team_id: newTeamId } = req.body ?? {};
+  const { name, team_id: newTeamId } = req.body ?? {};
 
   if (!name) {
     return res.status(400).json({ error: '参加者名は必須です。' });
@@ -273,7 +267,6 @@ router.put('/admin/participants/:id', requireAuth, requireAdminOrEditor, async (
 
     const updatePayload = {
       name,
-      can_edit: Boolean(can_edit),
       team_id: targetTeamId,
     };
 
@@ -281,7 +274,7 @@ router.put('/admin/participants/:id', requireAuth, requireAdminOrEditor, async (
       .from('participants')
       .update(updatePayload)
       .eq('id', id)
-      .select('id, name, can_edit, team_id, created_at')
+      .select('id, name, team_id, created_at')
       .single();
 
     if (error || !data) {
