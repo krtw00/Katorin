@@ -64,15 +64,6 @@ const formatDateWithTime = (value?: string | null) => {
   }).format(date);
 };
 
-const getOutcome = (selfScore?: string | null, opponentScore?: string | null): 'win' | 'lose' | 'draw' | 'pending' => {
-  const self = parseScoreValue(selfScore);
-  const opp = parseScoreValue(opponentScore);
-  if (self === null || opp === null) return 'pending';
-  if (self > opp) return 'win';
-  if (self < opp) return 'lose';
-  return 'draw';
-};
-
 const MatchList: React.FC = () => {
   const { t } = useTranslation();
   const teamApi = useTeamApi();
@@ -177,13 +168,8 @@ const MatchList: React.FC = () => {
   }, [page, totalPages]);
 
   const outcomeChip = (match: MatchRecord) => {
-    const parseScore = (value?: string | null) => {
-      if (!value) return null;
-      const num = Number(value);
-      return Number.isFinite(num) ? num : null;
-    };
-    const self = parseScore(match.selfScore);
-    const opp = parseScore(match.opponentScore);
+    const self = parseScoreValue(match.selfScore);
+    const opp = parseScoreValue(match.opponentScore);
     let label = t('matchList.resultPending');
     let color: 'success' | 'error' | 'default' = 'default';
     if (self !== null && opp !== null) {
