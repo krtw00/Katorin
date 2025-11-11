@@ -3,13 +3,11 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
   List,
   ListItem,
@@ -18,10 +16,9 @@ import {
   Paper,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { CloudDownload, CloudUpload, Delete, Description, Edit, EditOff, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
+import { CloudDownload, CloudUpload, Delete, Description, Edit, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { useRef } from 'react';
@@ -37,18 +34,26 @@ interface Team {
 interface Participant {
   id: string;
   name: string;
-  can_edit: boolean;
   created_at: string;
   team_id?: string;
 }
 
+interface Tournament {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 type TeamManagementPageProps = {
   embedded?: boolean;
+  tournament?: Tournament;
 };
 
-const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false }) => {
+const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false, tournament }) => {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const tournamentId = tournament?.id ?? null;
+  const tournamentSlug = tournament?.slug ?? null;
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsLoading, setTeamsLoading] = useState<boolean>(true);
@@ -74,12 +79,12 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [participantSubmitting, setParticipantSubmitting] = useState(false);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [participantName, setParticipantName] = useState('');
-  const [participantCanEdit, setParticipantCanEdit] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const missingTournamentContext = !tournamentId || !tournamentSlug;
 
   const selectedTeam = useMemo(
     () => teams.find((team) => team.id === selectedTeamId) ?? null,
@@ -99,10 +104,17 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setTeamsError(t('teamManagement.fetchError'));
       return;
     }
+    if (!tournamentId) {
+      setTeamsLoading(false);
+      setTeamsError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     setTeamsLoading(true);
     setTeamsError(null);
     try {
-      const response = await fetch('/api/teams', {
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await fetch(`/api/teams?${params.toString()}`, {
         headers: authHeader,
       });
       const data = await response.json();
@@ -122,7 +134,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     } finally {
       setTeamsLoading(false);
     }
-  }, [authHeader, t]);
+  }, [authHeader, t, tournamentId]);
 
   const fetchParticipants = useCallback(
     async (teamId: string) => {
@@ -158,9 +170,15 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setExportError(t('teamManagement.exportError'));
       return;
     }
+    if (!tournamentId) {
+      setExportError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     setExportError(null);
     try {
-      const response = await fetch('/api/teams/export', {
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await fetch(`/api/teams/export?${params.toString()}`, {
         headers: authHeader,
       });
 
@@ -182,13 +200,13 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       console.error('Failed to export teams:', err);
       setExportError(err.message || t('teamManagement.exportError'));
     }
-  }, [authHeader, t]);
+  }, [authHeader, t, tournamentId]);
 
   const handleDownloadTemplate = useCallback(() => {
     const template = [
-      ['team_name', 'participant_name', 'can_edit'],
-      ['チームA', '田中太郎', 'yes'],
-      ['チームA', '鈴木一郎', 'no'],
+      ['team_name', 'participant_name'],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerTanaka')],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerSuzuki')],
     ];
     const csv = Papa.unparse(template);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -200,7 +218,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
-  }, []);
+  }, [t]);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -209,6 +227,10 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!authHeader) {
       setImportError(t('teamManagement.importError'));
+      return;
+    }
+    if (!tournamentSlug) {
+      setImportError(t('teamManagement.tournamentSlugRequired'));
       return;
     }
     const file = event.target.files?.[0];
@@ -220,6 +242,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('tournament_slug', tournamentSlug);
 
     try {
       const response = await fetch('/api/teams/import', {
@@ -248,7 +271,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         fileInputRef.current.value = ''; // Clear file input
       }
     }
-  }, [authHeader, fetchTeams, t]);
+  }, [authHeader, fetchTeams, t, tournamentSlug]);
 
   useEffect(() => {
     fetchTeams();
@@ -316,6 +339,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         name: teamName.trim(),
         username: teamUsername.trim(),
       };
+      if (tournamentSlug) {
+        body.tournament_slug = tournamentSlug;
+      }
       if (teamPassword) {
         body.password = teamPassword;
       }
@@ -324,8 +350,13 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         setTeamDialogError(t('teamManagement.teamNameRequired'));
         return;
       }
+      if (!tournamentSlug) {
+        setTeamDialogError(t('teamManagement.tournamentSlugRequired'));
+        return;
+      }
       body = {
         name: teamName.trim(),
+        tournament_slug: tournamentSlug,
       };
     }
 
@@ -398,7 +429,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     }
     setCurrentParticipant(participant ?? null);
     setParticipantName(participant?.name ?? '');
-    setParticipantCanEdit(participant?.can_edit ?? false);
     setParticipantDialogError(null);
     setParticipantDialogOpen(true);
   };
@@ -429,7 +459,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         : `/api/admin/teams/${selectedTeam.id}/participants`;
       const payload: Record<string, unknown> = {
         name: participantName,
-        can_edit: participantCanEdit,
       };
       if (currentParticipant) {
         payload.team_id = selectedTeam.id;
@@ -535,7 +564,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="outlined"
             startIcon={<CloudDownload />}
             onClick={handleExportTeams}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.exportTeams')}
           </Button>
@@ -551,7 +580,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="contained"
             startIcon={<CloudUpload />}
             onClick={handleImportClick}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.importTeams')}
           </Button>
@@ -566,7 +595,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchTeams}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('common.refresh')}
           </Button>
@@ -574,12 +603,18 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             variant="contained"
             startIcon={<GroupAdd />}
             onClick={handleOpenCreateTeam}
-            disabled={teamSubmitting}
+            disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.createTeam')}
           </Button>
         </Stack>
       </Stack>
+
+      {missingTournamentContext ? (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t('teamManagement.tournamentSlugRequired')}
+        </Alert>
+      ) : null}
 
       {importError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -751,30 +786,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
                     >
                       <ListItemText
                         primary={
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography fontWeight={600} color="text.primary">
-                              {participant.name}
-                            </Typography>
-                            <Tooltip
-                              title={
-                                participant.can_edit
-                                  ? t('participantManagement.canEdit')
-                                  : t('participantManagement.cannotEdit')
-                              }
-                            >
-                              {participant.can_edit ? (
-                                <Edit
-                                  fontSize="small"
-                                  sx={{ color: 'success.main', verticalAlign: 'middle' }}
-                                />
-                              ) : (
-                                <EditOff
-                                  fontSize="small"
-                                  sx={{ color: 'text.disabled', verticalAlign: 'middle' }}
-                                />
-                              )}
-                            </Tooltip>
-                          </Stack>
+                          <Typography fontWeight={600} color="text.primary">
+                            {participant.name}
+                          </Typography>
                         }
                       />
                     </ListItem>
@@ -897,16 +911,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
               onChange={(event) => setParticipantName(event.target.value)}
               required
               disabled={participantSubmitting}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={participantCanEdit}
-                  onChange={(event) => setParticipantCanEdit(event.target.checked)}
-                  disabled={participantSubmitting}
-                />
-              }
-              label={t('participantManagement.grantEditPermission')}
             />
           </Stack>
         </DialogContent>

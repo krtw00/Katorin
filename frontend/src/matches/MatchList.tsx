@@ -34,6 +34,7 @@ import { useTranslation } from 'react-i18next';
 import MatchEditDialog from './MatchEditDialog';
 import { useTeamApi } from '../team/useTeamApi';
 import type { MatchRecord } from '../types/matchTypes';
+import { parseScoreValue } from '../types/matchTypes';
 
 type Participant = {
   id: string;
@@ -43,12 +44,12 @@ type Participant = {
 type TeamUser = {
   id: string;
   name: string;
-  can_edit: boolean;
+  can_edit: boolean; // 常に true（全チームメンバーが編集可能）
 };
 
 const PAGE_SIZE = 20;
 
-const formatDate = (value?: string | null) => {
+const formatDateWithTime = (value?: string | null) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -167,13 +168,8 @@ const MatchList: React.FC = () => {
   }, [page, totalPages]);
 
   const outcomeChip = (match: MatchRecord) => {
-    const parseScore = (value?: string | null) => {
-      if (!value) return null;
-      const num = Number(value);
-      return Number.isFinite(num) ? num : null;
-    };
-    const self = parseScore(match.selfScore);
-    const opp = parseScore(match.opponentScore);
+    const self = parseScoreValue(match.selfScore);
+    const opp = parseScoreValue(match.opponentScore);
     let label = t('matchList.resultPending');
     let color: 'success' | 'error' | 'default' = 'default';
     if (self !== null && opp !== null) {
@@ -360,7 +356,7 @@ const MatchList: React.FC = () => {
                       ) : null}
                     </Stack>
                     <Typography variant="body2" color="text.secondary">
-                      {formatDate(match.date)}
+                      {formatDateWithTime(match.date)}
                     </Typography>
                     <Typography variant="body2">
                       {t('matchList.scoreLine', {
@@ -418,7 +414,7 @@ const MatchList: React.FC = () => {
                   <TableRow key={match.id} hover>
                     <TableCell>
                       <Stack spacing={0.5}>
-                        <Typography variant="body2">{formatDate(match.date)}</Typography>
+                        <Typography variant="body2">{formatDateWithTime(match.date)}</Typography>
                         {match.timezone ? (
                           <Typography variant="caption" color="text.secondary">
                             {match.timezone}

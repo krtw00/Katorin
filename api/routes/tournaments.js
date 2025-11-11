@@ -159,6 +159,23 @@ router.post('/:tournamentId/rounds/:roundId/close', requireAuth, requireAdmin, a
   if (round.status === 'closed') {
     return res.status(400).json({ error: 'このラウンドは既に締め切られています。' });
   }
+
+  const { data: previousOpenRounds, error: previousError } = await client
+    .from('rounds')
+    .select('id, number, status')
+    .eq('tournament_id', tournamentId)
+    .lt('number', round.number)
+    .neq('status', 'closed');
+
+  if (previousError) {
+    logger.error('Failed to check previous rounds before closing', { error: previousError.message, roundId });
+    return res.status(500).json({ error: 'ラウンド状態の確認に失敗しました。' });
+  }
+
+  if (previousOpenRounds && previousOpenRounds.length > 0) {
+    return res.status(400).json({ error: '前のラウンドをすべて締めてからこのラウンドを締めてください。' });
+  }
+
   const { data, error } = await client
     .from('rounds')
     .update({

@@ -78,16 +78,22 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const [deleteSubmitting, setDeleteSubmitting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [permDialog, setPermDialog] = useState<{ open: boolean; matchId: string | null; value: string }>(
-    { open: false, matchId: null, value: 'none' },
+  const [permDialog, setPermDialog] = useState<{ open: boolean; matchId: string | null; value: string; eligibleTeamIds: string[] }>(
+    { open: false, matchId: null, value: 'none', eligibleTeamIds: [] },
   );
   const [permSaving, setPermSaving] = useState(false);
   const [permError, setPermError] = useState<string | null>(null);
   const authFetch = useAuthorizedFetch();
 
   const fetchTeams = useCallback(async () => {
+    if (!tournament?.id) {
+      setError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     try {
-      const response = await authFetch('/api/teams');
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournament.id);
+      const response = await authFetch(`/api/teams?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('matchManager.fetchTeamsError'));
@@ -97,7 +103,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
       console.error('Failed to fetch teams:', err);
       setError(err.message || t('matchManager.fetchTeamsError'));
     }
-  }, [authFetch, t]);
+  }, [authFetch, t, tournament?.id]);
 
   const loadRounds = useCallback(async () => {
     setRoundsLoading(true);
@@ -301,6 +307,14 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   );
 
   const canCreateMatch = Boolean(selectedRound && selectedRound.status !== 'closed');
+
+  const permDialogTeams = useMemo(() => {
+    if (!permDialog.eligibleTeamIds.length) {
+      return [];
+    }
+    const eligibleSet = new Set(permDialog.eligibleTeamIds);
+    return teams.filter((team) => eligibleSet.has(team.id));
+  }, [permDialog.eligibleTeamIds, teams]);
 
   const roundStatusChip = useMemo(() => {
     if (!selectedRound) return null;
@@ -802,8 +816,26 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                       // matches は生データを持っているので、現在値を見にいく
                       const raw = matches.find((m) => m.id === match.id);
                       const current = raw?.input_allowed_team_id ?? null;
+                      const eligibleTeamIds = Array.from(
+                        new Set(
+                          [raw?.team, raw?.opponentTeam].filter(
+                            (teamId): teamId is string => Boolean(teamId),
+                          ),
+                        ),
+                      );
+                      let nextValue: string = 'none';
+                      if (current === 'admin') {
+                        nextValue = 'admin';
+                      } else if (current && eligibleTeamIds.includes(current)) {
+                        nextValue = current;
+                      }
                       setPermError(null);
-                      setPermDialog({ open: true, matchId: match.id, value: current ?? 'none' });
+                      setPermDialog({
+                        open: true,
+                        matchId: match.id,
+                        value: nextValue,
+                        eligibleTeamIds,
+                      });
                     }}
                     disabled={!canCreateMatch}
                     sx={{ color: '#4a5162' }}
@@ -1048,7 +1080,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
       {/* 入力権限設定モーダル */}
       <Dialog
         open={permDialog.open}
-        onClose={() => (!permSaving ? setPermDialog({ open: false, matchId: null, value: 'none' }) : null)}
+        onClose={() =>
+          !permSaving ? setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] }) : null
+        }
         maxWidth="sm"
         fullWidth
       >
@@ -1067,15 +1101,22 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
             >
               <MenuItem value="none">{t('matchManager.permissionNone')}</MenuItem>
               <MenuItem value="admin">{t('matchManager.permissionAdmin')}</MenuItem>
-              <MenuItem disabled value="__sep__">──────────</MenuItem>
-              {teams.map((team) => (
-                <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
-              ))}
+              {permDialogTeams.length > 0 ? (
+                <>
+                  <MenuItem disabled value="__sep__">──────────</MenuItem>
+                  {permDialogTeams.map((team) => (
+                    <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
+                  ))}
+                </>
+              ) : null}
             </Select>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPermDialog({ open: false, matchId: null, value: 'none' })} disabled={permSaving}>
+          <Button
+            onClick={() => setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] })}
+            disabled={permSaving}
+          >
             {t('matchManager.cancel')}
           </Button>
           <Button
@@ -1101,7 +1142,7 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                   throw new Error(message || `HTTP ${response.status}`);
                 }
                 await loadMatches();
-                setPermDialog({ open: false, matchId: null, value: 'none' });
+                setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] });
               } catch (err: any) {
                 console.error('Failed to update input permission:', err);
                 setPermError(err?.message || t('matchManager.updatePermissionFailed'));

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Chip,
@@ -10,21 +9,22 @@ import {
   IconButton,
   Paper,
   Stack,
-  TextField,
   Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
-import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import { useTranslation } from 'react-i18next';
 import { useTeamApi } from '../team/useTeamApi';
 import MatchEditDialog from './MatchEditDialog';
 import type { MatchRecord } from '../types/matchTypes';
+import { parseScoreValue } from '../types/matchTypes';
+import { useNavigate } from 'react-router-dom';
 
 type Participant = {
   id: string;
@@ -38,24 +38,16 @@ type TeamUser = {
   can_edit: boolean;
 };
 
-const parseScore = (value?: string | null): number | null => {
-  if (value === null || value === undefined) return null;
-  const trimmed = value.toString().trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
 const getOutcome = (match: MatchRecord) => {
-  const self = parseScore(match.selfScore);
-  const opp = parseScore(match.opponentScore);
+  const self = parseScoreValue(match.selfScore);
+  const opp = parseScoreValue(match.opponentScore);
   if (self === null || opp === null) return 'pending';
   if (self > opp) return 'win';
   if (self < opp) return 'lose';
   return 'draw';
 };
 
-const formatDate = (value?: string | null) => {
+const formatDateWithTime = (value?: string | null) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -70,33 +62,20 @@ const formatDate = (value?: string | null) => {
   }).format(date);
 };
 
-const todaysDateKey = () => new Date().toISOString().slice(0, 10);
-
 const MatchManager: React.FC = () => {
   const { t } = useTranslation();
   const teamApi = useTeamApi();
+  const navigate = useNavigate();
   const [teamUser, setTeamUser] = useState<TeamUser | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [playerInput, setPlayerInput] = useState('');
-  const [playerName, setPlayerName] = useState('');
-  const [selfScore, setSelfScore] = useState('');
-  const [opponentScore, setOpponentScore] = useState('');
-  const [opponentTeam, setOpponentTeam] = useState('');
-  const [opponentPlayer, setOpponentPlayer] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
   const [editTarget, setEditTarget] = useState<MatchRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MatchRecord | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
-  const timezoneGuess =
-    typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
 
   const loadTeamUser = useCallback(async () => {
     const response = await teamApi('/api/team/current-user');
@@ -144,51 +123,7 @@ const MatchManager: React.FC = () => {
     refreshAll();
   }, [refreshAll]);
 
-  const handleQuickSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setFormError(null);
-    if (!teamUser?.can_edit) {
-      setFormError(t('matchManager.teamReadOnlyNotice'));
-      return;
-    }
-    if (!playerName || !selfScore || !opponentScore || !opponentTeam) {
-      setFormError(t('matchManager.teamCreateFailed'));
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const body = {
-        player: playerName,
-        selfScore,
-        opponentScore,
-        opponentTeam,
-        opponentPlayer,
-        date: new Date().toISOString(),
-        timezone: timezoneGuess,
-      };
-      const response = await teamApi('/api/team/matches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        const message = (await response.text()) || t('matchManager.teamCreateFailed');
-        throw new Error(message);
-      }
-      const created: MatchRecord = await response.json();
-      setMatches((prev) => [created, ...prev]);
-      setPlayerInput('');
-      setPlayerName('');
-      setSelfScore('');
-      setOpponentScore('');
-      setOpponentTeam('');
-      setOpponentPlayer('');
-    } catch (e: any) {
-      setFormError(e?.message || t('matchManager.teamCreateFailed'));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // クイック入力は廃止（対戦ごとに詳細入力を行うため）
 
   const handleUpdatedMatch = (updated: MatchRecord) => {
     setMatches((prev) => prev.map((match) => (match.id === updated.id ? updated : match)));
@@ -213,14 +148,9 @@ const MatchManager: React.FC = () => {
     }
   };
 
-  const todayKey = todaysDateKey();
-  const todayMatches = useMemo(
-    () =>
-      matches.filter((match) => {
-        if (!match?.date) return false;
-        return match.date.slice(0, 10) === todayKey;
-      }),
-    [matches, todayKey],
+  const openMatches = useMemo(
+    () => matches.filter((m) => m.result_status !== 'finalized'),
+    [matches],
   );
 
   const stats = useMemo(() => {
@@ -285,84 +215,26 @@ const MatchManager: React.FC = () => {
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Stack spacing={3}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h4" fontWeight="bold">
-            {t('matchManager.teamTitle')}
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackRoundedIcon />}
+              onClick={() => navigate('/team-dashboard')}
+            >
+              {t('common.back')}
+            </Button>
+            <Typography variant="h4" fontWeight="bold">
+              {t('matchManager.teamTitle')}
+            </Typography>
+          </Stack>
           <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={refreshAll}>
             {t('matchManager.teamReload')}
           </Button>
         </Stack>
 
-        {teamUser?.can_edit ? (
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Stack spacing={2} component="form" onSubmit={handleQuickSubmit}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <AddCircleOutlineRoundedIcon color="primary" />
-                <Typography variant="h6" fontWeight="bold">
-                  {t('matchManager.teamQuickInputTitle')}
-                </Typography>
-              </Stack>
-              <Typography variant="body2" color="text.secondary">
-                {t('matchManager.teamQuickInputDescription')}
-              </Typography>
-              {formError ? <Alert severity="error">{formError}</Alert> : null}
-              <Autocomplete<Participant, false, false, true>
-                options={participants}
-                getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
-                value={participants.find((p) => p.name === playerName) ?? null}
-                inputValue={playerInput}
-                onInputChange={(_, value) => {
-                  setPlayerInput(value);
-                  setPlayerName(value);
-                }}
-                onChange={(_, option) => {
-                  const name = typeof option === 'string' ? option : option?.name ?? '';
-                  setPlayerName(name);
-                  setPlayerInput(name);
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label={t('matchManager.teamPlayerLabel')} placeholder={t('matchManager.teamPlayerLabel')} />
-                )}
-                freeSolo
-              />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label={t('matchManager.teamSelfScoreLabel')}
-                  value={selfScore}
-                  onChange={(e) => setSelfScore(e.target.value)}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                  fullWidth
-                />
-                <TextField
-                  label={t('matchManager.teamOpponentScoreLabel')}
-                  value={opponentScore}
-                  onChange={(e) => setOpponentScore(e.target.value)}
-                  inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                  fullWidth
-                />
-              </Stack>
-              <TextField
-                label={t('matchManager.teamOpponentTeamLabel')}
-                value={opponentTeam}
-                onChange={(e) => setOpponentTeam(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label={t('matchManager.teamOpponentPlayerLabel')}
-                value={opponentPlayer}
-                onChange={(e) => setOpponentPlayer(e.target.value)}
-                fullWidth
-              />
-              <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Button type="submit" variant="contained" disabled={submitting}>
-                  {submitting ? t('matchManager.teamRecording') : t('matchManager.teamRecordButton')}
-                </Button>
-              </Stack>
-            </Stack>
-          </Paper>
-        ) : (
+        {!teamUser?.can_edit ? (
           <Alert severity="info">{t('matchManager.teamReadOnlyNotice')}</Alert>
-        )}
+        ) : null}
 
         <Paper elevation={1} sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -378,15 +250,22 @@ const MatchManager: React.FC = () => {
 
         <Paper elevation={1} sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom fontWeight="bold">
-            {t('matchManager.teamTodayMatches')}
+            {t('matchManager.teamOpenMatches')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
-          {todayMatches.length === 0 ? (
+          {openMatches.length === 0 ? (
             <Alert severity="info">{t('matchManager.teamNoMatchesToday')}</Alert>
           ) : (
             <Stack spacing={2}>
-              {todayMatches.map((match) => (
-                <Paper key={match.id} variant="outlined" sx={{ p: 2 }}>
+              {openMatches.map((match) => (
+                <Paper
+                  key={match.id}
+                  variant="outlined"
+                  sx={{ p: 2, cursor: 'pointer' }}
+                  onClick={() => {
+                    window.location.href = `/team/matches/${match.id}/entry`;
+                  }}
+                >
                   <Stack spacing={1}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       {renderOutcomeChip(match)}
@@ -394,7 +273,7 @@ const MatchManager: React.FC = () => {
                         {match.player || t('matchManager.teamUnknownPlayer')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {formatDate(match.date)}
+                        {formatDateWithTime(match.date)}
                       </Typography>
                       {match.timezone ? (
                         <Typography variant="caption" color="text.secondary">
@@ -404,10 +283,10 @@ const MatchManager: React.FC = () => {
                       <Box sx={{ flex: 1 }} />
                       {teamUser?.can_edit ? (
                         <Stack direction="row" spacing={1}>
-                          <IconButton size="small" onClick={() => setEditTarget(match)}>
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditTarget(match); }}>
                             <EditRoundedIcon fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" onClick={() => setDeleteTarget(match)}>
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteTarget(match); }}>
                             <DeleteRoundedIcon fontSize="small" />
                           </IconButton>
                         </Stack>

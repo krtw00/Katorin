@@ -139,8 +139,14 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const [teams, setTeams] = useState<Team[]>([]);
 
   const fetchTeams = useCallback(async () => {
+    if (!tournament?.id) {
+      setError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     try {
-      const response = await authFetch('/api/teams');
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournament.id);
+      const response = await authFetch(`/api/teams?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch teams');
       }
@@ -150,12 +156,11 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       console.error('Failed to fetch teams:', err);
       // Handle error appropriately
     }
-  }, [authFetch]);
+  }, [authFetch, tournament?.id, t]);
 
   useEffect(() => {
     fetchTeams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchTeams]);
 
   const makeSnapshot = useCallback(
     (formValues: MatchFormValues, rows: GameRow[]) =>

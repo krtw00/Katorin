@@ -39,3 +39,19 @@ frontend/.env.local
 .claude/
 .mcp_cache/
 .serena/
+
+# Codex configuration
+.onboarding
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Test skip files
+*.skip
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov

@@ -78,9 +78,16 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
   const authFetch = useAuthorizedFetch();
 
   const fetchTeams = useCallback(async () => {
+    if (!tournamentId) {
+      setError(t('matchCreateDialog.fetchTeamsError'));
+      setTeamsLoading(false);
+      return;
+    }
     setTeamsLoading(true);
     try {
-      const response = await authFetch('/api/teams');
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await authFetch(`/api/teams?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('matchCreateDialog.fetchTeamsError'));
@@ -92,7 +99,7 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
     } finally {
       setTeamsLoading(false);
     }
-  }, [authFetch, t]);
+  }, [authFetch, t, tournamentId]);
 
   useEffect(() => {
     if (open) {

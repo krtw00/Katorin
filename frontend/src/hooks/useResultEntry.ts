@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
-import { useTranslation } from 'react-i18next';
 
 type Team = {
   id: string;
@@ -20,8 +19,7 @@ type MatchRecord = {
   date: string | null;
 };
 
-export const useResultEntry = (matchId: string | null) => {
-  const { t } = useTranslation();
+export const useResultEntry = (matchId: string | null, tournamentId?: string) => {
   const authFetch = useAuthorizedFetch();
 
   // State
@@ -34,7 +32,8 @@ export const useResultEntry = (matchId: string | null) => {
   // Fetch teams
   const fetchTeams = useCallback(async () => {
     try {
-      const response = await authFetch('/api/teams');
+      const query = tournamentId ? `?tournament_id=${encodeURIComponent(tournamentId)}` : '';
+      const response = await authFetch(`/api/teams${query}`);
       if (!response.ok) {
         throw new Error('Failed to fetch teams');
       }
@@ -44,7 +43,7 @@ export const useResultEntry = (matchId: string | null) => {
       console.error('Failed to fetch teams:', err);
       setError(err.message);
     }
-  }, [authFetch]);
+  }, [authFetch, tournamentId]);
 
   // Load match data
   const loadMatch = useCallback(async () => {

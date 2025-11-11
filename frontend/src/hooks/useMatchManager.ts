@@ -34,8 +34,14 @@ export const useMatchManager = (tournamentId: string) => {
 
   // Fetch teams
   const fetchTeams = useCallback(async () => {
+    if (!tournamentId) {
+      setError(t('teamManagement.tournamentSlugRequired'));
+      return;
+    }
     try {
-      const response = await authFetch('/api/teams');
+      const params = new URLSearchParams();
+      params.set('tournament_id', tournamentId);
+      const response = await authFetch(`/api/teams?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('matchManager.fetchTeamsError'));
@@ -45,7 +51,7 @@ export const useMatchManager = (tournamentId: string) => {
       console.error('Failed to fetch teams:', err);
       setError(err.message || t('matchManager.fetchTeamsError'));
     }
-  }, [authFetch, t]);
+  }, [authFetch, t, tournamentId]);
 
   // Load rounds
   const loadRounds = useCallback(async () => {

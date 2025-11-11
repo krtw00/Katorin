@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import i18n from '../i18n';
 
 type AuthContextValue = {
   session: Session | null;
@@ -83,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth は AuthProvider 内でのみ使用できます。');
+    throw new Error(i18n.t('common.useAuthError'));
   }
   return context;
 };

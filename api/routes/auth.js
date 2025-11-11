@@ -14,6 +14,26 @@ router.get('/team/me', requireAuth, attachTeam, async (req, res) => {
   }
 });
 
+// Get current team user summary
+// 全チームメンバーが編集可能なため、can_edit は常に true
+router.get('/team/current-user', requireAuth, attachTeam, async (req, res) => {
+  try {
+    const response = {
+      id: req.team.id,
+      name: req.team.name,
+      username: req.team.username,
+      can_edit: true, // チームアカウントでログインしているユーザーは全員編集可能
+      tournament_id: req.team.tournament_id ?? null,
+      created_at: req.team.created_at,
+    };
+
+    res.json(response);
+  } catch (err) {
+    logger.error('Unexpected error fetching current team user', { error: err.message });
+    res.status(500).json({ error: 'チーム情報の取得に失敗しました。' });
+  }
+});
+
 // Request password reset email
 router.post('/password-reset', async (req, res) => {
   const { email } = req.body ?? {};

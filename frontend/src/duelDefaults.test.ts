@@ -1,4 +1,5 @@
-import { duelDefault, type DuelForm } from './duelDefaults';
+import { duelDefault } from './duelDefaults';
+// DuelForm型はテストに直接使用していないため、importは不要
 
 describe('duelDefaults', () => {
   it('exports a valid DuelForm object', () => {
