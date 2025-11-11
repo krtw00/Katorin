@@ -36,6 +36,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "i18n:csv-to-json": "node scripts/csv-to-json.js",
+    "i18n:verify": "node scripts/verify-translations.js",
     "lint": "eslint src --ext .ts,.tsx,.js,.jsx --max-warnings 10",
     "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
     "typecheck": "tsc --noEmit"
