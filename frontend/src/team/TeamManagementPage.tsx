@@ -3,13 +3,11 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
   List,
   ListItem,
@@ -21,7 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { CloudDownload, CloudUpload, Delete, Description, Edit, EditOff, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
+import { CloudDownload, CloudUpload, Delete, Description, Edit, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { useRef } from 'react';
@@ -914,16 +912,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
               onChange={(event) => setParticipantName(event.target.value)}
               required
               disabled={participantSubmitting}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={participantCanEdit}
-                  onChange={(event) => setParticipantCanEdit(event.target.checked)}
-                  disabled={participantSubmitting}
-                />
-              }
-              label={t('participantManagement.grantEditPermission')}
             />
           </Stack>
         </DialogContent>
