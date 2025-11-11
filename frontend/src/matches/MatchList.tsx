@@ -44,7 +44,7 @@ type Participant = {
 type TeamUser = {
   id: string;
   name: string;
-  can_edit: boolean;
+  can_edit: boolean; // 常に true（全チームメンバーが編集可能）
 };
 
 const PAGE_SIZE = 20;

@@ -3,13 +3,11 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
   List,
   ListItem,
@@ -18,10 +16,9 @@ import {
   Paper,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { CloudDownload, CloudUpload, Delete, Description, Edit, EditOff, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
+import { CloudDownload, CloudUpload, Delete, Description, Edit, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { useRef } from 'react';
@@ -37,7 +34,6 @@ interface Team {
 interface Participant {
   id: string;
   name: string;
-  can_edit: boolean;
   created_at: string;
   team_id?: string;
 }
@@ -83,7 +79,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
   const [participantSubmitting, setParticipantSubmitting] = useState(false);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [participantName, setParticipantName] = useState('');
-  const [participantCanEdit, setParticipantCanEdit] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -209,9 +204,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
   const handleDownloadTemplate = useCallback(() => {
     const template = [
-      ['team_name', 'participant_name', 'can_edit'],
-      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerTanaka'), 'yes'],
-      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerSuzuki'), 'no'],
+      ['team_name', 'participant_name'],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerTanaka')],
+      [t('teamManagement.sampleTeamA'), t('teamManagement.samplePlayerSuzuki')],
     ];
     const csv = Papa.unparse(template);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -434,7 +429,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     }
     setCurrentParticipant(participant ?? null);
     setParticipantName(participant?.name ?? '');
-    setParticipantCanEdit(participant?.can_edit ?? false);
     setParticipantDialogError(null);
     setParticipantDialogOpen(true);
   };
@@ -465,7 +459,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         : `/api/admin/teams/${selectedTeam.id}/participants`;
       const payload: Record<string, unknown> = {
         name: participantName,
-        can_edit: participantCanEdit,
       };
       if (currentParticipant) {
         payload.team_id = selectedTeam.id;
@@ -793,30 +786,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
                     >
                       <ListItemText
                         primary={
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography fontWeight={600} color="text.primary">
-                              {participant.name}
-                            </Typography>
-                            <Tooltip
-                              title={
-                                participant.can_edit
-                                  ? t('participantManagement.canEdit')
-                                  : t('participantManagement.cannotEdit')
-                              }
-                            >
-                              {participant.can_edit ? (
-                                <Edit
-                                  fontSize="small"
-                                  sx={{ color: 'success.main', verticalAlign: 'middle' }}
-                                />
-                              ) : (
-                                <EditOff
-                                  fontSize="small"
-                                  sx={{ color: 'text.disabled', verticalAlign: 'middle' }}
-                                />
-                              )}
-                            </Tooltip>
-                          </Stack>
+                          <Typography fontWeight={600} color="text.primary">
+                            {participant.name}
+                          </Typography>
                         }
                       />
                     </ListItem>
@@ -939,16 +911,6 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
               onChange={(event) => setParticipantName(event.target.value)}
               required
               disabled={participantSubmitting}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={participantCanEdit}
-                  onChange={(event) => setParticipantCanEdit(event.target.checked)}
-                  disabled={participantSubmitting}
-                />
-              }
-              label={t('participantManagement.grantEditPermission')}
             />
           </Stack>
         </DialogContent>

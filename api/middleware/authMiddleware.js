@@ -64,6 +64,69 @@ const requireRole = (role) => (req, res, next) => {
 const requireAdmin = requireRole('admin');
 
 /**
+ * ミドルウェア: 管理者 または has_admin_access=true のチームユーザーのみ許可
+ * 運営補助作業を行うチームユーザーに管理画面へのアクセスを許可する
+ */
+const requireAdminOrEditor = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: '認証が必要です。' });
+  }
+
+  try {
+    // 管理者チェック
+    const roles = []
+      .concat(req.user.app_metadata?.role ?? [])
+      .concat(req.user.app_metadata?.roles ?? []);
+    const normalizedRoles = roles
+      .flat()
+      .filter(Boolean)
+      .map((value) => value.toString().toLowerCase());
+
+    if (normalizedRoles.includes('admin')) {
+      return next(); // 管理者は通過
+    }
+
+    // チームユーザーの場合、has_admin_accessをチェック
+    if (normalizedRoles.includes('team')) {
+      const client = req.supabase ?? supabaseAdmin ?? supabase;
+      if (!client) {
+        logger.error('No Supabase client available for requireAdminOrEditor');
+        return res.status(500).json({ error: '権限チェックに失敗しました。' });
+      }
+
+      const { data: team, error: teamError } = await client
+        .from('teams')
+        .select('id, has_admin_access')
+        .eq('auth_user_id', req.user.id)
+        .single();
+
+      if (teamError || !team) {
+        logger.warn('Team not found for admin access check', {
+          userId: req.user.id,
+          error: teamError?.message,
+        });
+        return res.status(403).json({ error: '運営権限がありません。' });
+      }
+
+      if (team.has_admin_access === true) {
+        req.team = team; // 後続の処理で使用
+        return next();
+      }
+
+      return res.status(403).json({ error: '運営権限がありません。' });
+    }
+
+    return res.status(403).json({ error: '権限がありません。' });
+  } catch (err) {
+    logger.error('Error checking admin/editor permission', {
+      error: err.message,
+      stack: err.stack,
+    });
+    return res.status(500).json({ error: '権限チェック中にエラーが発生しました。' });
+  }
+};
+
+/**
  * ミドルウェア: 認証済みユーザーに紐づくチームを取得してreq.teamに設定
  * requireAuthの後に使用する
  */
@@ -105,4 +168,4 @@ const attachTeam = async (req, res, next) => {
   }
 };
 
-module.exports = { requireAuth, requireAdmin, requireRole, attachTeam };
+module.exports = { requireAuth, requireAdmin, requireRole, requireAdminOrEditor, attachTeam };
