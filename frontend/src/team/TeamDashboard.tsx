@@ -43,6 +43,7 @@ import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useTeamApi } from './useTeamApi';
 import MatchEditDialog from '../matches/MatchEditDialog';
 import type { MatchRecord } from '../types/matchTypes';
+import { parseScoreValue } from '../types/matchTypes';
 
 const COMPLETED_PAGE_SIZE = 25;
 
@@ -77,17 +78,9 @@ type Props = {
   onSignOut: () => void;
 };
 
-const parseScore = (value?: string | null): number | null => {
-  if (value === null || value === undefined) return null;
-  const trimmed = value.toString().trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
 const getOutcome = (match: MatchRecord) => {
-  const self = parseScore(match.selfScore);
-  const opp = parseScore(match.opponentScore);
+  const self = parseScoreValue(match.selfScore);
+  const opp = parseScoreValue(match.opponentScore);
   if (self === null || opp === null) return 'pending';
   if (self > opp) return 'win';
   if (self < opp) return 'lose';

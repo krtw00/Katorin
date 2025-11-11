@@ -49,15 +49,15 @@ export const createInitialValues = (): MatchFormValues => ({
   date: '',
 });
 
-export const formatDate = (value?: string | null) => {
+export const formatDate = (value?: string | null, fallback: string = '') => {
   if (!value) {
-    return '日付未設定';
+    return fallback;
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return new Intl.DateTimeFormat('ja-JP', {
+  return new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
