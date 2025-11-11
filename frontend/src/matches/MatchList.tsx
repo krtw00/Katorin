@@ -428,7 +428,7 @@ const MatchList: React.FC = () => {
                   <TableRow key={match.id} hover>
                     <TableCell>
                       <Stack spacing={0.5}>
-                        <Typography variant="body2">{formatDate(match.date)}</Typography>
+                        <Typography variant="body2">{formatDateWithTime(match.date)}</Typography>
                         {match.timezone ? (
                           <Typography variant="caption" color="text.secondary">
                             {match.timezone}
