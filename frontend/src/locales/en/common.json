@@ -22,7 +22,9 @@
     "matchManagement": "Match Management",
     "selectedTournament": "Selected Tournament",
     "teamParticipantManagement": "Team/Participant Management",
-    "title": "Katorin Match Manager"
+    "title": "Katorin Match Manager",
+    "tournamentCode": "Tournament Code",
+    "tournamentCodeCopied": "Tournament code copied to clipboard"
   },
   "auth": {
     "login": {

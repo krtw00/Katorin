@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, CssBaseline, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, CssBaseline, IconButton, Snackbar, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { ContentCopy as ContentCopyIcon } from '@mui/icons-material';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MatchManager from './MatchManager';
@@ -27,6 +28,7 @@ const AppRoutes: React.FC = () => {
   const [previousTournament, setPreviousTournament] = useState<Tournament | null>(null);
   const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false);
   const [tournamentMessage, setTournamentMessage] = useState<string | null>(null);
+  const [copySnackbarOpen, setCopySnackbarOpen] = useState(false);
   const { loading, session, user, signOut } = useAuth();
   const { t } = useTranslation();
 
@@ -119,6 +121,17 @@ const AppRoutes: React.FC = () => {
     setTournamentMessage(t('app.tournamentSelectedMessage', { tournamentName: tournament.name }));
   };
 
+  const handleCopyTournamentCode = async () => {
+    if (selectedTournament?.slug) {
+      try {
+        await navigator.clipboard.writeText(selectedTournament.slug);
+        setCopySnackbarOpen(true);
+      } catch (err) {
+        console.error('Failed to copy tournament code:', err);
+      }
+    }
+  };
+
   const renderAdminMainView = () => (
     <Stack sx={{ minHeight: '100vh', bgcolor: '#f4f6fb' }}>
       <Box
@@ -145,6 +158,36 @@ const AppRoutes: React.FC = () => {
               <Typography variant="body2" fontWeight="bold" color="#d1d5db">
                 {selectedTournament.name}
               </Typography>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="#9ca3af">
+                  {t('app.tournamentCode')}:
+                </Typography>
+                <Typography
+                  variant="caption"
+                  fontFamily="monospace"
+                  color="#d1d5db"
+                  sx={{
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  {selectedTournament.slug}
+                </Typography>
+                <Tooltip title={t('app.tournamentCode')}>
+                  <IconButton
+                    size="small"
+                    onClick={handleCopyTournamentCode}
+                    sx={{
+                      color: '#9ca3af',
+                      '&:hover': { color: '#d1d5db' },
+                    }}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
             </Stack>
           ) : null}
           <Button
@@ -239,6 +282,13 @@ const AppRoutes: React.FC = () => {
           )}
         </Stack>
       </Box>
+      <Snackbar
+        open={copySnackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setCopySnackbarOpen(false)}
+        message={t('app.tournamentCodeCopied')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Stack>
   );
 
