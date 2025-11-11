@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { useTeamApi } from '../team/useTeamApi';
 import MatchEditDialog from './MatchEditDialog';
 import type { MatchRecord } from '../types/matchTypes';
+import { parseScoreValue } from '../types/matchTypes';
 import { useNavigate } from 'react-router-dom';
 
 type Participant = {
@@ -37,24 +38,16 @@ type TeamUser = {
   can_edit: boolean;
 };
 
-const parseScore = (value?: string | null): number | null => {
-  if (value === null || value === undefined) return null;
-  const trimmed = value.toString().trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
 const getOutcome = (match: MatchRecord) => {
-  const self = parseScore(match.selfScore);
-  const opp = parseScore(match.opponentScore);
+  const self = parseScoreValue(match.selfScore);
+  const opp = parseScoreValue(match.opponentScore);
   if (self === null || opp === null) return 'pending';
   if (self > opp) return 'win';
   if (self < opp) return 'lose';
   return 'draw';
 };
 
-const formatDate = (value?: string | null) => {
+const formatDateWithTime = (value?: string | null) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -280,7 +273,7 @@ const MatchManager: React.FC = () => {
                         {match.player || t('matchManager.teamUnknownPlayer')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {formatDate(match.date)}
+                        {formatDateWithTime(match.date)}
                       </Typography>
                       {match.timezone ? (
                         <Typography variant="caption" color="text.secondary">

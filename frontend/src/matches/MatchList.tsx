@@ -34,6 +34,7 @@ import { useTranslation } from 'react-i18next';
 import MatchEditDialog from './MatchEditDialog';
 import { useTeamApi } from '../team/useTeamApi';
 import type { MatchRecord } from '../types/matchTypes';
+import { parseScoreValue } from '../types/matchTypes';
 
 type Participant = {
   id: string;
@@ -48,7 +49,7 @@ type TeamUser = {
 
 const PAGE_SIZE = 20;
 
-const formatDate = (value?: string | null) => {
+const formatDateWithTime = (value?: string | null) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -61,6 +62,15 @@ const formatDate = (value?: string | null) => {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
+};
+
+const getOutcome = (selfScore?: string | null, opponentScore?: string | null): 'win' | 'lose' | 'draw' | 'pending' => {
+  const self = parseScoreValue(selfScore);
+  const opp = parseScoreValue(opponentScore);
+  if (self === null || opp === null) return 'pending';
+  if (self > opp) return 'win';
+  if (self < opp) return 'lose';
+  return 'draw';
 };
 
 const MatchList: React.FC = () => {
@@ -360,7 +370,7 @@ const MatchList: React.FC = () => {
                       ) : null}
                     </Stack>
                     <Typography variant="body2" color="text.secondary">
-                      {formatDate(match.date)}
+                      {formatDateWithTime(match.date)}
                     </Typography>
                     <Typography variant="body2">
                       {t('matchList.scoreLine', {
