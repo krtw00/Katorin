@@ -49,7 +49,6 @@ const COMPLETED_PAGE_SIZE = 25;
 type Participant = {
   id: string;
   name: string;
-  can_edit: boolean;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -57,7 +56,7 @@ type Participant = {
 type TeamUser = {
   id: string;
   name: string;
-  can_edit: boolean;
+  can_edit: boolean; // 常に true（全チームメンバーが編集可能）
 };
 
 type CompletedMatchFilters = {
@@ -302,7 +301,6 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
   }, [loadCompletedMatches, completedPage, appliedCompletedFilters]);
 
   const participantsCount = participants.length;
-  const editableCount = participants.filter((p) => p.can_edit).length;
 
   const stats = useMemo(() => {
     const total = matches.length;
@@ -468,7 +466,7 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
           </Alert>
         ) : null}
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <Chip label={t('teamDashboard.memberCount', { total: participantsCount, editable: editableCount })} />
+          <Chip label={t('teamDashboard.totalMembers', { count: participantsCount })} />
           <Button
             startIcon={<RefreshRoundedIcon />}
             size="small"
@@ -489,7 +487,6 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
               <TableHead>
                 <TableRow>
                   <TableCell>{t('teamDashboard.memberNameLabel')}</TableCell>
-                  <TableCell width={160}>{t('teamDashboard.memberPermissionLabel')}</TableCell>
                   <TableCell width={200}>{t('teamDashboard.memberUpdatedAt')}</TableCell>
                   <TableCell width={140} align="right">
                     {t('teamDashboard.actions')}
@@ -500,14 +497,6 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
                 {participants.map((participant) => (
                   <TableRow key={participant.id} hover>
                     <TableCell>{participant.name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={participant.can_edit ? t('teamDashboard.canEdit') : t('teamDashboard.cannotEdit')}
-                        size="small"
-                        color={participant.can_edit ? 'primary' : 'default'}
-                        variant={participant.can_edit ? 'filled' : 'outlined'}
-                      />
-                    </TableCell>
                     <TableCell>{participant.updated_at ? formatDateTime(participant.updated_at) : '—'}</TableCell>
                     <TableCell align="right">
                       <IconButton size="small" onClick={() => openMemberDialog(participant)}>
@@ -802,7 +791,7 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
               {resolvedTeamName}
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Chip label={t('teamDashboard.memberCount', { total: participantsCount, editable: editableCount })} />
+              <Chip label={t('teamDashboard.totalMembers', { count: participantsCount })} />
               <Chip label={t('teamDashboard.statPendingChip', { value: stats.pending })} />
               <Chip label={t('teamDashboard.statCompletedChip', { value: stats.finalized })} />
             </Stack>
