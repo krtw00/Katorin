@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, attachTeam } = require('../middleware/authMiddleware');
+const { requireAuth, requireAdminOrEditor, attachTeam } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
 // --- Team Self-Service Endpoints (with attachTeam) ---
@@ -136,7 +136,7 @@ router.delete('/team/participants/:id', requireAuth, attachTeam, async (req, res
 // --- Admin Endpoints (per team) ---
 
 // Get participants for a specific team (admin)
-router.get('/admin/teams/:teamId/participants', requireAuth, async (req, res) => {
+router.get('/admin/teams/:teamId/participants', requireAuth, requireAdminOrEditor, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -178,7 +178,7 @@ router.get('/admin/teams/:teamId/participants', requireAuth, async (req, res) =>
 });
 
 // Add a participant to a team as the creator (admin)
-router.post('/admin/teams/:teamId/participants', requireAuth, async (req, res) => {
+router.post('/admin/teams/:teamId/participants', requireAuth, requireAdminOrEditor, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -230,7 +230,7 @@ router.post('/admin/teams/:teamId/participants', requireAuth, async (req, res) =
 });
 
 // Update a participant as the team creator (admin)
-router.put('/admin/participants/:id', requireAuth, async (req, res) => {
+router.put('/admin/participants/:id', requireAuth, requireAdminOrEditor, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -297,7 +297,7 @@ router.put('/admin/participants/:id', requireAuth, async (req, res) => {
 });
 
 // Delete a participant as the team creator (admin)
-router.delete('/admin/participants/:id', requireAuth, async (req, res) => {
+router.delete('/admin/participants/:id', requireAuth, requireAdminOrEditor, async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
