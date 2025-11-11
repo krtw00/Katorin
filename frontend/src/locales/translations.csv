@@ -27,11 +27,13 @@ auth.passwordReset.backToLogin,ログイン画面に戻る,Back to Login
 auth.passwordReset.success,パスワードが正常にリセットされました。ログイン画面に戻って新しいパスワードでログインしてください。,Password has been reset successfully. Please return to the login screen and sign in with your new password.
 auth.passwordReset.failed,パスワードのリセットに失敗しました。,Password reset failed.
 auth.passwordReset.unexpectedError,予期せぬエラーが発生しました。,An unexpected error occurred.
+auth.passwordReset.successEmailSent,パスワードリセットのリンクを生成しました。メールをご確認ください。,Password reset link generated. Please check your email.
+auth.passwordReset.sendResetLink,リセットリンクを送信,Send Reset Link
 tournament.create.title,大会を作成,Create Tournament
 tournament.create.subtitle,大会コード（スラッグ）はメールアドレスのドメインとしても使用されます。半角英数字とハイフンで入力してください。,The tournament code (slug) will also be used as the email domain. Please use alphanumeric characters and hyphens only.
 tournament.create.nameLabel,大会名,Tournament Name
 tournament.create.slugLabel,大会コード（スラッグ）,Tournament Code (Slug)
-tournament.create.slugPlaceholder,例: 2025-spring-league,e.g., 2025-spring-league
+tournament.create.slugPlaceholder,例: 2025-spring-league,e.g.
 tournament.create.slugHelperText,半角英数とハイフンのみ。空欄のままでも大会名から自動生成されます。,Only alphanumeric characters and hyphens. If left blank it will be auto-generated from the tournament name.
 tournament.create.descriptionLabel,説明 (任意),Description (Optional)
 tournament.create.cancel,キャンセル,Cancel
@@ -47,10 +49,10 @@ tournament.selection.createButton,大会を作成,Create Tournament
 tournament.selection.refreshButton,更新,Refresh
 tournament.selection.backButton,戻る,Back
 tournament.selection.loading,大会を読み込み中です…,Loading tournaments...
-tournament.selection.noTournaments,まだ大会が登録されていません。先に「大会を作成」を押して登録してください。,No tournaments registered yet. Please press "Create Tournament" to register one first.
+tournament.selection.noTournaments,まだ大会が登録されていません。先に「大会を作成」を押して登録してください。,No tournaments registered yet. Please press Create Tournament to register one first.
 tournament.selection.selectButton,この大会を管理する,Manage This Tournament
 tournament.selection.createdAt,作成日時:,Created:
-tournament.selection.created,「{{name}}」を作成しました。,Created "{{name}}".
+tournament.selection.created,「{{name}}」を作成しました。,Created {{name}}.
 tournament.selection.errorFailed,大会一覧の取得に失敗しました。時間をおいて再度お試しください。,Failed to retrieve tournament list. Please try again later.
 tournament.selection.errorInvalidResponse,サーバーが不正なレスポンスを返しました。,The server returned an invalid response.
 tournament.selection.logoutButton,ログアウト,Logout
@@ -84,19 +86,23 @@ common.confirm,確認,Confirm
 common.loading,読み込み中...,Loading...
 common.error,エラー,Error
 common.success,成功,Success
+common.create,作成,Create
+common.updating,更新中...,Updating...
+common.creating,作成中...,Creating...
+common.update,更新,Update
+common.inputResult,結果入力,Enter Result
+common.useAuthError,useAuth は AuthProvider 内でのみ使用できます。,useAuth can only be used within AuthProvider.
 app.title,Katorin Match Manager,Katorin Match Manager
 app.selectedTournament,選択中の大会,Selected Tournament
 app.changeTournament,大会を変更,Change Tournament
 app.logout,ログアウト,Logout
-app.tournamentSelectedMessage,「{{tournamentName}}」を選択しました。, "{{tournamentName}}" selected.
-app.managingTournamentMessage,現在「{{tournamentName}}」を管理しています。,Currently managing "{{tournamentName}}".
+app.tournamentSelectedMessage,「{{tournamentName}}」を選択しました。,{{tournamentName}} selected.
+app.managingTournamentMessage,現在「{{tournamentName}}」を管理しています。,Currently managing {{tournamentName}}.
 app.matchManagement,対戦管理,Match Management
 app.teamParticipantManagement,チーム・参加者管理,Team/Participant Management
 app.participantScreenComingSoonTitle,参加者用画面は準備中です,Participant screen is coming soon
-app.participantScreenComingSoonDescription,現在は運営アカウントのみ管理ツールをご利用いただけます。参加者向けの機能は今後追加予定です。,Currently, only admin accounts can use the management tool. Participant features will be added in the future.
-app.tournamentCreatedMessage,「{{tournamentName}}」を作成しました。, "{{tournamentName}}" created.
-auth.passwordReset.successEmailSent,パスワードリセットのリンクを生成しました。メールをご確認ください。,Password reset link generated. Please check your email.
-auth.passwordReset.sendResetLink,リセットリンクを送信,Send Reset Link
+app.participantScreenComingSoonDescription,現在は運営アカウントのみ管理ツールをご利用いただけます。参加者向けの機能は今後追加予定です。,Currently
+app.tournamentCreatedMessage,「{{tournamentName}}」を作成しました。,{{tournamentName}} created.
 language.japanese,日本語,Japanese
 language.english,English,English
 duel.vs,VS,VS
@@ -116,7 +122,7 @@ duelInput.update,更新,Update
 duelInput.noTournamentOrRound,大会またはラウンドが選択されていません。,No tournament or round selected.
 duelInput.matchRecordList,対戦記録一覧,Match Record List
 duelInput.action,アクション,Action
-duelInput.noRecords,まだ対戦記録がありません。「対戦記録を追加」から登録してください。,No match records yet. Please register from "Add Match Record".
+duelInput.noRecords,まだ対戦記録がありません。「対戦記録を追加」から登録してください。,No match records yet. Please register from Add Match Record.
 duelInput.deleteConfirmation,削除の確認,Confirm Deletion
 duelInput.deleteConfirmationMessage,この対戦記録を削除しますか?,Are you sure you want to delete this match record?
 duelInput.delete,削除する,Delete
@@ -177,12 +183,12 @@ matchManager.roundClosedCannotReopen,このラウンドは締め済みです。�
 matchManager.awaitingResult,結果待ち,Awaiting Result
 matchManager.toResultEntry,結果入力へ,To Result Entry
 matchManager.noMatchesYet,対戦カードがまだ登録されていません,No match cards registered yet
-matchManager.createMatchPrompt,「対戦を作成」から新しい対戦を登録してください,Please create a new match from "Create Match"
+matchManager.createMatchPrompt,「対戦を作成」から新しい対戦を登録してください,Please create a new match from Create Match
 matchManager.participantManagementComingSoon,参加者管理は準備中です,Participant management is coming soon
 matchManager.participantManagementDescription,チームや参加者の管理機能を今後追加予定です,Team and participant management features will be added in the future
 matchManager.roundNameOptional,ラウンド名は任意です,Round name is optional
 matchManager.roundNameLabel,ラウンド名（任意）,Round Name (Optional)
-matchManager.roundNamePlaceholder,例: 予選プール,e.g., Qualifying Pool
+matchManager.roundNamePlaceholder,例: 予選プール,e.g.
 matchManager.cancel,キャンセル,Cancel
 matchManager.creating,作成中...,Creating...
 matchManager.create,作成する,Create
@@ -197,12 +203,59 @@ matchManager.pending,結果待ち {{count}},Pending {{count}}
 matchManager.registeredTeams,登録チーム {{count}},Registered Teams {{count}}
 matchManager.setInputPermission,入力権限を設定,Set Input Permission
 matchManager.inputPermissionTitle,入力権限の設定,Set Input Permission
-matchManager.inputPermissionDescription,この対戦の結果入力を許可する対象を選択してください。"admin" は運営のみ、特定チームを選ぶとそのチームのみ入力可能になります。,Select who can enter results for this match. "admin" allows admins only; choosing a specific team allows only that team to enter.
+matchManager.inputPermissionDescription,この対戦の結果入力を許可する対象を選択してください。admin は運営のみ、特定チームを選ぶとそのチームのみ入力可能になります。,Select who can enter results for this match. admin allows admins only; choosing a specific team allows only that team to enter.
 matchManager.permissionNone,未許可（入力不可）,Not Allowed (No Input)
 matchManager.permissionAdmin,運営のみ（常時可）,Admin Only (Always Allowed)
 matchManager.updatePermissionFailed,入力権限の更新に失敗しました。,Failed to update input permission.
 matchManager.saving,保存中...,Saving...
 matchManager.save,保存,Save
+matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
+matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
+matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.
+matchManager.teamReload,再読み込み,Reload
+matchManager.teamTitle,対戦管理,Match Manager
+matchManager.teamQuickInputTitle,クイック入力（運営専用）,Quick Entry (Organizers)
+matchManager.teamQuickInputDescription,選手とスコア、相手チーム情報を入力して即座に記録できます。,Record a match quickly by selecting a player
+matchManager.teamPlayerLabel,選手,Player
+matchManager.teamSelfScoreLabel,自チームスコア,Team Score
+matchManager.teamOpponentScoreLabel,相手スコア,Opponent Score
+matchManager.teamOpponentTeamLabel,相手チーム,Opponent Team
+matchManager.teamOpponentPlayerLabel,相手選手,Opponent Player
+matchManager.teamRecordButton,記録する,Record
+matchManager.teamRecording,記録中...,Recording...
+matchManager.teamReadOnlyNotice,試合結果の入力権限がありません。運営に権限付与を依頼してください。,You don't have permission to enter results. Please contact the organizer.
+matchManager.teamCreateFailed,試合結果の登録に失敗しました。,Failed to record the match.
+matchManager.teamStatsTitle,チーム戦績,Team Stats
+matchManager.teamStatsTotal,総試合数 {{count}},Total Matches {{count}}
+matchManager.teamStatsWins,勝利 {{count}},Wins {{count}}
+matchManager.teamStatsLosses,敗北 {{count}},Losses {{count}}
+matchManager.teamStatsWinRate,勝率 {{rate}}%,Win Rate {{rate}}%
+matchManager.teamTodayMatches,本日の試合結果,Today's Matches
+matchManager.teamOpenMatches,未確定の試合,Unfinalized Matches
+matchManager.teamNoMatchesToday,本日の試合はまだ登録されていません。,No matches have been recorded for today yet.
+matchManager.teamUnknownPlayer,選手未設定,Player Not Set
+matchManager.teamUnknownTeam,相手チーム未設定,Opponent Not Set
+matchManager.teamScoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
+matchManager.teamOpponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
+matchManager.teamOutcomeWin,勝利,Win
+matchManager.teamOutcomeLose,敗北,Loss
+matchManager.teamOutcomeDraw,引き分け,Draw
+matchManager.teamOutcomePending,試合中,In Progress
+matchManager.teamUpdateFailed,試合結果の更新に失敗しました。,Failed to update match.
+matchManager.teamTimezoneLabel,タイムゾーン,Timezone
+matchManager.teamDateLabel,日付,Date
+matchManager.teamEditTitle,試合結果を編集,Edit Match
+matchManager.teamCancel,キャンセル,Cancel
+matchManager.teamSave,保存,Save
+matchManager.teamSaving,保存中...,Saving...
+matchManager.teamDeleteTitle,試合結果の削除,Delete Match
+matchManager.teamDeleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
+matchManager.teamDeleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
+matchManager.teamDelete,削除する,Delete
+matchManager.teamDeleting,削除中...,Deleting...
+matchManager.roundList.title,ラウンド一覧,Round List
+matchManager.roundList.noRounds,ラウンドがまだ作成されていません,No rounds have been created yet.
+matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
 teamManagement.title,チーム管理,Team Management
 teamManagement.createTeam,チームを作成,Create Team
 teamManagement.editTeam,チームを編集,Edit Team
@@ -225,6 +278,9 @@ teamManagement.importTeams,チームをインポート,Import Teams
 teamManagement.exportError,チームのエクスポートに失敗しました。,Failed to export teams.
 teamManagement.importError,チームのインポートに失敗しました。,Failed to import teams.
 teamManagement.importSuccess,{{teams}} チームと {{participants}} 参加者をインポートしました。,Imported {{teams}} teams and {{participants}} participants.
+teamManagement.sampleTeamA,チームA,Team A
+teamManagement.samplePlayerTanaka,田中太郎,Taro Tanaka
+teamManagement.samplePlayerSuzuki,鈴木一郎,Ichiro Suzuki
 participantManagement.title,参加者管理,Participant Management
 participantManagement.titleForTeam,{{teamName}} の参加者,Participants of {{teamName}}
 participantManagement.addParticipant,参加者を追加,Add Participant
@@ -251,7 +307,6 @@ teamLoginForm.backToAdminLogin,運営ログインに戻る,Back to Admin Login
 teamLoginForm.loginFailed,ログインに失敗しました,Login failed
 teamLoginForm.networkError,ネットワークエラーが発生しました,Network error occurred
 teamLoginForm.tournamentCodeLabel,大会コード,Tournament Code
-common.create,作成,Create
 matchCreateDialog.createMatch,対戦を作成,Create Match
 matchCreateDialog.editMatch,対戦を編集,Edit Match
 matchCreateDialog.createMatchDescription,新しい対戦カードを作成します。,Create a new match card.
@@ -265,174 +320,85 @@ matchCreateDialog.roundNotSelected,ラウンドが選択されていません,No
 matchCreateDialog.updateFailed,対戦の更新に失敗しました,Failed to update match
 matchCreateDialog.createFailed,対戦の作成に失敗しました,Failed to create match
 matchCreateDialog.noTeamsRegistered,チームが登録されていません。先にチームを登録してください。,No teams are registered. Please register teams first.
-common.updating,更新中...,Updating...
-common.creating,作成中...,Creating...
-common.update,更新,Update
-teamDashboard.title,チーム管理ダッシュボード,Team Management Dashboard
-teamDashboard.subtitle,{{teamName}} のメンバーと試合結果を管理します,Manage members and match results for {{teamName}}
-teamDashboard.noDate,日付未設定,No date set
+teamDashboard.title,チームコンソール,Team Console
+teamDashboard.subtitle,{{teamName}} としてサインイン中,Signed in as {{teamName}}
+teamDashboard.subtitleGeneric,チームアカウントでサインイン中,Signed in with your team account
+teamDashboard.summaryLabel,現在のチーム,Current team
 teamDashboard.loadTeamFailed,チーム情報の取得に失敗しました。,Failed to load team information.
-teamDashboard.loadParticipantsFailed,メンバー一覧の取得に失敗しました。,Failed to load members.
-teamDashboard.loadMatchesFailed,試合結果の取得に失敗しました。,Failed to load match results.
-teamDashboard.loadPermissionFailed,権限情報の取得に失敗しました。,Failed to load permission information.
-teamDashboard.loadDashboardFailed,ダッシュボードの読み込みに失敗しました。,Failed to load dashboard.
-teamDashboard.saveParticipantFailed,メンバーの保存に失敗しました。,Failed to save member.
-teamDashboard.deleteParticipantFailed,メンバーの削除に失敗しました。,Failed to delete member.
-teamDashboard.saveMatchFailed,試合結果の保存に失敗しました。,Failed to save match result.
-teamDashboard.deleteMatchFailed,試合結果の削除に失敗しました。,Failed to delete match result.
+teamDashboard.loadParticipantsFailed,メンバーの取得に失敗しました。,Failed to load members.
+teamDashboard.loadMatchesFailed,対戦情報の取得に失敗しました。,Failed to load matches.
+teamDashboard.loadPermissionFailed,権限情報の取得に失敗しました。,Failed to load permissions.
+teamDashboard.saveParticipantFailed,メンバーの保存に失敗しました。,Failed to save the member.
+teamDashboard.deleteParticipantFailed,メンバーの削除に失敗しました。,Failed to delete the member.
+teamDashboard.deleteMatchFailed,対戦の削除に失敗しました。,Failed to delete the match.
+teamDashboard.completedLoadFailed,完了済み対戦の読み込みに失敗しました。,Failed to load completed matches.
+teamDashboard.completedDetailFailed,対戦詳細の取得に失敗しました。,Failed to load the match details.
 teamDashboard.retry,再試行,Retry
-teamDashboard.memberCount,登録: {{total}} 名 (編集権限: {{editable}} 名),Members: {{total}} (Editors: {{editable}})
-teamDashboard.refresh,最新の状態に更新,Refresh
-teamDashboard.signOut,ログアウト,Sign out
-teamDashboard.membersTab,メンバー管理,Members
-teamDashboard.matchesTab,試合結果,Matches
-teamDashboard.membersSection,メンバー一覧,Team Members
-teamDashboard.membersDescription,チームメンバーを追加・編集し、編集権限を付与できます。,Add or edit team members and grant edit permissions.
+teamDashboard.refresh,更新,Refresh
+teamDashboard.signOut,サインアウト,Sign out
+teamDashboard.membersTab,メンバー,Members
+teamDashboard.matchesTab,自チーム,My Matches
+teamDashboard.completedTab,全完了戦,All Completed
+teamDashboard.membersTitle,メンバー一覧,Member roster
+teamDashboard.membersDescription,このチームアカウントでプレイするメンバーを追加・リネームします。,Add or rename the people who play under this account.
 teamDashboard.addMember,メンバーを追加,Add member
-teamDashboard.noMembers,まだメンバーが登録されていません。,No members have been registered yet.
-teamDashboard.canEdit,編集権限あり,Can edit
-teamDashboard.cannotEdit,閲覧のみ,View only
-teamDashboard.updatedAt,最終更新: {{value}},Updated: {{value}}
+teamDashboard.editMember,メンバー名を変更,Rename member
 teamDashboard.memberNameRequired,メンバー名を入力してください。,Please enter a member name.
-teamDashboard.editMember,メンバーを編集,Edit member
-teamDashboard.deleteMember,メンバーを削除,Delete member
-teamDashboard.memberNameLabel,メンバー名,Member name
-teamDashboard.memberCanEditLabel,このメンバーに編集権限を付与,Allow this member to edit
+teamDashboard.memberNameLabel,表示名,Display name
+teamDashboard.memberPermissionLabel,権限,Permission
+teamDashboard.memberUpdatedAt,最終更新,Last updated
+teamDashboard.memberDialogHelper,編集権限の付与は運営のみが行います。,Editing permissions are managed by the organizers.
+teamDashboard.deleteMember,メンバーを削除,Remove member
+teamDashboard.confirmDeleteMember,{{name}} を削除しますか？,Remove {{name}} from the roster?
+teamDashboard.noMembers,登録されているメンバーがありません。,No members have been registered yet.
+teamDashboard.memberCount,メンバー: {{total}} / 編集可: {{editable}},Members: {{total}} / Editors: {{editable}}
+teamDashboard.actions,操作,Actions
+teamDashboard.canEdit,編集可,Editor
+teamDashboard.cannotEdit,閲覧のみ,Viewer
 teamDashboard.cancel,キャンセル,Cancel
-teamDashboard.saving,保存中...,Saving...
 teamDashboard.save,保存,Save
-teamDashboard.confirmDeleteMember,{{name}} を削除しますか？,Delete {{name}}?
-teamDashboard.deleting,削除中...,Deleting...
+teamDashboard.saving,保存中...,Saving...
 teamDashboard.delete,削除,Delete
-teamDashboard.matchesSection,試合一覧,Match Results
-teamDashboard.matchesDescription,自チームの試合結果を登録・更新できます。,Create and update match records for your team.
-teamDashboard.addMatch,試合結果を追加,Add match
-teamDashboard.noMatches,まだ試合結果が登録されていません。,No match results have been recorded yet.
-teamDashboard.unknownOpponent,対戦相手未設定,Opponent not set
-teamDashboard.matchScore,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
-teamDashboard.matchPlayer,担当: {{player}} / デッキ: {{deck}},Player: {{player}} / Deck: {{deck}}
-teamDashboard.noPlayer,プレイヤー未設定,Player not set
-teamDashboard.noDeck,デッキ未設定,Deck not set
-teamDashboard.editMatch,試合結果を編集,Edit match
-teamDashboard.deleteMatch,試合結果を削除,Delete match
-teamDashboard.matchPlayerLabel,自チームのプレイヤー,Your player
-teamDashboard.matchDeckLabel,使用デッキ,Deck
-teamDashboard.selfScoreLabel,自チームのスコア,Your score
-teamDashboard.opponentScoreLabel,相手のスコア,Opponent score
-teamDashboard.opponentTeamLabel,対戦相手チーム,Opponent team
-teamDashboard.opponentPlayerLabel,相手プレイヤー,Opponent player
-teamDashboard.opponentDeckLabel,相手デッキ,Opponent deck
-teamDashboard.matchDateLabel,試合日,Match date
-teamDashboard.tournamentIdLabel,大会ID (任意),Tournament ID (optional)
-teamDashboard.tournamentIdHelper,必要に応じて大会IDを関連付けます。,Link a tournament ID when needed.
-teamDashboard.roundIdLabel,ラウンドID (任意),Round ID (optional)
-teamDashboard.roundIdHelper,大会のラウンドIDがある場合は入力してください。,Set the round ID if the tournament uses one.
-teamDashboard.confirmDeleteMatch,この試合結果（相手: {{opponent}}）を削除しますか？,Delete this match result (opponent: {{opponent}})?
-teamDashboard.matchManagementAdminTitle,対戦管理,Match management
-teamDashboard.matchManagementViewerTitle,試合状況,Match overview
-teamDashboard.matchManagementAdminDescription,試合結果を登録・編集し、入力権限を管理できます。,Record and edit match results while managing input permissions.
-teamDashboard.matchManagementViewerDescription,登録済みの試合結果を閲覧できます。,Browse the match results recorded by your team.
-teamDashboard.matchManagementAdminButton,対戦を管理する,Open match manager
-teamDashboard.matchManagementViewerButton,試合結果を表示,View match list
-teamDashboard.todaySummaryTitle,本日の戦績,Today's summary
-teamDashboard.todayMatchesLabel,本日の試合数: {{count}} 件,Matches today: {{count}}
-teamDashboard.todayRecordValue,勝ち: {{wins}} / 負け: {{losses}},Wins: {{wins}} / Losses: {{losses}}
-teamDashboard.todayRecordEmpty,本日の試合はまだありません。,No matches recorded today.
-teamDashboard.participantsCountLabel,登録メンバー: {{count}} 名,Registered members: {{count}}
-teamDashboard.manageParticipantsButton,メンバーを管理,Manage members
-teamDashboard.historySectionTitle,過去の試合結果,Match history
-teamDashboard.historySectionDescription,投稿済みの試合結果一覧を確認します。,Review previously submitted match results.
-teamDashboard.historyButton,一覧を開く,Open list
-matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
-matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
-matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.
-matchManager.teamReload,再読み込み,Reload
-matchManager.teamTitle,対戦管理,Match Manager
-matchManager.teamQuickInputTitle,クイック入力（運営専用）,Quick Entry (Organizers)
-matchManager.teamQuickInputDescription,選手とスコア、相手チーム情報を入力して即座に記録できます。,Record a match quickly by selecting a player, scores, and opponent information.
-matchManager.teamPlayerLabel,選手,Player
-matchManager.teamSelfScoreLabel,自チームスコア,Team Score
-matchManager.teamOpponentScoreLabel,相手スコア,Opponent Score
-matchManager.teamOpponentTeamLabel,相手チーム,Opponent Team
-matchManager.teamOpponentPlayerLabel,相手選手,Opponent Player
-matchManager.teamRecordButton,記録する,Record
-matchManager.teamRecording,記録中...,Recording...
-matchManager.teamReadOnlyNotice,試合結果の入力権限がありません。運営に権限付与を依頼してください。,You don't have permission to enter results. Please contact the organizer.
-matchManager.teamCreateFailed,試合結果の登録に失敗しました。,Failed to record the match.
-matchManager.teamStatsTitle,チーム戦績,Team Stats
-matchManager.teamStatsTotal,総試合数 {{count}},Total Matches {{count}}
-matchManager.teamStatsWins,勝利 {{count}},Wins {{count}}
-matchManager.teamStatsLosses,敗北 {{count}},Losses {{count}}
-matchManager.teamStatsWinRate,勝率 {{rate}}%,Win Rate {{rate}}%
-matchManager.teamTodayMatches,本日の試合結果,Today's Matches
-matchManager.teamNoMatchesToday,本日の試合はまだ登録されていません。,No matches have been recorded for today yet.
-matchManager.teamUnknownPlayer,選手未設定,Player Not Set
-matchManager.teamUnknownTeam,相手チーム未設定,Opponent Not Set
-matchManager.teamScoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
-matchManager.teamOpponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
-matchManager.teamOutcomeWin,勝利,Win
-matchManager.teamOutcomeLose,敗北,Loss
-matchManager.teamOutcomeDraw,引き分け,Draw
-matchManager.teamOutcomePending,試合中,In Progress
-matchManager.teamUpdateFailed,試合結果の更新に失敗しました。,Failed to update match.
-matchManager.teamTimezoneLabel,タイムゾーン,Timezone
-matchManager.teamDateLabel,日付,Date
-matchManager.teamEditTitle,試合結果を編集,Edit Match
-matchManager.teamCancel,キャンセル,Cancel
-matchManager.teamSave,保存,Save
-matchManager.teamSaving,保存中...,Saving...
-matchManager.teamDeleteTitle,試合結果の削除,Delete Match
-matchManager.teamDeleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
-matchManager.teamDeleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
-matchManager.teamDelete,削除する,Delete
-matchManager.teamDeleting,削除中...,Deleting...
-matchManager.roundList.title,ラウンド一覧,Round List
-matchManager.roundList.noRounds,ラウンドがまだ作成されていません,No rounds have been created yet.
-matchManager.roundList.createFirstRound,最初のラウンドを作成,Create First Round
-matchManager.teamCurrentUserFailed,権限情報の取得に失敗しました。,Failed to fetch permission information.
-matchManager.teamParticipantsFailed,参加者一覧の取得に失敗しました。,Failed to load participant list.
-matchManager.teamLoadError,データの取得に失敗しました。時間をおいて再度お試しください。,Failed to load data. Please try again later.
-matchManager.teamReload,再読み込み,Reload
-matchManager.teamTitle,対戦管理,Match Manager
-matchManager.teamQuickInputTitle,クイック入力（運営専用）,Quick Entry (Organizers)
-matchManager.teamQuickInputDescription,選手とスコア、相手チーム情報を入力して即座に記録できます。,Record a match quickly by selecting a player, scores, and opponent information.
-matchManager.teamPlayerLabel,選手,Player
-matchManager.teamSelfScoreLabel,自チームスコア,Team Score
-matchManager.teamOpponentScoreLabel,相手スコア,Opponent Score
-matchManager.teamOpponentTeamLabel,相手チーム,Opponent Team
-matchManager.teamOpponentPlayerLabel,相手選手,Opponent Player
-matchManager.teamRecordButton,記録する,Record
-matchManager.teamRecording,記録中...,Recording...
-matchManager.teamReadOnlyNotice,試合結果の入力権限がありません。運営に権限付与を依頼してください。,You don't have permission to enter results. Please contact the organizer.
-matchManager.teamCreateFailed,試合結果の登録に失敗しました。,Failed to record the match.
-matchManager.teamStatsTitle,チーム戦績,Team Stats
-matchManager.teamStatsTotal,総試合数 {{count}},Total Matches {{count}}
-matchManager.teamStatsWins,勝利 {{count}},Wins {{count}}
-matchManager.teamStatsLosses,敗北 {{count}},Losses {{count}}
-matchManager.teamStatsWinRate,勝率 {{rate}}%,Win Rate {{rate}}%
-matchManager.teamTodayMatches,本日の試合結果,Today's Matches
-matchManager.teamNoMatchesToday,本日の試合はまだ登録されていません。,No matches have been recorded for today yet.
-matchManager.teamUnknownPlayer,選手未設定,Player Not Set
-matchManager.teamUnknownTeam,相手チーム未設定,Opponent Not Set
-matchManager.teamScoreLine,スコア: {{self}} - {{opponent}},Score: {{self}} - {{opponent}}
-matchManager.teamOpponentLine,相手: {{team}} / {{player}},Opponent: {{team}} / {{player}}
-matchManager.teamOutcomeWin,勝利,Win
-matchManager.teamOutcomeLose,敗北,Loss
-matchManager.teamOutcomeDraw,引き分け,Draw
-matchManager.teamOutcomePending,試合中,In Progress
-matchManager.teamUpdateFailed,試合結果の更新に失敗しました。,Failed to update match.
-matchManager.teamTimezoneLabel,タイムゾーン,Timezone
-matchManager.teamDateLabel,日付,Date
-matchManager.teamEditTitle,試合結果を編集,Edit Match
-matchManager.teamCancel,キャンセル,Cancel
-matchManager.teamSave,保存,Save
-matchManager.teamSaving,保存中...,Saving...
-matchManager.teamDeleteTitle,試合結果の削除,Delete Match
-matchManager.teamDeleteConfirm,この試合結果を削除しますか？,Are you sure you want to delete this match?
-matchManager.teamDeleteFailed,試合結果の削除に失敗しました。,Failed to delete match.
-matchManager.teamDelete,削除する,Delete
-matchManager.teamDeleting,削除中...,Deleting...
-teamDashboard.analyticsTab,分析,Analytics
+teamDashboard.deleting,削除中...,Deleting...
+teamDashboard.myMatchesTitle,チームの対戦,Team matches
+teamDashboard.myMatchesDescription,最新の対戦状況を確認し、スコアを報告します。,Report scores and check the latest pairings for your team.
+teamDashboard.statTotal,合計 {{value}},Total {{value}}
+teamDashboard.statWins,勝利 {{value}},Wins {{value}}
+teamDashboard.statLosses,敗北 {{value}},Losses {{value}}
+teamDashboard.statDraws,引き分け {{value}},Draws {{value}}
+teamDashboard.statPending,進行中 {{value}},Open {{value}}
+teamDashboard.statPendingChip,未完了 {{value}},Open {{value}}
+teamDashboard.statCompletedChip,確定 {{value}},Finalized {{value}}
+teamDashboard.pendingSectionTitle,入力待ちの対戦,Matches awaiting input
+teamDashboard.pendingSectionDescription,まだチームで編集できる対戦です。,These matches are still editable.
+teamDashboard.noPendingMatches,入力待ちの対戦はありません。,No matches require input right now.
+teamDashboard.completedSectionTitle,直近で確定した対戦 (自チーム),Recently finalized (team)
+teamDashboard.completedSectionDescription,自チームで確定した直近の対戦です。,Latest finalized matches for your team.
+teamDashboard.noCompletedMatches,確定済みの対戦はまだありません。,No finalized results have been recorded.
+teamDashboard.completedTitle,完了済み対戦一覧,All completed matches
+teamDashboard.completedDescription,全チームの確定済み対戦を検索し、詳細を確認できます。,Browse every finalized match and open the full scorecard.
+teamDashboard.completedSearch,チーム名・プレイヤー名で検索,Search by team or player
+teamDashboard.completedDateFrom,開始日,From date
+teamDashboard.completedDateTo,終了日,To date
+teamDashboard.completedApplyFilters,絞り込み,Apply filters
+teamDashboard.completedResetFilters,リセット,Reset
+teamDashboard.completedEmpty,条件に一致する対戦はありません。,No matches match the filters.
+teamDashboard.completedMatchColumn,対戦,Match
+teamDashboard.completedScoreColumn,スコア,Score
+teamDashboard.completedDateColumn,日時,Date
+teamDashboard.viewDetails,詳細を見る,View details
+teamDashboard.unknownTeam,未設定のチーム,Team not set
+teamDashboard.unknownPlayer,未設定のプレイヤー,Player not set
+teamDashboard.scoreValue,{{self}} - {{opponent}},{{self}} - {{opponent}}
+teamDashboard.matchupLabel,{{home}} 対 {{away}},{{home}} vs {{away}}
+teamDashboard.reportScore,スコアを入力,Report score
+teamDashboard.noDate,日時未設定,Date not set
+teamDashboard.completedDetailTitle,対戦詳細,Match details
+teamDashboard.completedTournament,トーナメント,Tournament
+teamDashboard.completedMatchupLabel,対戦カード,Matchup
+teamDashboard.close,閉じる,Close
+teamDashboard.deleteMatchTitle,対戦を削除,Delete match
+teamDashboard.deleteMatchBody,この対戦記録を削除しますか？,Delete this match record?
 analytics.title,戦績分析,Match Analytics
 teamResultEntry.title,試合結果入力,Result Entry
 teamResultEntry.loading,読み込み中...,Loading...
@@ -445,11 +411,6 @@ teamResultEntry.save,保存,Save
 teamResultEntry.finalize,確定,Finalize
 teamResultEntry.finalized,確定済,Finalized
 teamResultEntry.draft,未確定,Draft
-common.inputResult,結果入力,Enter Result
-common.useAuthError,useAuth は AuthProvider 内でのみ使用できます。,useAuth can only be used within AuthProvider.
-teamManagement.sampleTeamA,チームA,Team A
-teamManagement.samplePlayerTanaka,田中太郎,Taro Tanaka
-teamManagement.samplePlayerSuzuki,鈴木一郎,Ichiro Suzuki
 matchList.title,試合履歴,Match History
 matchList.reload,最新の状態に更新,Refresh
 matchList.filters,フィルター,Filters
