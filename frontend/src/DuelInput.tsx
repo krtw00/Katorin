@@ -1,29 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Box,
+  Modal,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Paper,
-  Stack,
+  Card,
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Tooltip,
+  Input,
+  Space,
   Typography,
-} from '@mui/material';
-import Grid from '@mui/material/Grid';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+  Row,
+  Col,
+  Tooltip,
+  Flex,
+} from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
+
+const { Title } = Typography;
 
 type MatchRecord = {
   id: string;
@@ -123,102 +117,130 @@ const RecordModal: React.FC<RecordModalProps> = ({ open, initialValues, mode, on
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{mode === 'create' ? t('duelInput.addRecord') : t('duelInput.editRecord')}</DialogTitle>
-      <DialogContent dividers>
-        <Box sx={{ mt: 1 }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.team')}
+    <Modal
+      open={open}
+      onCancel={onClose}
+      title={mode === 'create' ? t('duelInput.addRecord') : t('duelInput.editRecord')}
+      width={800}
+      footer={[
+        <Button key="cancel" onClick={onClose}>
+          {t('duelInput.cancel')}
+        </Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit}>
+          {mode === 'create' ? t('duelInput.add') : t('duelInput.update')}
+        </Button>,
+      ]}
+    >
+      <div style={{ marginTop: 16 }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#6f9dff', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.team')}
+              </label>
+              <Input
                 value={values.team}
                 onChange={handleChange('team')}
-                fullWidth
-                sx={modalFieldStyles.self}
+                style={{ backgroundColor: 'rgba(70, 124, 224, 0.12)' }}
                 autoFocus
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.team')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#d46060', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.team')}
+              </label>
+              <Input
                 value={values.opponentTeam}
                 onChange={handleChange('opponentTeam')}
-                fullWidth
-                sx={modalFieldStyles.opponent}
+                style={{ backgroundColor: 'rgba(224, 86, 70, 0.18)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.player')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#6f9dff', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.player')}
+              </label>
+              <Input
                 value={values.player}
                 onChange={handleChange('player')}
-                fullWidth
-                sx={modalFieldStyles.self}
+                style={{ backgroundColor: 'rgba(70, 124, 224, 0.12)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.player')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#d46060', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.player')}
+              </label>
+              <Input
                 value={values.opponentPlayer}
                 onChange={handleChange('opponentPlayer')}
-                fullWidth
-                sx={modalFieldStyles.opponent}
+                style={{ backgroundColor: 'rgba(224, 86, 70, 0.18)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField label={t('duelInput.deck')} value={values.deck} onChange={handleChange('deck')} fullWidth sx={modalFieldStyles.self} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.deck')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#6f9dff', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.deck')}
+              </label>
+              <Input
+                value={values.deck}
+                onChange={handleChange('deck')}
+                style={{ backgroundColor: 'rgba(70, 124, 224, 0.12)' }}
+              />
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#d46060', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.deck')}
+              </label>
+              <Input
                 value={values.opponentDeck}
                 onChange={handleChange('opponentDeck')}
-                fullWidth
-                sx={modalFieldStyles.opponent}
+                style={{ backgroundColor: 'rgba(224, 86, 70, 0.18)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.score')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#6f9dff', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.score')}
+              </label>
+              <Input
                 value={values.selfScore}
                 onChange={handleChange('selfScore')}
                 type="number"
-                inputProps={{ min: 0, inputMode: 'numeric', pattern: '[0-9]*' }}
-                fullWidth
-                sx={modalFieldStyles.self}
+                style={{ backgroundColor: 'rgba(70, 124, 224, 0.12)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.score')}
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ color: '#d46060', marginBottom: 4, display: 'block' }}>
+                {t('duelInput.score')}
+              </label>
+              <Input
                 value={values.opponentScore}
                 onChange={handleChange('opponentScore')}
                 type="number"
-                inputProps={{ min: 0, inputMode: 'numeric', pattern: '[0-9]*' }}
-                fullWidth
-                sx={modalFieldStyles.opponent}
+                style={{ backgroundColor: 'rgba(224, 86, 70, 0.18)' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                label={t('duelInput.date')}
-                type="date"
-                value={values.date}
-                onChange={handleChange('date')}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t('duelInput.cancel')}</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          {mode === 'create' ? t('duelInput.add') : t('duelInput.update')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+            </div>
+          </Col>
+          <Col xs={24} md={12}>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ marginBottom: 4, display: 'block' }}>{t('duelInput.date')}</label>
+              <Input type="date" value={values.date} onChange={handleChange('date')} />
+            </div>
+          </Col>
+        </Row>
+      </div>
+    </Modal>
   );
 };
 
@@ -397,128 +419,101 @@ const DuelInput: React.FC = () => {
   };
 
   return (
-    <Paper
-      elevation={6}
-      sx={{
-        p: { xs: 3, md: 4 },
-        borderRadius: 4,
+    <Card
+      style={{
+        padding: '24px 32px',
+        borderRadius: 16,
         background: 'linear-gradient(180deg, #12172b 0%, #0b0d18 100%)',
         color: '#fff',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.08em' }}>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 24 }}>
+        <Title level={3} style={{ fontWeight: 800, letterSpacing: '0.08em', margin: 0, color: '#fff' }}>
           {t('duelInput.matchRecordList')}
-        </Typography>
-        <Button variant="contained" onClick={openCreateModal}>
+        </Title>
+        <Button type="primary" onClick={openCreateModal}>
           {t('duelInput.addRecord')}
         </Button>
-      </Box>
+      </Flex>
 
-      <Box sx={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto' }}>
         <Table
-          sx={{
-            minWidth: 960,
-            '& th': {
-              borderBottom: '2px solid rgba(255,255,255,0.2)',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              whiteSpace: 'nowrap',
-              color: '#e2e4ff',
-              verticalAlign: 'bottom',
-            },
-            '& td': {
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              color: '#f3f3f3',
-            },
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              {columns.map((column) => {
-                const style = column.group ? groupStyles[column.group] : undefined;
-                return (
-                  <TableCell
-                    key={column.key}
-                    align={column.align}
-                    sx={{
+          size="small"
+          dataSource={records.length === 0 ? [] : records}
+          columns={[
+            ...columns.map((column) => {
+              const style = column.group ? groupStyles[column.group] : undefined;
+              const isScore = column.key === 'selfScore' || column.key === 'opponentScore';
+              const isOpponentGroup = column.group === 'opponent';
+
+              return {
+                title: (
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      padding: '4px 8px',
+                      borderRadius: 4,
                       backgroundColor: style?.headerBg,
-                      color: style?.headerColor,
+                      color: style?.headerColor || '#e2e4ff',
+                      letterSpacing: '0.08em',
+                      whiteSpace: 'nowrap' as const,
                     }}
                   >
-                    <Stack spacing={0.5} alignItems={column.align === 'center' ? 'center' : 'flex-start'}>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 800,
-                          display: 'inline-block',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
-                          backgroundColor: style?.headerBg,
-                          color: style?.headerColor,
-                        }}
-                      >
-                        {column.label}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                );
-              })}
-              <TableCell align="center">{t('duelInput.action')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 6, color: 'rgba(255,255,255,0.6)' }}>
-                  {t('duelInput.noRecords')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              records.map((record) => (
-                <TableRow key={record.id}>
-                  {columns.map((column) => {
-                    const style = column.group ? groupStyles[column.group] : undefined;
-                    const value = record[column.key] || '';
-                    const isScore = column.key === 'selfScore' || column.key === 'opponentScore';
-                    const isOpponentGroup = column.group === 'opponent';
-                    return (
-                      <TableCell
-                        key={column.key}
-                        align={column.align}
-                        sx={{
-                          backgroundColor: style?.cellBg,
-                          fontWeight: isScore ? 700 : 500,
-                          fontSize: isScore ? 18 : undefined,
-                          textAlign: isScore ? 'center' : undefined,
-                          color: isOpponentGroup ? '#ffd3d0' : undefined,
-                        }}
-                      >
-                        {value === '' ? '-' : value}
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <Tooltip title={t('duelInput.editRecord')}>
-                        <IconButton size="small" color="primary" onClick={() => openEditModal(record.id)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t('duelInput.delete')}>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(record.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Box>
+                    {column.label}
+                  </div>
+                ),
+                dataIndex: column.key,
+                key: column.key,
+                align: column.align || ('left' as const),
+                onCell: () => ({
+                  style: {
+                    backgroundColor: style?.cellBg,
+                    fontWeight: isScore ? 700 : 500,
+                    fontSize: isScore ? 18 : undefined,
+                    color: isOpponentGroup ? '#ffd3d0' : '#f3f3f3',
+                  },
+                }),
+                render: (value: string) => (value === '' || value === null ? '-' : value),
+              };
+            }),
+            {
+              title: t('duelInput.action'),
+              key: 'action',
+              align: 'center' as const,
+              render: (_: unknown, record: MatchRecord) => (
+                <Space size="small">
+                  <Tooltip title={t('duelInput.editRecord')}>
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => openEditModal(record.id)}
+                    />
+                  </Tooltip>
+                  <Tooltip title={t('duelInput.delete')}>
+                    <Button
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDelete(record.id)}
+                    />
+                  </Tooltip>
+                </Space>
+              ),
+            },
+          ]}
+          locale={{
+            emptyText: (
+              <div style={{ padding: '48px 0', color: 'rgba(255,255,255,0.6)' }}>
+                {t('duelInput.noRecords')}
+              </div>
+            ),
+          }}
+          pagination={false}
+          style={{ minWidth: 960 }}
+        />
+      </div>
 
       <RecordModal
         open={modalState.open}
@@ -527,19 +522,23 @@ const DuelInput: React.FC = () => {
         onSave={handleModalSave}
         onClose={closeModal}
       />
-      <Dialog open={confirmState.open} onClose={closeConfirm} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('duelInput.deleteConfirmation')}</DialogTitle>
-        <DialogContent dividers>
-          <Typography>{t('duelInput.deleteConfirmationMessage')}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeConfirm}>{t('duelInput.cancel')}</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
+      <Modal
+        open={confirmState.open}
+        onCancel={closeConfirm}
+        title={t('duelInput.deleteConfirmation')}
+        width={400}
+        footer={[
+          <Button key="cancel" onClick={closeConfirm}>
+            {t('duelInput.cancel')}
+          </Button>,
+          <Button key="delete" danger type="primary" onClick={confirmDelete}>
             {t('duelInput.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Paper>
+          </Button>,
+        ]}
+      >
+        <div>{t('duelInput.deleteConfirmationMessage')}</div>
+      </Modal>
+    </Card>
   );
 };
 

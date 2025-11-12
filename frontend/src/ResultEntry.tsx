@@ -2,33 +2,31 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Avatar,
-  Box,
   Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  DialogContentText,
-  Paper,
-  Stack,
+  Card,
+  Input,
+  InputNumber,
+  Modal,
+  Space,
+  Spin,
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
+  Tag,
   Typography,
-} from '@mui/material';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+  Flex,
+} from 'antd';
+import {
+  ArrowLeftOutlined,
+  SaveOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
+import type { ColumnsType } from 'antd/es/table';
+
+const { Title, Text } = Typography;
 
 interface Team {
   id: string;
@@ -102,17 +100,19 @@ const parseScore = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-
-const statusMeta: Record<ScoreStatus, { chipBg: string; chipColor: string; homeHighlight: boolean; awayHighlight: boolean }> = {
-  homeWin: { chipBg: '#e6f7ef', chipColor: '#1f8a5d', homeHighlight: true, awayHighlight: false },
-  awayWin: { chipBg: '#e6f7ef', chipColor: '#1f8a5d', homeHighlight: false, awayHighlight: true },
-  draw: { chipBg: '#e8ecf8', chipColor: '#43506c', homeHighlight: false, awayHighlight: false },
-  pending: { chipBg: '#fff4e6', chipColor: '#b66d1f', homeHighlight: false, awayHighlight: false },
+const statusMeta: Record<
+  ScoreStatus,
+  { color: string; homeHighlight: boolean; awayHighlight: boolean }
+> = {
+  homeWin: { color: 'success', homeHighlight: true, awayHighlight: false },
+  awayWin: { color: 'success', homeHighlight: false, awayHighlight: true },
+  draw: { color: 'default', homeHighlight: false, awayHighlight: false },
+  pending: { color: 'warning', homeHighlight: false, awayHighlight: false },
 };
 
 const getInitial = (value: string) => {
   const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed.slice(0, 1) : '？';
+  return trimmed.length > 0 ? trimmed.slice(0, 1) : '?';
 };
 
 const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, onSaved }) => {
@@ -121,17 +121,26 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const [form, setForm] = useState<MatchFormValues>(emptyForm);
   const [gameRows, setGameRows] = useState<GameRow[]>([]);
   const [isFinalized, setIsFinalized] = useState(false);
-  const [persistedScores, setPersistedScores] = useState<{ home: string; away: string }>({ home: '', away: '' });
+  const [persistedScores, setPersistedScores] = useState<{ home: string; away: string }>({
+    home: '',
+    away: '',
+  });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
-  const [rowModalState, setRowModalState] = useState<{ open: boolean; mode: 'create' | 'edit'; draft: GameRow }>({
+  const [rowModalState, setRowModalState] = useState<{
+    open: boolean;
+    mode: 'create' | 'edit';
+    draft: GameRow;
+  }>({
     open: false,
     mode: 'create',
     draft: emptyRow,
   });
-  const [deleteState, setDeleteState] = useState<{ open: boolean; targetId?: string }>({ open: false });
+  const [deleteState, setDeleteState] = useState<{ open: boolean; targetId?: string }>({
+    open: false,
+  });
   const [initialized, setInitialized] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState('');
@@ -154,7 +163,6 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       setTeams(data);
     } catch (err) {
       console.error('Failed to fetch teams:', err);
-      // Handle error appropriately
     }
   }, [authFetch, tournament?.id, t]);
 
@@ -204,7 +212,9 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   const scoreStatusMeta = statusMeta[scoreState];
   const scoreStatusLabel = useMemo(() => {
     if (!isFinalized) {
-      return gameRows.length === 0 ? t('resultEntry.notRegistered') : t('resultEntry.pending');
+      return gameRows.length === 0
+        ? t('resultEntry.notRegistered')
+        : t('resultEntry.pending');
     }
     if (scoreState === 'homeWin') {
       return `${form.team || t('resultEntry.homeTeam')} ${t('resultEntry.win')}`;
@@ -215,13 +225,15 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
     if (scoreState === 'draw') {
       return t('resultEntry.draw');
     }
-    return gameRows.length === 0 ? t('resultEntry.notRegistered') : t('resultEntry.pending');
+    return gameRows.length === 0
+      ? t('resultEntry.notRegistered')
+      : t('resultEntry.pending');
   }, [isFinalized, scoreState, form.team, form.opponentTeam, gameRows.length, t]);
 
   const snapshot = useMemo(() => makeSnapshot(form, gameRows), [form, gameRows, makeSnapshot]);
 
   const fetchMatch = useCallback(async () => {
-    if (!matchId || teams.length === 0) { // teamsが読み込まれるまで待機
+    if (!matchId || teams.length === 0) {
       setForm(emptyForm);
       setGameRows([]);
       setError(null);
@@ -245,7 +257,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
       }
       const data: MatchRecord = await response.json();
       const homeTeamName = teams.find((t) => t.id === data.team)?.name ?? data.team ?? '';
-      const awayTeamName = teams.find((t) => t.id === data.opponentTeam)?.name ?? data.opponentTeam ?? '';
+      const awayTeamName =
+        teams.find((t) => t.id === data.opponentTeam)?.name ?? data.opponentTeam ?? '';
 
       const newFormState: MatchFormValues = {
         team: homeTeamName,
@@ -329,7 +342,6 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   }, [authFetch, makeSnapshot, matchId, teams, t]);
 
   useEffect(() => {
-    // This will run when matchId changes OR when teams array is populated
     if (teams.length > 0) {
       fetchMatch();
     }
@@ -364,7 +376,8 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
 
         const payloadPlayer = {
           rounds: rowsForPayload,
-          finalized: mode === 'finalize' ? true : mode === 'unfinalize' ? false : isFinalized,
+          finalized:
+            mode === 'finalize' ? true : mode === 'unfinalize' ? false : isFinalized,
           totals: { home: totals.homeTotal, away: totals.awayTotal },
         };
 
@@ -468,7 +481,10 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
           setIsFinalized(parsedFinalized);
           setPersistedScores(
             parsedFinalized
-              ? { home: String(parsedTotals.home ?? ''), away: String(parsedTotals.away ?? '') }
+              ? {
+                  home: String(parsedTotals.home ?? ''),
+                  away: String(parsedTotals.away ?? ''),
+                }
               : { home: '', away: '' }
           );
 
@@ -596,71 +612,65 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
   };
 
   const renderScoreBoard = () => (
-    <Paper
-      sx={{
-        borderRadius: 4,
-        p: { xs: 3, md: 4 },
-        bgcolor: '#fff',
+    <Card
+      style={{
+        borderRadius: 16,
         boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
         border: '1px solid rgba(24, 32, 56, 0.08)',
       }}
     >
-      <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#1a1d2f' }}>{t('resultEntry.matchScore')}</Typography>
-          <Chip
-            label={scoreStatusLabel}
-            sx={{
-              bgcolor: scoreStatusMeta.chipBg,
-              color: scoreStatusMeta.chipColor,
-              fontWeight: 700,
-              height: 26,
-              '& .MuiChip-label': { px: 1.75 },
-            }}
-          />
-        </Stack>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: { xs: 3, md: 4 },
-          }}
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Flex justify="space-between" align="center">
+          <Title level={4} style={{ margin: 0, color: '#1a1d2f' }}>
+            {t('resultEntry.matchScore')}
+          </Title>
+          <Tag color={scoreStatusMeta.color} style={{ fontWeight: 700 }}>
+            {scoreStatusLabel}
+          </Tag>
+        </Flex>
+        <Flex
+          align="center"
+          justify="space-between"
+          gap={32}
+          style={{ flexWrap: 'wrap' }}
         >
           {renderTeamColumn(form.team, scoreStatusMeta.homeHighlight)}
-          <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 120 }}>
-            <Typography sx={{ fontSize: 12, color: '#7e8494', letterSpacing: '0.12em' }}>SCORE</Typography>
-            <Typography sx={{ fontSize: 34, fontWeight: 800, color: '#1a1d2f' }}>
+          <Space direction="vertical" align="center" size="small" style={{ minWidth: 120 }}>
+            <Text type="secondary" style={{ fontSize: 12, letterSpacing: '0.12em' }}>
+              SCORE
+            </Text>
+            <Title level={1} style={{ margin: 0, fontWeight: 800, color: '#1a1d2f' }}>
               {totals.homeTotal}
-              <Typography component="span" sx={{ mx: 1, fontSize: 24, color: '#7e8494' }}>
+              <Text type="secondary" style={{ fontSize: 24, margin: '0 8px' }}>
                 -
-              </Typography>
+              </Text>
               {totals.awayTotal}
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: '#9ba0ad', letterSpacing: '0.16em' }}>VS</Typography>
-          </Stack>
+            </Title>
+            <Text type="secondary" style={{ fontSize: 12, letterSpacing: '0.16em' }}>
+              VS
+            </Text>
+          </Space>
           {renderTeamColumn(form.opponentTeam, scoreStatusMeta.awayHighlight)}
-        </Box>
-      </Stack>
-    </Paper>
+        </Flex>
+      </Space>
+    </Card>
   );
 
   const renderTeamColumn = (teamName: string, highlight: boolean) => (
-    <Stack spacing={1} alignItems="center" sx={{ flex: 1 }}>
+    <Space direction="vertical" align="center" size="small" style={{ flex: 1 }}>
       <Avatar
-        sx={{
-          width: 48,
-          height: 48,
+        size={48}
+        style={{
           fontWeight: 700,
           fontSize: 18,
-          bgcolor: highlight ? '#0d1026' : '#f4f6fd',
+          backgroundColor: highlight ? '#0d1026' : '#f4f6fd',
           color: highlight ? '#fff' : '#4a5162',
         }}
       >
         {getInitial(teamName)}
       </Avatar>
-      <Typography
-        sx={{
+      <Text
+        style={{
           fontSize: 16,
           fontWeight: 700,
           color: highlight ? '#0d1026' : '#4a5162',
@@ -668,260 +678,284 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         }}
       >
         {teamName || t('resultEntry.teamNotSet')}
-      </Typography>
-    </Stack>
+      </Text>
+    </Space>
   );
 
+  const columns: ColumnsType<GameRow> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 60,
+      align: 'center',
+      render: (_: any, __: GameRow, index: number) => index + 1,
+    },
+    {
+      title: t('resultEntry.team'),
+      dataIndex: 'homeTeam',
+      key: 'homeTeam',
+      render: (text: string) => text || form.team || '—',
+    },
+    {
+      title: t('resultEntry.player'),
+      dataIndex: 'homePlayer',
+      key: 'homePlayer',
+      render: (text: string) => text || '—',
+    },
+    {
+      title: t('resultEntry.deck'),
+      dataIndex: 'homeDeck',
+      key: 'homeDeck',
+      render: (text: string) => text || '—',
+    },
+    {
+      title: t('resultEntry.score'),
+      dataIndex: 'homeScore',
+      key: 'homeScore',
+      width: 80,
+      align: 'center',
+      render: (text: string) => <Text strong>{text || '-'}</Text>,
+    },
+    {
+      title: t('resultEntry.score'),
+      dataIndex: 'awayScore',
+      key: 'awayScore',
+      width: 80,
+      align: 'center',
+      render: (text: string) => <Text strong>{text || '-'}</Text>,
+    },
+    {
+      title: t('resultEntry.deck'),
+      dataIndex: 'awayDeck',
+      key: 'awayDeck',
+      render: (text: string) => text || '—',
+    },
+    {
+      title: t('resultEntry.player'),
+      dataIndex: 'awayPlayer',
+      key: 'awayPlayer',
+      render: (text: string) => text || '—',
+    },
+    {
+      title: t('resultEntry.team'),
+      dataIndex: 'awayTeam',
+      key: 'awayTeam',
+      render: (text: string) => text || form.opponentTeam || '—',
+    },
+    {
+      title: t('resultEntry.actions'),
+      key: 'actions',
+      width: 180,
+      align: 'right',
+      render: (_: any, record: GameRow) => (
+        <Space size="small">
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => openEditRowModal(record)}
+            disabled={disableEditing}
+          >
+            {t('resultEntry.edit')}
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => confirmDeleteRow(record.id)}
+            disabled={disableEditing}
+          >
+            {t('resultEntry.delete')}
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   const renderForm = () => (
-    <Paper
-      sx={{
-        borderRadius: 4,
-        p: { xs: 3, md: 4 },
-        bgcolor: '#fff',
+    <Card
+      style={{
+        borderRadius: 16,
         boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
         border: '1px solid rgba(24, 32, 56, 0.08)',
       }}
     >
-      <Stack spacing={3}>
-        <Stack spacing={0.5}>
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#1a1d2f' }}>{t('resultEntry.roundList')}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="small">
+          <Title level={4} style={{ margin: 0, color: '#1a1d2f' }}>
+            {t('resultEntry.roundList')}
+          </Title>
+          <Text type="secondary" style={{ fontSize: 13 }}>
             {t('resultEntry.roundListDescription')}
-          </Typography>
-        </Stack>
-        <Stack spacing={2}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1a1d2f' }}>{t('resultEntry.matchDetails')}</Typography>
+          </Text>
+        </Space>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Flex justify="space-between" align="center">
+            <Title level={5} style={{ margin: 0, color: '#1a1d2f' }}>
+              {t('resultEntry.matchDetails')}
+            </Title>
             <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
+              type="primary"
+              icon={<PlusOutlined />}
               onClick={openCreateRowModal}
               disabled={disableEditing}
-              sx={{
+              style={{
                 borderRadius: 999,
-                textTransform: 'none',
                 fontWeight: 700,
-                bgcolor: '#0d1026',
-                '&:hover': { bgcolor: '#181d3f' },
+                backgroundColor: '#0d1026',
               }}
             >
               {t('resultEntry.addRound')}
             </Button>
-          </Stack>
-          <Table size="small" sx={{ borderSpacing: '0', borderCollapse: 'separate' }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={tableHeadSx}>#</TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.team')}</TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.player')}</TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.deck')}</TableCell>
-                <TableCell sx={tableHeadSx} align="center">
-                  {t('resultEntry.score')}
-                </TableCell>
-                <TableCell sx={tableHeadSx} align="center">
-                  {t('resultEntry.score')}
-                </TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.deck')}</TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.player')}</TableCell>
-                <TableCell sx={tableHeadSx}>{t('resultEntry.team')}</TableCell>
-                <TableCell sx={tableHeadSx} align="right">
-                  {t('resultEntry.actions')}
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {gameRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} sx={{ textAlign: 'center', color: '#7e8494', py: 4 }}>
-                    {t('resultEntry.noRoundsMessage')}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                gameRows.map((row, index) => (
-                    <TableRow key={row.id} sx={{ '&:last-child td': { borderBottom: 'none' } }}>
-                      <TableCell sx={tableBodySx}>{index + 1}</TableCell>
-                      <TableCell sx={tableBodySx}>{row.homeTeam || form.team || '—'}</TableCell>
-                    <TableCell sx={tableBodySx}>{row.homePlayer || '—'}</TableCell>
-                    <TableCell sx={tableBodySx}>{row.homeDeck || '—'}</TableCell>
-                      <TableCell sx={{ ...tableBodySx, textAlign: 'center', fontWeight: 700 }}>
-                        {row.homeScore || '-'}
-                      </TableCell>
-                      <TableCell sx={{ ...tableBodySx, textAlign: 'center', fontWeight: 700 }}>
-                        {row.awayScore || '-'}
-                      </TableCell>
-                      <TableCell sx={tableBodySx}>{row.awayDeck || '—'}</TableCell>
-                      <TableCell sx={tableBodySx}>{row.awayPlayer || '—'}</TableCell>
-                      <TableCell sx={tableBodySx}>{row.awayTeam || form.opponentTeam || '—'}</TableCell>
-                    <TableCell sx={{ ...tableBodySx, textAlign: 'right' }}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<EditRoundedIcon />}
-                          onClick={() => openEditRowModal(row)}
-                          disabled={disableEditing}
-                          sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
-                        >
-                          {t('resultEntry.edit')}
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="error"
-                          startIcon={<DeleteRoundedIcon />}
-                          onClick={() => confirmDeleteRow(row.id)}
-                          disabled={disableEditing}
-                          sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
-                        >
-                          {t('resultEntry.delete')}
-                        </Button>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Stack>
-        <Stack direction="row" spacing={2} justifyContent="flex-end" alignItems="center">
-          <Typography sx={{ fontSize: 12, color: '#7e8494' }}>{saveStatusText}</Typography>
+          </Flex>
+          <Table
+            columns={columns}
+            dataSource={gameRows}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            locale={{
+              emptyText: (
+                <div style={{ padding: '32px 0', color: '#7e8494' }}>
+                  {t('resultEntry.noRoundsMessage')}
+                </div>
+              ),
+            }}
+          />
+        </Space>
+        <Flex justify="flex-end" align="center" gap={16}>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {saveStatusText}
+          </Text>
           {isFinalized ? (
             <Button
-              variant="outlined"
+              icon={<SaveOutlined />}
               onClick={() => handleSave('unfinalize', snapshot)}
-              startIcon={<SaveRoundedIcon />}
               disabled={saving || autoSaving || disableInputs}
-              sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 700,
-              }}
+              style={{ borderRadius: 999, fontWeight: 700 }}
             >
               {saving ? t('resultEntry.unfinalizing') : t('resultEntry.unfinalizeResult')}
             </Button>
           ) : (
             <Button
-              variant="contained"
+              type="primary"
+              icon={<SaveOutlined />}
               onClick={() => handleSave('finalize', snapshot)}
-              startIcon={<SaveRoundedIcon />}
               disabled={saving || autoSaving || disableInputs}
-              sx={{
+              style={{
                 borderRadius: 999,
-                textTransform: 'none',
                 fontWeight: 700,
-                bgcolor: '#0d1026',
-                '&:hover': { bgcolor: '#181d3f' },
+                backgroundColor: '#0d1026',
               }}
             >
               {saving ? t('resultEntry.finalizing') : t('resultEntry.finalizeResult')}
             </Button>
           )}
-        </Stack>
-      </Stack>
-    </Paper>
+        </Flex>
+      </Space>
+    </Card>
   );
 
   const renderContent = () => {
     if (!matchId) {
       return (
-        <Paper
-          sx={{
-            borderRadius: 4,
-            p: { xs: 3, md: 4 },
-            bgcolor: '#fff',
+        <Card
+          style={{
+            borderRadius: 16,
             boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
             border: '1px solid rgba(24, 32, 56, 0.08)',
             textAlign: 'center',
+            padding: '32px 16px',
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1 }}>{t('resultEntry.selectMatchPrompt')}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
+          <Title level={5} style={{ fontWeight: 700, color: '#2f3645', marginBottom: 8 }}>
+            {t('resultEntry.selectMatchPrompt')}
+          </Title>
+          <Text type="secondary" style={{ fontSize: 13 }}>
             {t('resultEntry.selectMatchDescription')}
-          </Typography>
-        </Paper>
+          </Text>
+        </Card>
       );
     }
 
     if (loading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '64px 0' }}>
+          <Spin size="large" />
+        </div>
       );
     }
 
     return (
-      <Stack spacing={3}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {renderScoreBoard()}
-        {error && <Alert severity="error">{error}</Alert>}
-        {saveFeedback && <Alert severity="success">{saveFeedback}</Alert>}
+        {error && <Alert message={error} type="error" showIcon />}
+        {saveFeedback && <Alert message={saveFeedback} type="success" showIcon />}
         {renderForm()}
-      </Stack>
+      </Space>
     );
   };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         minHeight: '100vh',
-        bgcolor: '#f6f7fb',
-        py: 6,
-        px: { xs: 3, md: 8 },
+        backgroundColor: '#f6f7fb',
+        padding: '48px 24px',
         boxSizing: 'border-box',
       }}
     >
-      <Box
-        sx={{
+      <div
+        style={{
           maxWidth: 960,
-          mx: 'auto',
+          margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 4,
+          gap: 32,
         }}
       >
-        <Paper
-          sx={{
+        <Card
+          style={{
             display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
             justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', md: 'center' },
-            gap: { xs: 3, md: 4 },
-            px: { xs: 3, md: 4 },
-            py: { xs: 3, md: 3.5 },
-            borderRadius: 4,
+            alignItems: 'center',
+            borderRadius: 16,
             boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
             border: '1px solid rgba(24, 32, 56, 0.06)',
-            bgcolor: '#fff',
+            flexWrap: 'wrap',
+            gap: 24,
           }}
         >
-          <Stack spacing={0.75}>
-            <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#ff8c3d', letterSpacing: 1 }}>
+          <Space direction="vertical" size="small">
+            <Title
+              level={3}
+              style={{
+                margin: 0,
+                fontWeight: 800,
+                color: '#ff8c3d',
+                letterSpacing: 1,
+              }}
+            >
               {t('resultEntry.title')}
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: '#6d7385', fontWeight: 600 }}>
+            </Title>
+            <Text type="secondary" style={{ fontSize: 13, fontWeight: 600 }}>
               {t('resultEntry.description')}
-            </Typography>
-          </Stack>
+            </Text>
+          </Space>
           <Button
-            variant="outlined"
-            startIcon={<ArrowBackRoundedIcon />}
+            icon={<ArrowLeftOutlined />}
             onClick={onBack}
-            sx={{
+            style={{
               borderRadius: 999,
-              px: 3,
-              py: 1.15,
-              textTransform: 'none',
+              padding: '8px 24px',
               fontWeight: 700,
-              borderColor: 'rgba(24,32,56,0.18)',
-              color: '#2f3645',
-              '&:hover': { borderColor: '#181d3f', bgcolor: 'rgba(24,32,56,0.05)' },
+              height: 'auto',
             }}
           >
             {t('resultEntry.backToMatchList')}
           </Button>
-        </Paper>
+        </Card>
         {renderContent()}
-      </Box>
+      </div>
       <GameRowModal
         open={rowModalState.open}
         mode={rowModalState.mode}
@@ -931,19 +965,18 @@ const ResultEntry: React.FC<ResultEntryProps> = ({ tournament, matchId, onBack, 
         onClose={closeRowModal}
         onSave={handleRowSave}
       />
-      <Dialog open={deleteState.open} onClose={() => setDeleteState({ open: false })}>
-        <DialogTitle>{t('resultEntry.deleteRoundTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{t('resultEntry.deleteRoundConfirm')}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteState({ open: false })}>{t('resultEntry.cancel')}</Button>
-          <Button onClick={handleDeleteRow} color="error" variant="contained">
-            {t('resultEntry.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <Modal
+        open={deleteState.open}
+        title={t('resultEntry.deleteRoundTitle')}
+        onCancel={() => setDeleteState({ open: false })}
+        onOk={handleDeleteRow}
+        okText={t('resultEntry.delete')}
+        cancelText={t('resultEntry.cancel')}
+        okButtonProps={{ danger: true }}
+      >
+        <Text>{t('resultEntry.deleteRoundConfirm')}</Text>
+      </Modal>
+    </div>
   );
 };
 
@@ -957,7 +990,15 @@ type GameRowModalProps = {
   onSave: (row: GameRow) => void;
 };
 
-const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam, awayTeam, onClose, onSave }) => {
+const GameRowModal: React.FC<GameRowModalProps> = ({
+  open,
+  mode,
+  draft,
+  homeTeam,
+  awayTeam,
+  onClose,
+  onSave,
+}) => {
   const { t } = useTranslation();
   const [values, setValues] = useState<GameRow>(draft);
 
@@ -969,91 +1010,92 @@ const GameRowModal: React.FC<GameRowModalProps> = ({ open, mode, draft, homeTeam
     }));
   }, [draft, homeTeam, awayTeam]);
 
-  const handleChange =
-    (field: keyof GameRow) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { value } = event.target;
-      setValues((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
+  const handleChange = (field: keyof GameRow) => (value: any) => {
+    setValues((prev) => ({
+      ...prev,
+      [field]: typeof value === 'object' && value?.target ? value.target.value : value,
+    }));
+  };
 
   const handleSubmit = () => {
     onSave(values);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{mode === 'create' ? t('resultEntry.addRoundTitle') : t('resultEntry.editRoundTitle')}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 0.5 }}>
-            {t('resultEntry.roundModalDescription')}
-          </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-            }}
-          >
-            <TextField
-              label={t('resultEntry.team')}
-              value={homeTeam}
-              InputProps={{ readOnly: true, sx: { color: '#1a1d2f' } }}
-              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#1a1d2f' } }}
-              disabled
-            />
-            <TextField
-              label={t('resultEntry.team')}
-              value={awayTeam}
-              InputProps={{ readOnly: true, sx: { color: '#1a1d2f' } }}
-              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: '#1a1d2f' } }}
-              disabled
-            />
-            <TextField label={t('resultEntry.player')} value={values.homePlayer} onChange={handleChange('homePlayer')} />
-            <TextField label={t('resultEntry.player')} value={values.awayPlayer} onChange={handleChange('awayPlayer')} />
-            <TextField label={t('resultEntry.deck')} value={values.homeDeck} onChange={handleChange('homeDeck')} />
-            <TextField label={t('resultEntry.deck')} value={values.awayDeck} onChange={handleChange('awayDeck')} />
-            <TextField
-              label={t('resultEntry.score')}
-              value={values.homeScore}
-              onChange={handleChange('homeScore')}
-              type="number"
-              inputProps={{ min: 0, inputMode: 'numeric', pattern: '[0-9]*' }}
-            />
-            <TextField
-              label={t('resultEntry.score')}
-              value={values.awayScore}
-              onChange={handleChange('awayScore')}
-              type="number"
-              inputProps={{ min: 0, inputMode: 'numeric', pattern: '[0-9]*' }}
-            />
-          </Box>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t('resultEntry.cancel')}</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          {mode === 'create' ? t('resultEntry.add') : t('resultEntry.save')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <Modal
+      open={open}
+      title={
+        mode === 'create'
+          ? t('resultEntry.addRoundTitle')
+          : t('resultEntry.editRoundTitle')
+      }
+      onCancel={onClose}
+      onOk={handleSubmit}
+      okText={mode === 'create' ? t('resultEntry.add') : t('resultEntry.save')}
+      cancelText={t('resultEntry.cancel')}
+      width={600}
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          {t('resultEntry.roundModalDescription')}
+        </Text>
+        <div
+          style={{
+            display: 'grid',
+            gap: 16,
+            gridTemplateColumns: 'repeat(2, 1fr)',
+          }}
+        >
+          <Input
+            placeholder={t('resultEntry.team')}
+            value={homeTeam}
+            disabled
+            style={{ color: '#1a1d2f' }}
+          />
+          <Input
+            placeholder={t('resultEntry.team')}
+            value={awayTeam}
+            disabled
+            style={{ color: '#1a1d2f' }}
+          />
+          <Input
+            placeholder={t('resultEntry.player')}
+            value={values.homePlayer}
+            onChange={handleChange('homePlayer')}
+          />
+          <Input
+            placeholder={t('resultEntry.player')}
+            value={values.awayPlayer}
+            onChange={handleChange('awayPlayer')}
+          />
+          <Input
+            placeholder={t('resultEntry.deck')}
+            value={values.homeDeck}
+            onChange={handleChange('homeDeck')}
+          />
+          <Input
+            placeholder={t('resultEntry.deck')}
+            value={values.awayDeck}
+            onChange={handleChange('awayDeck')}
+          />
+          <InputNumber
+            placeholder={t('resultEntry.score')}
+            value={values.homeScore}
+            onChange={(value) => handleChange('homeScore')(String(value ?? ''))}
+            min="0"
+            style={{ width: '100%' }}
+          />
+          <InputNumber
+            placeholder={t('resultEntry.score')}
+            value={values.awayScore}
+            onChange={(value) => handleChange('awayScore')(String(value ?? ''))}
+            min="0"
+            style={{ width: '100%' }}
+          />
+        </div>
+      </Space>
+    </Modal>
   );
-};
-
-const tableHeadSx = {
-  fontWeight: 700,
-  fontSize: 12,
-  color: '#7e8494',
-  borderBottom: '1px solid rgba(24,32,56,0.12)',
-  whiteSpace: 'nowrap' as const,
-};
-
-const tableBodySx = {
-  fontSize: 13,
-  color: '#2f3645',
-  borderBottom: '1px solid rgba(24,32,56,0.08)',
 };
 
 export default ResultEntry;

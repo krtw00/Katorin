@@ -1,21 +1,11 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
-import Grid from '@mui/material/Grid';
+import { Card, Row, Col, Typography, Table, Flex } from 'antd';
 import { DuelForm } from './duelDefaults';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
 import { useTranslation } from 'react-i18next';
 
+const { Title, Text } = Typography;
 type RosterEntry = {
   primary: string;
   secondary: string;
@@ -188,301 +178,313 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
   }, [filteredMatchRows]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-      }}
-    >
-      <Paper
-        elevation={6}
-        sx={{
-          borderRadius: 3,
-          p: { xs: 3, md: 4 },
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Card
+        style={{
+          borderRadius: 12,
+          padding: '24px 32px',
           background: 'linear-gradient(180deg, #efefef 0%, #d7d7d7 100%)',
           border: '4px solid #6f6f6f',
           color: '#0f0f0f',
           fontFamily: `'Segoe UI', 'Noto Sans JP', sans-serif`,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+        <Flex
+          justify="space-between"
+          align="center"
+          style={{
             borderBottom: '4px solid #b3b3b3',
-            pb: 2,
-            mb: 3,
+            paddingBottom: 16,
+            marginBottom: 24,
           }}
         >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 800, letterSpacing: '0.12em', lineHeight: 1.1 }}
+          <div>
+            <Title
+              level={2}
+              style={{
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                lineHeight: 1.1,
+                margin: 0,
+                marginBottom: 4,
+              }}
             >
               {form.title}
-            </Typography>
-            <Typography
-              sx={{
+            </Title>
+            <Text
+              style={{
                 fontWeight: 600,
                 letterSpacing: '0.32em',
                 color: '#1f3f92',
                 fontSize: 16,
+                display: 'block',
               }}
             >
               {form.subtitle}
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'right', fontWeight: 600, color: '#333' }}>
-            <Typography sx={{ fontSize: 18 }}>{form.stage}</Typography>
-            <Typography sx={{ fontSize: 16, mt: 0.5 }}>{displayDate}</Typography>
-          </Box>
-        </Box>
+            </Text>
+          </div>
+          <div style={{ textAlign: 'right', fontWeight: 600, color: '#333' }}>
+            <div style={{ fontSize: 18 }}>{form.stage}</div>
+            <div style={{ fontSize: 16, marginTop: 4 }}>{displayDate}</div>
+          </div>
+        </Flex>
 
-        <Grid container spacing={2} alignItems="stretch">
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Paper
-              elevation={0}
-              sx={{
+        <Row gutter={16} align="stretch">
+          <Col xs={24} md={10}>
+            <Card
+              style={{
                 height: '100%',
-                borderRadius: 2.5,
+                borderRadius: 10,
                 overflow: 'hidden',
                 border: '3px solid rgba(0,0,0,0.2)',
               }}
+              bodyStyle={{ padding: 0 }}
             >
-              <Box
-                sx={{
-                  bgcolor: '#4b7edb',
+              <div
+                style={{
+                  backgroundColor: '#4b7edb',
                   color: '#fff',
-                  px: 2,
-                  py: 1.5,
+                  padding: '12px 16px',
                   fontSize: 20,
                   fontWeight: 700,
                 }}
               >
                 {form.leftTeamName}
-              </Box>
+              </div>
               <Table
                 size="small"
-                sx={{
-                  '& td': {
-                    bgcolor: 'rgba(75, 126, 219, 0.86)',
-                    color: '#fff',
-                    fontWeight: 600,
-                    borderBottom: '1px solid rgba(255,255,255,0.2)',
-                    px: 2,
-                    py: 1.2,
+                dataSource={leftRoster.map((entry, index) => ({
+                  key: `left-${index}`,
+                  primary: entry.primary || '-',
+                }))}
+                columns={[
+                  {
+                    dataIndex: 'primary',
+                    key: 'primary',
+                    render: (text) => (
+                      <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
+                    ),
                   },
+                ]}
+                pagination={false}
+                showHeader={false}
+                style={{
+                  backgroundColor: 'rgba(75, 126, 219, 0.86)',
                 }}
-              >
-                <TableBody>
-                  {leftRoster.map((entry, index) => (
-                    <TableRow key={`left-${index}`}>
-                      <TableCell>{entry.primary || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          </Grid>
+                rowClassName="roster-row-left"
+              />
+            </Card>
+          </Col>
 
-          <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography
-              variant="h3"
-              sx={{
+          <Col xs={24} md={4} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Title
+              level={1}
+              style={{
                 fontWeight: 900,
                 color: '#333',
                 textShadow: '0 4px 6px rgba(0,0,0,0.25)',
                 letterSpacing: '0.08em',
+                margin: 0,
               }}
             >
               {t('duel.vs')}
-            </Typography>
-          </Grid>
+            </Title>
+          </Col>
 
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Paper
-              elevation={0}
-              sx={{
+          <Col xs={24} md={10}>
+            <Card
+              style={{
                 height: '100%',
-                borderRadius: 2.5,
+                borderRadius: 10,
                 overflow: 'hidden',
                 border: '3px solid rgba(0,0,0,0.2)',
               }}
+              bodyStyle={{ padding: 0 }}
             >
-              <Box
-                sx={{
-                  bgcolor: '#c92f2f',
+              <div
+                style={{
+                  backgroundColor: '#c92f2f',
                   color: '#fff',
-                  px: 2,
-                  py: 1.5,
+                  padding: '12px 16px',
                   fontSize: 20,
                   fontWeight: 700,
                 }}
               >
                 {form.rightTeamName}
-              </Box>
+              </div>
               <Table
                 size="small"
-                sx={{
-                  '& td': {
-                    bgcolor: 'rgba(201, 47, 47, 0.86)',
-                    color: '#fff',
-                    fontWeight: 600,
-                    borderBottom: '1px solid rgba(255,255,255,0.25)',
-                    px: 2,
-                    py: 1.2,
+                dataSource={rightRoster.map((entry, index) => ({
+                  key: `right-${index}`,
+                  primary: entry.primary || '-',
+                }))}
+                columns={[
+                  {
+                    dataIndex: 'primary',
+                    key: 'primary',
+                    align: 'right' as const,
+                    render: (text) => (
+                      <span style={{ fontWeight: 600, color: '#fff' }}>{text}</span>
+                    ),
                   },
-                  '& tr': { '&td:first-of-type': { textAlign: 'right' } },
+                ]}
+                pagination={false}
+                showHeader={false}
+                style={{
+                  backgroundColor: 'rgba(201, 47, 47, 0.86)',
                 }}
-              >
-                <TableBody>
-                  {rightRoster.map((entry, index) => (
-                    <TableRow key={`right-${index}`}>
-                      <TableCell>{entry.primary || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          </Grid>
-        </Grid>
+                rowClassName="roster-row-right"
+              />
+            </Card>
+          </Col>
+        </Row>
 
-        <Paper
-          elevation={0}
-          sx={{
-            mt: 3,
-            borderRadius: 2.5,
+        <Card
+          style={{
+            marginTop: 24,
+            borderRadius: 10,
             overflow: 'hidden',
             border: '3px solid #777',
             backgroundColor: '#d0d0d0',
           }}
+          bodyStyle={{ padding: 0 }}
         >
           <Table
-            sx={{
-              '& th': {
-                bgcolor: '#555',
-                color: '#f5f5f5',
-                textAlign: 'center',
-                fontWeight: 700,
-                fontSize: 14,
-                px: 1.5,
-                py: 1.2,
+            size="small"
+            dataSource={filteredMatchRows.map((match, index) => ({
+              key: `match-${index}`,
+              leftPlayer: match.leftPlayer,
+              leftDeck: match.leftDeck,
+              score: match.score,
+              rightDeck: match.rightDeck,
+              rightPlayer: match.rightPlayer,
+            }))}
+            columns={[
+              {
+                title: t('duel.player'),
+                dataIndex: 'leftPlayer',
+                key: 'leftPlayer',
+                align: 'center' as const,
+                onCell: () => ({
+                  style: {
+                    backgroundColor: 'rgba(41,112,224,0.95)',
+                    color: '#fff',
+                    fontWeight: 700,
+                  },
+                }),
               },
-              '& td': {
-                textAlign: 'center',
-                px: 1.5,
-                py: 1.2,
-                borderBottom: '1px solid rgba(0,0,0,0.2)',
-                fontSize: 15,
+              {
+                title: t('duel.deck'),
+                dataIndex: 'leftDeck',
+                key: 'leftDeck',
+                align: 'center' as const,
+                onCell: () => ({
+                  style: {
+                    backgroundColor: 'rgba(41,112,224,0.95)',
+                    color: '#fff',
+                  },
+                }),
               },
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('duel.player')}</TableCell>
-                <TableCell>{t('duel.deck')}</TableCell>
-                <TableCell></TableCell>
-                  <TableCell>{t('duel.deck')}</TableCell>
-                <TableCell>{t('duel.player')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredMatchRows.map((match, index) => (
-                <TableRow key={`match-${index}`}>
-                  <TableCell
-                    sx={{
-                      bgcolor: 'rgba(41,112,224,0.95)',
-                      color: '#fff',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {match.leftPlayer}
-                  </TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(41,112,224,0.95)', color: '#fff' }}>
-                    {match.leftDeck}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: '#f1f1f1',
-                      fontWeight: 700,
-                      fontSize: 18,
-                      color: '#272727',
-                    }}
-                  >
-                    {match.score}
-                  </TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(226,58,58,0.95)', color: '#fff' }}>
-                    {match.rightDeck}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      bgcolor: 'rgba(226,58,58,0.95)',
-                      color: '#fff',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {match.rightPlayer}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Box
-            sx={{
-              bgcolor: '#505050',
+              {
+                title: '',
+                dataIndex: 'score',
+                key: 'score',
+                align: 'center' as const,
+                onCell: () => ({
+                  style: {
+                    backgroundColor: '#f1f1f1',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: '#272727',
+                  },
+                }),
+              },
+              {
+                title: t('duel.deck'),
+                dataIndex: 'rightDeck',
+                key: 'rightDeck',
+                align: 'center' as const,
+                onCell: () => ({
+                  style: {
+                    backgroundColor: 'rgba(226,58,58,0.95)',
+                    color: '#fff',
+                  },
+                }),
+              },
+              {
+                title: t('duel.player'),
+                dataIndex: 'rightPlayer',
+                key: 'rightPlayer',
+                align: 'center' as const,
+                onCell: () => ({
+                  style: {
+                    backgroundColor: 'rgba(226,58,58,0.95)',
+                    color: '#fff',
+                    fontWeight: 700,
+                  },
+                }),
+              },
+            ]}
+            pagination={false}
+            className="match-table"
+          />
+          <div
+            style={{
+              backgroundColor: '#505050',
               color: '#fff',
               textAlign: 'center',
-              py: 1.2,
+              padding: '10px 0',
               fontWeight: 700,
               letterSpacing: '0.3em',
             }}
           >
             {leftWins} - {rightWins}
-          </Box>
-        </Paper>
+          </div>
+        </Card>
 
-        <Grid container spacing={2} sx={{ mt: 3 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                bgcolor: '#1a59d9',
+        <Row gutter={16} style={{ marginTop: 24 }}>
+          <Col xs={24} md={12}>
+            <Card
+              style={{
+                backgroundColor: '#1a59d9',
                 color: '#fff',
-                borderRadius: 2,
+                borderRadius: 8,
                 textAlign: 'center',
-                py: 2,
+                padding: '16px 0',
                 fontWeight: 800,
                 fontSize: 22,
                 letterSpacing: '0.3em',
                 boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.25)',
+                border: 'none',
               }}
+              bodyStyle={{ padding: 0 }}
             >
               {form.winLabel}
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                bgcolor: '#d12c2c',
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card
+              style={{
+                backgroundColor: '#d12c2c',
                 color: '#fff',
-                borderRadius: 2,
+                borderRadius: 8,
                 textAlign: 'center',
-                py: 2,
+                padding: '16px 0',
                 fontWeight: 800,
                 fontSize: 22,
                 letterSpacing: '0.3em',
                 boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.25)',
+                border: 'none',
               }}
+              bodyStyle={{ padding: 0 }}
             >
               {form.loseLabel}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Paper>
-    </Box>
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+    </div>
   );
 };
 

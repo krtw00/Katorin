@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Stack, Typography, TextField, Button, Alert, Chip } from '@mui/material';
+import { Space, Typography, Input, Button, Alert, Tag, Card, Spin } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import ResultEntryGuard, { postTeamMatchResult } from './ResultEntryGuard';
+
+const { Title } = Typography;
 
 const TeamResultEntryPage: React.FC = () => {
   const { t } = useTranslation();
@@ -57,7 +59,6 @@ const TeamResultEntryPage: React.FC = () => {
         setOpponentScore(updated?.opponentScore ?? '');
       }
       if (action === 'finalize') {
-        // 完了後は一覧に戻す
         navigate('/matches');
       }
     } catch (e: any) {
@@ -68,55 +69,79 @@ const TeamResultEntryPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
+    <div style={{ padding: 32 }}>
+      <Title level={3} style={{ fontWeight: 'bold', marginBottom: 16 }}>
         {t('teamResultEntry.title')}
-      </Typography>
-      {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
+      </Title>
+      {error ? <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} /> : null}
       {loading ? (
-        <Typography variant="body2">{t('teamResultEntry.loading')}</Typography>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '64px 0' }}>
+          <Spin size="large" />
+        </div>
       ) : match ? (
         <ResultEntryGuard
           matchId={matchId as string}
           teamId={teamId}
-          fallback={<Alert severity="info">{t('teamResultEntry.viewOnly')}</Alert>}
+          fallback={<Alert message={t('teamResultEntry.viewOnly')} type="info" showIcon />}
         >
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1}>
-              {match.result_status === 'finalized' ? (
-                <Chip size="small" color="success" label={t('teamResultEntry.finalized')} />
-              ) : (
-                <Chip size="small" label={t('teamResultEntry.draft')} />
-              )}
-            </Stack>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                label={t('teamResultEntry.selfScore')}
-                value={selfScore}
-                onChange={(e) => setSelfScore(e.target.value)}
-                inputProps={{ inputMode: 'numeric' }}
-              />
-              <TextField
-                label={t('teamResultEntry.opponentScore')}
-                value={opponentScore}
-                onChange={(e) => setOpponentScore(e.target.value)}
-                inputProps={{ inputMode: 'numeric' }}
-              />
-            </Stack>
-            <Stack direction="row" spacing={1}>
-              <Button variant="outlined" onClick={() => navigate('/matches')}>{t('teamResultEntry.backToList')}</Button>
-              <Box sx={{ flex: 1 }} />
-              <Button disabled={saving} onClick={() => handleAction('cancel')}>{t('teamResultEntry.cancel')}</Button>
-              <Button disabled={saving} variant="contained" onClick={() => handleAction('save')}>{t('teamResultEntry.save')}</Button>
-              <Button disabled={saving} variant="contained" color="success" onClick={() => handleAction('finalize')}>{t('teamResultEntry.finalize')}</Button>
-            </Stack>
-          </Stack>
+          <Card>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Space size="small">
+                {match.result_status === 'finalized' ? (
+                  <Tag color="success">{t('teamResultEntry.finalized')}</Tag>
+                ) : (
+                  <Tag>{t('teamResultEntry.draft')}</Tag>
+                )}
+              </Space>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  <label>{t('teamResultEntry.selfScore')}</label>
+                  <Input
+                    value={selfScore}
+                    onChange={(e) => setSelfScore(e.target.value)}
+                    inputMode="numeric"
+                    size="large"
+                  />
+                </Space>
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  <label>{t('teamResultEntry.opponentScore')}</label>
+                  <Input
+                    value={opponentScore}
+                    onChange={(e) => setOpponentScore(e.target.value)}
+                    inputMode="numeric"
+                    size="large"
+                  />
+                </Space>
+              </Space>
+              <Space size="small" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button onClick={() => navigate('/matches')}>
+                  {t('teamResultEntry.backToList')}
+                </Button>
+                <Button disabled={saving} onClick={() => handleAction('cancel')}>
+                  {t('teamResultEntry.cancel')}
+                </Button>
+                <Button
+                  disabled={saving}
+                  type="primary"
+                  onClick={() => handleAction('save')}
+                >
+                  {t('teamResultEntry.save')}
+                </Button>
+                <Button
+                  disabled={saving}
+                  type="primary"
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                  onClick={() => handleAction('finalize')}
+                >
+                  {t('teamResultEntry.finalize')}
+                </Button>
+              </Space>
+            </Space>
+          </Card>
         </ResultEntryGuard>
       ) : null}
-    </Box>
+    </div>
   );
 };
 
 export default TeamResultEntryPage;
-
-

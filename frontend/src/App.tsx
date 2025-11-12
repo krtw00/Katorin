@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, CssBaseline, IconButton, Snackbar, Stack, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
-import { ContentCopy as ContentCopyIcon } from '@mui/icons-material';
+import { Button, Space, Flex, Typography, Alert, Spin, Segmented, Tooltip, message } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MatchManager from './MatchManager';
@@ -18,6 +18,8 @@ import MatchList from './matches/MatchList';
 import TeamMatchManager from './matches/MatchManager';
 import TeamResultEntryPage from './team/TeamResultEntryPage';
 
+const { Title, Text } = Typography;
+
 const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<'manager' | 'result'>('manager');
@@ -28,9 +30,9 @@ const AppRoutes: React.FC = () => {
   const [previousTournament, setPreviousTournament] = useState<Tournament | null>(null);
   const [tournamentDialogOpen, setTournamentDialogOpen] = useState(false);
   const [tournamentMessage, setTournamentMessage] = useState<string | null>(null);
-  const [copySnackbarOpen, setCopySnackbarOpen] = useState(false);
   const { loading, session, user, signOut } = useAuth();
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenResult = (matchId: string) => {
     setSelectedMatchId(matchId);
@@ -125,75 +127,72 @@ const AppRoutes: React.FC = () => {
     if (selectedTournament?.slug) {
       try {
         await navigator.clipboard.writeText(selectedTournament.slug);
-        setCopySnackbarOpen(true);
+        messageApi.success(t('app.tournamentCodeCopied'));
       } catch (err) {
         console.error('Failed to copy tournament code:', err);
+        messageApi.error('Failed to copy tournament code');
       }
     }
   };
 
   const renderAdminMainView = () => (
-    <Stack sx={{ minHeight: '100vh', bgcolor: '#f4f6fb' }}>
-      <Box
-        component="header"
-        sx={{
+    <div style={{ minHeight: '100vh', backgroundColor: '#f4f6fb' }}>
+      <header
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: 3,
-          py: 2,
-          bgcolor: '#1f2937',
+          padding: '16px 24px',
+          backgroundColor: '#1f2937',
           color: '#fff',
         }}
       >
-        <Typography variant="h6" fontWeight="bold">
+        <Title level={4} style={{ margin: 0, color: '#fff', fontWeight: 'bold' }}>
           {t('app.title')}
-        </Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        </Title>
+        <Space size="large" align="center">
           {selectedTournament ? (
-            <Stack spacing={0.5} alignItems="flex-end">
-              <Typography variant="caption" color="#9ca3af">
+            <Space direction="vertical" size={4} align="end">
+              <Text style={{ fontSize: '12px', color: '#9ca3af' }}>
                 {t('app.selectedTournament')}
-              </Typography>
-              <Typography variant="body2" fontWeight="bold" color="#d1d5db">
+              </Text>
+              <Text style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>
                 {selectedTournament.name}
-              </Typography>
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <Typography variant="caption" color="#9ca3af">
+              </Text>
+              <Space size={4} align="center">
+                <Text style={{ fontSize: '12px', color: '#9ca3af' }}>
                   {t('app.tournamentCode')}:
-                </Typography>
-                <Typography
-                  variant="caption"
-                  fontFamily="monospace"
-                  color="#d1d5db"
-                  sx={{
-                    bgcolor: 'rgba(255, 255, 255, 0.1)',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 0.5,
+                </Text>
+                <Text
+                  style={{
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                    color: '#d1d5db',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
                   }}
                 >
                   {selectedTournament.slug}
-                </Typography>
+                </Text>
                 <Tooltip title={t('app.tournamentCode')}>
-                  <IconButton
+                  <Button
+                    type="text"
                     size="small"
+                    icon={<CopyOutlined />}
                     onClick={handleCopyTournamentCode}
-                    sx={{
+                    style={{
                       color: '#9ca3af',
-                      '&:hover': { color: '#d1d5db' },
                     }}
-                  >
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
+                  />
                 </Tooltip>
-              </Stack>
-            </Stack>
+              </Space>
+            </Space>
           ) : null}
           <Button
-            variant="text"
-            color="inherit"
+            type="text"
             size="small"
+            style={{ color: '#fff' }}
             onClick={() => {
               setPreviousTournament(selectedTournament);
               setSelectedTournament(null);
@@ -203,65 +202,57 @@ const AppRoutes: React.FC = () => {
             {t('app.changeTournament')}
           </Button>
           {user?.email ? (
-            <Typography variant="body2" color="#d1d5db">
+            <Text style={{ fontSize: '14px', color: '#d1d5db' }}>
               {user.email}
-            </Typography>
+            </Text>
           ) : null}
-          <Box sx={{ color: 'inherit' }}>
+          <div style={{ color: 'inherit' }}>
             <LanguageSwitcher />
-          </Box>
-          <Button variant="outlined" color="inherit" size="small" onClick={handleSignOut}>
+          </div>
+          <Button
+            size="small"
+            style={{ color: '#fff', borderColor: '#fff' }}
+            onClick={handleSignOut}
+          >
             {t('app.logout')}
           </Button>
-        </Stack>
-      </Box>
-      <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 4 } }}>
+        </Space>
+      </header>
+      <main style={{ flex: 1, padding: window.innerWidth < 768 ? '16px' : '32px' }}>
         {tournamentMessage ? (
-          <Alert severity="success" onClose={() => setTournamentMessage(null)} sx={{ mb: 2 }}>
-            {tournamentMessage}
-          </Alert>
+          <Alert
+            type="success"
+            message={tournamentMessage}
+            closable
+            onClose={() => setTournamentMessage(null)}
+            style={{ marginBottom: '16px' }}
+          />
         ) : null}
         {selectedTournament ? (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {t('app.managingTournamentMessage', { tournamentName: selectedTournament.name })}
-          </Alert>
+          <Alert
+            type="info"
+            message={t('app.managingTournamentMessage', { tournamentName: selectedTournament.name })}
+            style={{ marginBottom: '16px' }}
+          />
         ) : null}
-        <Stack spacing={3}>
-          <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'center' } }}>
-            <ToggleButtonGroup
-              exclusive
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Flex justify="center">
+            <Segmented
               value={adminSection}
-              onChange={(_, next) => {
-                if (next) {
-                  setAdminSection(next);
-                }
+              onChange={(value) => {
+                setAdminSection(value as 'matches' | 'teams');
               }}
-              sx={{
-                width: { xs: '100%', sm: 'auto' },
-                bgcolor: '#f6f7fb',
-                borderRadius: 999,
-                p: 0.5,
-                boxShadow: 'inset 0 0 0 1px rgba(24, 32, 56, 0.08)',
-                '& .MuiToggleButton-root': {
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: '#6a7184',
-                  px: 3,
-                  border: 'none',
-                  borderRadius: 999,
-                },
-                '& .Mui-selected': {
-                  bgcolor: '#f4f7ff',
-                  color: '#1a1d2f',
-                  boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
-                },
+              options={[
+                { label: t('app.matchManagement'), value: 'matches' },
+                { label: t('app.teamParticipantManagement'), value: 'teams' },
+              ]}
+              style={{
+                backgroundColor: '#f6f7fb',
+                fontWeight: 700,
+                fontSize: '14px',
               }}
-            >
-              <ToggleButton value="matches">{t('app.matchManagement')}</ToggleButton>
-              <ToggleButton value="teams">{t('app.teamParticipantManagement')}</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+            />
+          </Flex>
           {adminSection === 'matches' ? (
             view === 'manager' ? (
               <MatchManager
@@ -280,33 +271,25 @@ const AppRoutes: React.FC = () => {
           ) : (
             <TeamManagementPage embedded tournament={selectedTournament ?? undefined} />
           )}
-        </Stack>
-      </Box>
-      <Snackbar
-        open={copySnackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setCopySnackbarOpen(false)}
-        message={t('app.tournamentCodeCopied')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
-    </Stack>
+        </Space>
+      </main>
+    </div>
   );
 
   return (
     <>
-      <CssBaseline />
+      {contextHolder}
       {loading ? (
-        <Box
-          sx={{
+        <Flex
+          align="center"
+          justify="center"
+          style={{
             minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: '#f4f6fb',
+            backgroundColor: '#f4f6fb',
           }}
         >
-          <CircularProgress />
-        </Box>
+          <Spin size="large" />
+        </Flex>
       ) : (
         <Routes>
           <Route

@@ -1,9 +1,23 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack, Paper } from '@mui/material';
-import { Edit, Delete, PersonAdd } from '@mui/icons-material';
+import {
+  Alert,
+  Button,
+  Card,
+  Flex,
+  Input,
+  List,
+  Modal,
+  Space,
+  Spin,
+  Typography,
+  message,
+} from 'antd';
+import { EditOutlined, DeleteOutlined, UserAddOutlined } from '@ant-design/icons';
 import { useParams } from 'react-router-dom';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useTranslation } from 'react-i18next';
+
+const { Title, Text } = Typography;
 
 interface Participant {
   id: string;
@@ -34,14 +48,13 @@ const ParticipantManagementPage: React.FC = () => {
   const { t } = useTranslation();
   const { teamId } = useParams<{ teamId: string }>();
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]); // For moving participants
+  const [teams, setTeams] = useState<Team[]>([]);
   const [teamName, setTeamName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [participantName, setParticipantName] = useState('');
-  // チーム側では編集権限の付与は不可（管理者のみ）
   const [newTeamId, setNewTeamId] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
 
@@ -80,7 +93,6 @@ const ParticipantManagementPage: React.FC = () => {
   }, [authFetch, t]);
 
   const fetchTeamsForMove = useCallback(async () => {
-    // fetch teams using supabase auth
     try {
       const storedTournamentId = getStoredTournamentId();
       const query = storedTournamentId ? `?tournament_id=${encodeURIComponent(storedTournamentId)}` : '';
@@ -104,7 +116,6 @@ const ParticipantManagementPage: React.FC = () => {
   const handleOpenCreateDialog = () => {
     setCurrentParticipant(null);
     setParticipantName('');
-    // can_edit は常に付与不可
     setNewTeamId(teamId || null);
     setDialogError(null);
     setOpenDialog(true);
@@ -113,7 +124,6 @@ const ParticipantManagementPage: React.FC = () => {
   const handleOpenEditDialog = (participant: Participant) => {
     setCurrentParticipant(participant);
     setParticipantName(participant.name);
-    // can_edit は表示のみで編集不可
     setNewTeamId(participant.team_id);
     setDialogError(null);
     setOpenDialog(true);
@@ -140,7 +150,6 @@ const ParticipantManagementPage: React.FC = () => {
       const url = currentParticipant
         ? `/api/team/participants/${currentParticipant.id}`
         : `/api/team/participants`;
-      // can_edit はチーム側から変更不可
       const body: any = { name: participantName };
       if (currentParticipant && newTeamId && newTeamId !== currentParticipant.team_id) {
         body.team_id = newTeamId;
@@ -160,6 +169,11 @@ const ParticipantManagementPage: React.FC = () => {
 
       fetchParticipants();
       handleCloseDialog();
+      message.success(
+        currentParticipant
+          ? t('participantManagement.updateSuccess')
+          : t('participantManagement.createSuccess')
+      );
     } catch (err: any) {
       console.error('Failed to save participant:', err);
       setDialogError(err.message || t('participantManagement.saveError'));
@@ -169,97 +183,144 @@ const ParticipantManagementPage: React.FC = () => {
   };
 
   const handleDeleteParticipant = async (participantId: string) => {
-    if (!window.confirm(t('participantManagement.confirmDelete'))) {
-      return;
-    }
+    Modal.confirm({
+      title: t('participantManagement.confirmDelete'),
+      onOk: async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await authFetch(`/api/team/participants/${participantId}`, {
+            method: 'DELETE',
+          });
 
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await authFetch(`/api/team/participants/${participantId}`, { method: 'DELETE' });
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || t('participantManagement.deleteError'));
+          }
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || t('participantManagement.deleteError'));
-      }
-
-      fetchParticipants();
-    } catch (err: any) {
-      console.error('Failed to delete participant:', err);
-      setError(err.message || t('participantManagement.deleteError'));
-    } finally {
-      setLoading(false);
-    }
+          fetchParticipants();
+          message.success(t('participantManagement.deleteSuccess'));
+        } catch (err: any) {
+          console.error('Failed to delete participant:', err);
+          setError(err.message || t('participantManagement.deleteError'));
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   if (loading && !participants.length && !teamName) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <Spin size="large" />
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          {teamName ? t('participantManagement.titleForTeam', { teamName }) : t('participantManagement.title')}
-        </Typography>
-        <Button variant="contained" startIcon={<PersonAdd />} onClick={handleOpenCreateDialog}>
+    <div style={{ padding: 32 }}>
+      <Flex justify="space-between" align="center" wrap="wrap" gap={16} style={{ marginBottom: 24 }}>
+        <Space direction="vertical" size="small">
+          <Title level={4} style={{ margin: 0, fontWeight: 'bold' }}>
+            {teamName
+              ? t('participantManagement.titleForTeam', { teamName })
+              : t('participantManagement.title')}
+          </Title>
+          <Text type="secondary">{t('participantManagement.description')}</Text>
+        </Space>
+        <Button type="primary" icon={<UserAddOutlined />} onClick={handleOpenCreateDialog}>
           {t('participantManagement.addParticipant')}
         </Button>
-      </Stack>
+      </Flex>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
       {participants.length === 0 && !loading ? (
-        <Alert severity="info">{t('participantManagement.noParticipants')}</Alert>
+        <Alert message={t('participantManagement.noParticipants')} type="info" showIcon />
       ) : (
-        <Paper elevation={3} sx={{ borderRadius: 2 }}>
-          <List>
-            {participants.map((participant) => (
-              <ListItem key={participant.id} divider>
-                <ListItemText
-                  primary={participant.name}
-                  secondary={participant.can_edit ? t('participantManagement.canEdit') : t('participantManagement.cannotEdit')}
+        <Card>
+          <List
+            dataSource={participants}
+            renderItem={(participant) => (
+              <List.Item
+                actions={[
+                  <Button
+                    key="edit"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => handleOpenEditDialog(participant)}
+                  >
+                    {t('common.edit')}
+                  </Button>,
+                  <Button
+                    key="delete"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleDeleteParticipant(participant.id)}
+                  >
+                    {t('common.delete')}
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={<Text strong>{participant.name}</Text>}
+                  description={
+                    participant.can_edit
+                      ? t('participantManagement.canEdit')
+                      : t('participantManagement.cannotEdit')
+                  }
                 />
-                <ListItemSecondaryAction>
-                  <IconButton edge="end" aria-label="edit" onClick={() => handleOpenEditDialog(participant)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteParticipant(participant.id)}>
-                    <Delete />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
+              </List.Item>
+            )}
+          />
+        </Card>
       )}
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>{currentParticipant ? t('participantManagement.editParticipant') : t('participantManagement.addParticipant')}</DialogTitle>
-        <DialogContent>
-          {dialogError && <Alert severity="error" sx={{ mb: 2 }}>{dialogError}</Alert>}
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label={t('participantManagement.participantName')}
-              fullWidth
+      <Modal
+        open={openDialog}
+        title={
+          currentParticipant
+            ? t('participantManagement.editParticipant')
+            : t('participantManagement.addParticipant')
+        }
+        onCancel={handleCloseDialog}
+        onOk={handleSaveParticipant}
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ loading: loading }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {dialogError && <Alert message={dialogError} type="error" showIcon />}
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Text>{t('participantManagement.participantName')}</Text>
+            <Input
+              placeholder={t('participantManagement.participantName')}
               value={participantName}
               onChange={(e) => setParticipantName(e.target.value)}
-              required
+              autoFocus
             />
-            {/* 編集権限の付与はチーム側では不可（管理者機能） */}
-            {currentParticipant && (
-              <TextField
-                select
-                label={t('participantManagement.moveToTeam')}
-                fullWidth
-                value={newTeamId}
-                onChange={(e) => setNewTeamId(e.target.value as string)}
-                SelectProps={{
-                  native: true,
+          </Space>
+          {currentParticipant && (
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Text>{t('participantManagement.moveToTeam')}</Text>
+              <select
+                value={newTeamId || ''}
+                onChange={(e) => setNewTeamId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: 6,
+                  fontSize: 14,
                 }}
               >
                 {teams.map((team) => (
@@ -267,18 +328,12 @@ const ParticipantManagementPage: React.FC = () => {
                     {team.name}
                   </option>
                 ))}
-              </TextField>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>{t('common.cancel')}</Button>
-          <Button onClick={handleSaveParticipant} variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : t('common.save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+              </select>
+            </Space>
+          )}
+        </Space>
+      </Modal>
+    </div>
   );
 };
 
