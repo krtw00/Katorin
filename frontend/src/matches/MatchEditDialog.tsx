@@ -1,19 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Autocomplete,
-  Box,
+  AutoComplete,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-} from '@mui/material';
+  DatePicker,
+  Flex,
+  Form,
+  Input,
+  Modal,
+  Space,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useTeamApi } from '../team/useTeamApi';
 import type { MatchRecord } from '../types/matchTypes';
+import dayjs from 'dayjs';
 
 type Participant = {
   id: string;
@@ -131,93 +131,107 @@ const MatchEditDialog: React.FC<Props> = ({ open, match, participants, onClose, 
   };
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} fullWidth maxWidth="sm">
-      <form onSubmit={handleSubmit}>
-        <DialogTitle>{t('matchManager.teamEditTitle')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            <Autocomplete<Participant, false, false, true>
-              options={participants}
-              getOptionLabel={(option) => (typeof option === 'string' ? option : option.name)}
-              value={selectedParticipant}
-              inputValue={playerInput}
-              onInputChange={(_, value) => {
+    <Modal
+      title={t('matchManager.teamEditTitle')}
+      open={open}
+      onCancel={submitting ? undefined : onClose}
+      footer={[
+        <Button key="cancel" onClick={onClose} disabled={submitting}>
+          {t('matchManager.teamCancel')}
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={submitting}
+          onClick={handleSubmit}
+        >
+          {submitting ? t('matchManager.teamSaving') : t('matchManager.teamSave')}
+        </Button>,
+      ]}
+      width={640}
+    >
+      <Form layout="vertical" style={{ marginTop: 16 }}>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {error && <Alert type="error" message={error} />}
+          <Form.Item label={t('matchManager.teamPlayerLabel')}>
+            <AutoComplete
+              value={playerInput}
+              onChange={(value) => {
                 setPlayerInput(value);
                 setPlayerName(value);
               }}
-              onChange={(_, option) => {
-                const name = typeof option === 'string' ? option : option?.name ?? '';
+              onSelect={(value) => {
+                const participant = participants.find((p) => p.name === value);
+                const name = participant?.name ?? value;
                 setPlayerName(name);
                 setPlayerInput(name);
               }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={t('matchManager.teamPlayerLabel')}
-                  placeholder={t('matchManager.teamPlayerLabel')}
-                />
-              )}
-              freeSolo
+              options={participants.map((p) => ({ value: p.name }))}
+              placeholder={t('matchManager.teamPlayerLabel')}
             />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                label={t('matchManager.teamSelfScoreLabel')}
+          </Form.Item>
+          <Flex gap={16}>
+            <Form.Item
+              label={t('matchManager.teamSelfScoreLabel')}
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              <Input
                 value={selfScore}
                 onChange={(e) => setSelfScore(e.target.value)}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                fullWidth
+                type="number"
               />
-              <TextField
-                label={t('matchManager.teamOpponentScoreLabel')}
+            </Form.Item>
+            <Form.Item
+              label={t('matchManager.teamOpponentScoreLabel')}
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              <Input
                 value={opponentScore}
                 onChange={(e) => setOpponentScore(e.target.value)}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                fullWidth
+                type="number"
               />
-            </Stack>
-            <TextField
-              label={t('matchManager.teamOpponentTeamLabel')}
+            </Form.Item>
+          </Flex>
+          <Form.Item label={t('matchManager.teamOpponentTeamLabel')}>
+            <Input
               value={opponentTeam}
               onChange={(e) => setOpponentTeam(e.target.value)}
-              fullWidth
             />
-            <TextField
-              label={t('matchManager.teamOpponentPlayerLabel')}
+          </Form.Item>
+          <Form.Item label={t('matchManager.teamOpponentPlayerLabel')}>
+            <Input
               value={opponentPlayer}
               onChange={(e) => setOpponentPlayer(e.target.value)}
-              fullWidth
             />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                label={t('matchManager.teamDateLabel')}
-                type="date"
-                value={dateValue}
-                onChange={(e) => setDateValue(e.target.value)}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
+          </Form.Item>
+          <Flex gap={16}>
+            <Form.Item
+              label={t('matchManager.teamDateLabel')}
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              <DatePicker
+                value={dateValue ? dayjs(dateValue) : null}
+                onChange={(date) =>
+                  setDateValue(date ? date.format('YYYY-MM-DD') : '')
+                }
+                style={{ width: '100%' }}
+                format="YYYY-MM-DD"
               />
-              <TextField
-                label={t('matchManager.teamTimezoneLabel')}
+            </Form.Item>
+            <Form.Item
+              label={t('matchManager.teamTimezoneLabel')}
+              style={{ flex: 1, marginBottom: 0 }}
+            >
+              <Input
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 placeholder={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                fullWidth
               />
-            </Stack>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={onClose} disabled={submitting}>
-            {t('matchManager.teamCancel')}
-          </Button>
-          <Box sx={{ flex: 1 }} />
-          <Button type="submit" variant="contained" disabled={submitting}>
-            {submitting ? t('matchManager.teamSaving') : t('matchManager.teamSave')}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+            </Form.Item>
+          </Flex>
+        </Space>
+      </Form>
+    </Modal>
   );
 };
 

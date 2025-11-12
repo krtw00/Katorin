@@ -1,40 +1,29 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { TableColumnsType } from 'antd';
 import {
   Alert,
-  Box,
   Button,
   Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  DatePicker,
   Divider,
-  Grid,
-  IconButton,
-  Pagination,
-  Paper,
-  Stack,
+  Flex,
+  Input,
+  Modal,
+  Space,
+  Spin,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
+  Tag,
   Typography,
-  useMediaQuery,
-} from '@mui/material';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import { useTheme } from '@mui/material/styles';
+} from 'antd';
+import { EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import MatchEditDialog from './MatchEditDialog';
 import { useTeamApi } from '../team/useTeamApi';
 import type { MatchRecord } from '../types/matchTypes';
 import { parseScoreValue } from '../types/matchTypes';
+import dayjs from 'dayjs';
+
+const { Title, Text } = Typography;
 
 type Participant = {
   id: string;
@@ -67,8 +56,6 @@ const formatDateWithTime = (value?: string | null) => {
 const MatchList: React.FC = () => {
   const { t } = useTranslation();
   const teamApi = useTeamApi();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [teamUser, setTeamUser] = useState<TeamUser | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -167,11 +154,11 @@ const MatchList: React.FC = () => {
     }
   }, [page, totalPages]);
 
-  const outcomeChip = (match: MatchRecord) => {
+  const getOutcomeTag = (match: MatchRecord) => {
     const self = parseScoreValue(match.selfScore);
     const opp = parseScoreValue(match.opponentScore);
     let label = t('matchList.resultPending');
-    let color: 'success' | 'error' | 'default' = 'default';
+    let color: string = 'default';
     if (self !== null && opp !== null) {
       if (self > opp) {
         label = t('matchList.resultWin');
@@ -184,7 +171,7 @@ const MatchList: React.FC = () => {
         color = 'default';
       }
     }
-    return <Chip size="small" color={color} label={label} />;
+    return <Tag color={color}>{label}</Tag>;
   };
 
   const handleApplyFilters = () => {
@@ -227,252 +214,206 @@ const MatchList: React.FC = () => {
     }
   };
 
+  const canEdit = Boolean(teamUser?.can_edit);
+
+  const columns: TableColumnsType<MatchRecord> = [
+    {
+      title: t('matchList.date'),
+      dataIndex: 'date',
+      key: 'date',
+      render: (date: string | null, record: MatchRecord) => (
+        <Space direction="vertical" size={0}>
+          <Text>{formatDateWithTime(date)}</Text>
+          {record.timezone && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.timezone}
+            </Text>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: t('matchList.player'),
+      dataIndex: 'player',
+      key: 'player',
+      render: (player: string | null) => player || t('matchList.unknownPlayer'),
+    },
+    {
+      title: t('matchList.score'),
+      key: 'score',
+      render: (_, record: MatchRecord) =>
+        t('matchList.scoreLine', {
+          self: record.selfScore ?? '-',
+          opponent: record.opponentScore ?? '-',
+        }),
+    },
+    {
+      title: t('matchList.opponentTeam'),
+      dataIndex: 'opponentTeam',
+      key: 'opponentTeam',
+      render: (team: string | null) => team || t('matchList.unknownTeam'),
+    },
+    {
+      title: t('matchList.opponentPlayer'),
+      dataIndex: 'opponentPlayer',
+      key: 'opponentPlayer',
+      render: (player: string | null) => player || t('matchList.unknownPlayer'),
+    },
+    {
+      title: t('matchList.result'),
+      key: 'result',
+      render: (_, record: MatchRecord) => getOutcomeTag(record),
+    },
+    {
+      title: t('matchList.status'),
+      dataIndex: 'result_status',
+      key: 'result_status',
+      render: (status: string) => (
+        <Tag color={status === 'finalized' ? 'success' : 'default'}>
+          {status === 'finalized'
+            ? t('matchList.statusFinalized')
+            : t('matchList.statusDraft')}
+        </Tag>
+      ),
+    },
+    ...(canEdit
+      ? [
+          {
+            title: t('matchList.actions'),
+            key: 'actions',
+            align: 'right' as const,
+            render: (_: unknown, record: MatchRecord) => (
+              <Space>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => setEditTarget(record)}
+                />
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  danger
+                  onClick={() => setDeleteTarget(record)}
+                />
+              </Space>
+            ),
+          },
+        ]
+      : []),
+  ];
+
   if (loading) {
     return (
-      <Stack alignItems="center" justifyContent="center" sx={{ minHeight: '60vh' }}>
-        <CircularProgress />
-      </Stack>
+      <Flex align="center" justify="center" style={{ minHeight: '60vh' }}>
+        <Spin size="large" />
+      </Flex>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Stack spacing={2} alignItems="flex-start">
-          <Alert severity="error">{error}</Alert>
-          <Button variant="outlined" onClick={refreshAll}>
-            {t('matchList.retry')}
-          </Button>
-        </Stack>
-      </Box>
+      <div style={{ padding: 32 }}>
+        <Space direction="vertical" size="middle">
+          <Alert type="error" message={error} />
+          <Button onClick={refreshAll}>{t('matchList.retry')}</Button>
+        </Space>
+      </div>
     );
   }
 
-  const canEdit = Boolean(teamUser?.can_edit);
-
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Stack spacing={3}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2}>
-          <Typography variant="h4" fontWeight="bold">
+    <div style={{ padding: '16px 32px' }}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+          <Title level={2} style={{ margin: 0 }}>
             {t('matchList.title')}
-          </Typography>
-          <Button variant="outlined" onClick={refreshAll}>
+          </Title>
+          <Button icon={<ReloadOutlined />} onClick={refreshAll}>
             {t('matchList.reload')}
           </Button>
-        </Stack>
+        </Flex>
 
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            {t('matchList.filters')}
-          </Typography>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                label={t('matchList.searchPlayer')}
+        <Card>
+          <Title level={5}>{t('matchList.filters')}</Title>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Flex gap={16} wrap="wrap">
+              <Input
+                placeholder={t('matchList.searchPlayer')}
                 value={playerFilter}
                 onChange={(e) => setPlayerFilter(e.target.value)}
+                style={{ flex: '1 1 200px' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <TextField
-                fullWidth
-                label={t('matchList.dateFrom')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={startDateFilter}
-                onChange={(e) => setStartDateFilter(e.target.value)}
+              <DatePicker
+                placeholder={t('matchList.dateFrom')}
+                value={startDateFilter ? dayjs(startDateFilter) : null}
+                onChange={(date) =>
+                  setStartDateFilter(date ? date.format('YYYY-MM-DD') : '')
+                }
+                style={{ flex: '1 1 200px' }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <TextField
-                fullWidth
-                label={t('matchList.dateTo')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={endDateFilter}
-                onChange={(e) => setEndDateFilter(e.target.value)}
+              <DatePicker
+                placeholder={t('matchList.dateTo')}
+                value={endDateFilter ? dayjs(endDateFilter) : null}
+                onChange={(date) =>
+                  setEndDateFilter(date ? date.format('YYYY-MM-DD') : '')
+                }
+                style={{ flex: '1 1 200px' }}
               />
-            </Grid>
-          </Grid>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" onClick={handleApplyFilters}>
-              {t('matchList.filter')}
-            </Button>
-            <Button variant="outlined" onClick={handleClearFilters}>
-              {t('matchList.clear')}
-            </Button>
-          </Stack>
-        </Paper>
+            </Flex>
+            <Space>
+              <Button type="primary" onClick={handleApplyFilters}>
+                {t('matchList.filter')}
+              </Button>
+              <Button onClick={handleClearFilters}>{t('matchList.clear')}</Button>
+            </Space>
+          </Space>
+        </Card>
 
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            {t('matchList.summary')}
-          </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Chip label={t('matchList.totalMatches', { count: filteredMatches.length })} />
-            <Chip
-              color="success"
-              label={t('matchList.winCount', {
+        <Card>
+          <Title level={5}>{t('matchList.summary')}</Title>
+          <Space wrap>
+            <Tag>{t('matchList.totalMatches', { count: filteredMatches.length })}</Tag>
+            <Tag color="success">
+              {t('matchList.winCount', {
                 count: filteredMatches.filter((m) => {
                   const self = Number(m.selfScore ?? NaN);
                   const opp = Number(m.opponentScore ?? NaN);
                   return Number.isFinite(self) && Number.isFinite(opp) && self > opp;
                 }).length,
               })}
-            />
-            <Chip
-              color="error"
-              label={t('matchList.lossCount', {
+            </Tag>
+            <Tag color="error">
+              {t('matchList.lossCount', {
                 count: filteredMatches.filter((m) => {
                   const self = Number(m.selfScore ?? NaN);
                   const opp = Number(m.opponentScore ?? NaN);
                   return Number.isFinite(self) && Number.isFinite(opp) && self < opp;
                 }).length,
               })}
-            />
-          </Stack>
-        </Paper>
+            </Tag>
+          </Space>
+        </Card>
 
         {filteredMatches.length === 0 ? (
-          <Alert severity="info">{t('matchList.noMatches')}</Alert>
-        ) : isMobile ? (
-          <Stack spacing={2}>
-            {pageMatches.map((match) => (
-              <Card key={match.id} variant="outlined">
-                <CardContent>
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {outcomeChip(match)}
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {match.player || t('matchList.unknownPlayer')}
-                      </Typography>
-                      <Box sx={{ flex: 1 }} />
-                      {match.timezone ? (
-                        <Typography variant="caption" color="text.secondary">
-                          {match.timezone}
-                        </Typography>
-                      ) : null}
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDateWithTime(match.date)}
-                    </Typography>
-                    <Typography variant="body2">
-                      {t('matchList.scoreLine', {
-                        self: match.selfScore ?? '-',
-                        opponent: match.opponentScore ?? '-',
-                      })}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('matchList.opponentLine', {
-                        team: match.opponentTeam || t('matchList.unknownTeam'),
-                        player: match.opponentPlayer || t('matchList.unknownPlayer'),
-                      })}
-                    </Typography>
-                    <Divider />
-                    <Typography variant="caption" color="text.secondary">
-                      {t('matchList.statusLabel', {
-                        status:
-                          match.result_status === 'finalized'
-                            ? t('matchList.statusFinalized')
-                            : t('matchList.statusDraft'),
-                      })}
-                    </Typography>
-                    {canEdit ? (
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton size="small" onClick={() => setEditTarget(match)}>
-                          <EditRoundedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => setDeleteTarget(match)}>
-                          <DeleteRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    ) : null}
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
+          <Alert type="info" message={t('matchList.noMatches')} />
         ) : (
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('matchList.date')}</TableCell>
-                  <TableCell>{t('matchList.player')}</TableCell>
-                  <TableCell>{t('matchList.score')}</TableCell>
-                  <TableCell>{t('matchList.opponentTeam')}</TableCell>
-                  <TableCell>{t('matchList.opponentPlayer')}</TableCell>
-                  <TableCell>{t('matchList.result')}</TableCell>
-                  <TableCell>{t('matchList.status')}</TableCell>
-                  {canEdit ? <TableCell align="right">{t('matchList.actions')}</TableCell> : null}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pageMatches.map((match) => (
-                  <TableRow key={match.id} hover>
-                    <TableCell>
-                      <Stack spacing={0.5}>
-                        <Typography variant="body2">{formatDateWithTime(match.date)}</Typography>
-                        {match.timezone ? (
-                          <Typography variant="caption" color="text.secondary">
-                            {match.timezone}
-                          </Typography>
-                        ) : null}
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{match.player || t('matchList.unknownPlayer')}</TableCell>
-                    <TableCell>
-                      {t('matchList.scoreLine', {
-                        self: match.selfScore ?? '-',
-                        opponent: match.opponentScore ?? '-',
-                      })}
-                    </TableCell>
-                    <TableCell>{match.opponentTeam || t('matchList.unknownTeam')}</TableCell>
-                    <TableCell>{match.opponentPlayer || t('matchList.unknownPlayer')}</TableCell>
-                    <TableCell>{outcomeChip(match)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        color={match.result_status === 'finalized' ? 'success' : 'default'}
-                        label={
-                          match.result_status === 'finalized'
-                            ? t('matchList.statusFinalized')
-                            : t('matchList.statusDraft')
-                        }
-                      />
-                    </TableCell>
-                    {canEdit ? (
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" onClick={() => setEditTarget(match)}>
-                            <EditRoundedIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => setDeleteTarget(match)}>
-                            <DeleteRoundedIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Table
+            columns={columns}
+            dataSource={pageMatches}
+            rowKey="id"
+            pagination={{
+              current: page,
+              pageSize: PAGE_SIZE,
+              total: filteredMatches.length,
+              onChange: (newPage) => setPage(newPage),
+              showSizeChanger: false,
+            }}
+            scroll={{ x: 'max-content' }}
+          />
         )}
-
-        {totalPages > 1 ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, value) => setPage(value)}
-              color="primary"
-            />
-          </Box>
-        ) : null}
-      </Stack>
+      </Space>
 
       <MatchEditDialog
         open={Boolean(editTarget)}
@@ -482,24 +423,22 @@ const MatchList: React.FC = () => {
         onUpdated={handleUpdatedMatch}
       />
 
-      <Dialog open={Boolean(deleteTarget)} onClose={deleteLoading ? undefined : () => setDeleteTarget(null)}>
-        <DialogTitle>{t('matchList.deleteTitle')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2}>
-            <Typography>{t('matchList.deleteConfirm')}</Typography>
-            {deleteError ? <Alert severity="error">{deleteError}</Alert> : null}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
-            {t('matchList.cancel')}
-          </Button>
-          <Button color="error" onClick={handleDelete} disabled={deleteLoading} variant="contained">
-            {deleteLoading ? t('matchList.deleting') : t('matchList.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <Modal
+        title={t('matchList.deleteTitle')}
+        open={Boolean(deleteTarget)}
+        onCancel={deleteLoading ? undefined : () => setDeleteTarget(null)}
+        onOk={handleDelete}
+        okText={deleteLoading ? t('matchList.deleting') : t('matchList.delete')}
+        cancelText={t('matchList.cancel')}
+        okButtonProps={{ danger: true }}
+        confirmLoading={deleteLoading}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text>{t('matchList.deleteConfirm')}</Text>
+          {deleteError && <Alert type="error" message={deleteError} />}
+        </Space>
+      </Modal>
+    </div>
   );
 };
 

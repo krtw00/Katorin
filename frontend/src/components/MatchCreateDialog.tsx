@@ -1,21 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-  MenuItem,
-}
-from '@mui/material';
+import { Alert, Button, DatePicker, Flex, Form, Modal, Select, Space, Spin, Typography } from 'antd';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+
+const { Text } = Typography;
 
 type MatchRecord = {
   id: string;
@@ -190,97 +179,95 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
   const dialogTitle = mode === 'edit' ? t('matchCreateDialog.editMatch') : t('matchCreateDialog.createMatch');
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{dialogTitle}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          {error && <Alert severity="error">{error}</Alert>}
-          {teamsLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : teams.length === 0 ? (
-            <Alert severity="warning">{t('matchCreateDialog.noTeamsRegistered')}</Alert>
-          ) : (
-            <>
-              {mode === 'create' ? (
-                <Typography sx={{ fontSize: 13, color: '#6a7184' }}>
-                  {t('matchCreateDialog.createMatchDescription')}
-                </Typography>
-              ) : (
-                <Typography sx={{ fontSize: 13, color: '#6a7184' }}>
-                  {t('matchCreateDialog.editMatchDescription')}
-                </Typography>
-              )}
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: 2,
-                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                }}
-              >
-                <TextField
-                  select
+    <Modal
+      title={dialogTitle}
+      open={open}
+      onCancel={onClose}
+      onOk={handleSubmit}
+      okText={
+        submitting
+          ? mode === 'edit'
+            ? t('common.updating')
+            : t('common.creating')
+          : mode === 'edit'
+          ? t('common.update')
+          : t('common.create')
+      }
+      cancelText={t('common.cancel')}
+      confirmLoading={submitting}
+      okButtonProps={{ disabled: isSubmitDisabled }}
+      width={640}
+    >
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        {error && <Alert type="error" message={error} />}
+        {teamsLoading ? (
+          <Flex justify="center" style={{ padding: '16px 0' }}>
+            <Spin />
+          </Flex>
+        ) : teams.length === 0 ? (
+          <Alert type="warning" message={t('matchCreateDialog.noTeamsRegistered')} />
+        ) : (
+          <>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {mode === 'create'
+                ? t('matchCreateDialog.createMatchDescription')
+                : t('matchCreateDialog.editMatchDescription')}
+            </Text>
+            <Form layout="vertical">
+              <Flex gap={16} wrap="wrap">
+                <Form.Item
                   label={t('matchCreateDialog.homeTeam')}
-                  value={values.teamId || ''}
-                  onChange={handleChange('teamId')}
-                  fullWidth
                   required
+                  style={{ flex: '1 1 280px', marginBottom: 0 }}
                 >
-                  <MenuItem value="" disabled>
-                    <em>{t('matchCreateDialog.selectTeam')}</em>
-                  </MenuItem>
-                  {teams.filter(team => team.id !== values.opponentTeamId).map((team) => (
-                    <MenuItem key={team.id} value={team.id}>
-                      {team.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
+                  <Select
+                    placeholder={t('matchCreateDialog.selectTeam')}
+                    value={values.teamId || undefined}
+                    onChange={(value) =>
+                      setValues((prev) => ({ ...prev, teamId: value }))
+                    }
+                    style={{ width: '100%' }}
+                    options={teams
+                      .filter((team) => team.id !== values.opponentTeamId)
+                      .map((team) => ({ value: team.id, label: team.name }))}
+                  />
+                </Form.Item>
+                <Form.Item
                   label={t('matchCreateDialog.awayTeam')}
-                  value={values.opponentTeamId || ''}
-                  onChange={handleChange('opponentTeamId')}
-                  fullWidth
                   required
+                  style={{ flex: '1 1 280px', marginBottom: 0 }}
                 >
-                  <MenuItem value="" disabled>
-                    <em>{t('matchCreateDialog.selectTeam')}</em>
-                  </MenuItem>
-                  {teams.filter(team => team.id !== values.teamId).map((team) => (
-                    <MenuItem key={team.id} value={team.id}>
-                      {team.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  label={t('matchCreateDialog.matchDate')}
-                  type="date"
-                  value={values.date}
-                  onChange={handleChange('date')}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
+                  <Select
+                    placeholder={t('matchCreateDialog.selectTeam')}
+                    value={values.opponentTeamId || undefined}
+                    onChange={(value) =>
+                      setValues((prev) => ({ ...prev, opponentTeamId: value }))
+                    }
+                    style={{ width: '100%' }}
+                    options={teams
+                      .filter((team) => team.id !== values.teamId)
+                      .map((team) => ({ value: team.id, label: team.name }))}
+                  />
+                </Form.Item>
+              </Flex>
+              <Form.Item label={t('matchCreateDialog.matchDate')} style={{ marginTop: 16 }}>
+                <DatePicker
+                  value={values.date ? dayjs(values.date) : null}
+                  onChange={(date) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      date: date ? date.format('YYYY-MM-DD') : '',
+                    }))
+                  }
+                  style={{ width: '100%' }}
+                  format="YYYY-MM-DD"
                 />
-              </Box>
-            </>
-          )}
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>
-          {t('common.cancel')}
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={isSubmitDisabled}>
-          {submitting
-            ? mode === 'edit'
-              ? t('common.updating')
-              : t('common.creating')
-            : mode === 'edit'
-            ? t('common.update')
-            : t('common.create')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+              </Form.Item>
+            </Form>
+          </>
+        )}
+      </Space>
+    </Modal>
   );
 };
 
