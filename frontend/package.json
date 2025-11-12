@@ -4,6 +4,7 @@
   "private": true,
   "proxy": "http://localhost:3001",
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
@@ -19,6 +20,8 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vercel/speed-insights": "^1.2.0",
+    "antd": "^5.28.1",
+    "dayjs": "^1.11.19",
     "i18next": "^23.16.8",
     "papaparse": "^5.5.3",
     "react": "^19.2.0",

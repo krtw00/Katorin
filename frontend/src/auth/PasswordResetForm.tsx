@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import { Alert, Button, Card, Input, Space, Typography } from 'antd';
+import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import AntLanguageSwitcher from '../components/AntLanguageSwitcher';
 import { supabase } from '../lib/supabaseClient';
+
+const { Title, Text } = Typography;
 
 interface PasswordResetFormProps {
   onBackToLogin: () => void;
 }
 
+/**
+ * パスワードリセットフォームコンポーネント（Ant Design版）
+ * メール送信とパスワード更新の両方をサポート
+ */
 const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -97,54 +104,113 @@ const PasswordResetForm: React.FC<PasswordResetFormProps> = ({ onBackToLogin }) 
   };
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#f4f6fb' }}>
-      <Card sx={{ minWidth: 360, maxWidth: 480, boxShadow: 3, position: 'relative' }}>
-        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-          <LanguageSwitcher />
-        </Box>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" textAlign="center">
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f7',
+        padding: 16,
+      }}
+    >
+      <Card
+        style={{
+          minWidth: 360,
+          maxWidth: 480,
+          width: '100%',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 16, right: 16 }}>
+          <AntLanguageSwitcher />
+        </div>
+
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Title level={3} style={{ textAlign: 'center', margin: 0 }}>
             {t('auth.passwordReset.title')}
-          </Typography>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+          </Title>
+
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              closable
+              onClose={() => setError(null)}
+            />
+          )}
+
+          {success && (
+            <Alert
+              message={success}
+              type="success"
+              closable
+              onClose={() => setSuccess(null)}
+            />
+          )}
+
           <form onSubmit={handleSubmit}>
-            <Stack spacing={2}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {!isResettingPassword ? (
-                <TextField
-                  label={t('auth.passwordReset.emailLabel')}
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  fullWidth
-                />
+                <div>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                    {t('auth.passwordReset.emailLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                  </label>
+                  <Input
+                    prefix={<MailOutlined />}
+                    type="email"
+                    placeholder={t('auth.passwordReset.emailLabel')}
+                    size="large"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
               ) : (
-                <TextField
-                  label={t('auth.passwordReset.newPasswordLabel')}
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  fullWidth
-                  helperText={t('auth.passwordReset.newPasswordHelperText')}
-                />
+                <div>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                    {t('auth.passwordReset.newPasswordLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                  </label>
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder={t('auth.passwordReset.newPasswordLabel')}
+                    size="large"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    {t('auth.passwordReset.newPasswordHelperText')}
+                  </Text>
+                </div>
               )}
-              <Button type="submit" variant="contained" fullWidth disabled={loading}>
+
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                block
+                loading={loading}
+              >
                 {loading
                   ? t('auth.passwordReset.submitting')
                   : isResettingPassword
                   ? t('auth.passwordReset.submitButton')
                   : t('auth.passwordReset.sendResetLink')}
               </Button>
-              <Button variant="text" onClick={onBackToLogin} fullWidth>
+
+              <Button
+                type="link"
+                onClick={onBackToLogin}
+                block
+              >
                 {t('auth.passwordReset.backToLogin')}
               </Button>
-            </Stack>
+            </Space>
           </form>
-        </CardContent>
+        </Space>
       </Card>
-    </Box>
+    </div>
   );
 };
 

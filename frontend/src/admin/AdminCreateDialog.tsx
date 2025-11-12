@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Input, Modal, Space, Typography } from 'antd';
+import { MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
+
+const { Text } = Typography;
 
 type AdminCreateDialogProps = {
   open: boolean;
@@ -19,6 +12,10 @@ type AdminCreateDialogProps = {
   onCreated?: (email: string) => void;
 };
 
+/**
+ * 管理者作成ダイアログ（Ant Design版）
+ * 新しい管理者ユーザーを作成
+ */
 const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, onCreated }) => {
   const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
@@ -83,48 +80,78 @@ const AdminCreateDialog: React.FC<AdminCreateDialogProps> = ({ open, onClose, on
     submitting || email.trim().length === 0 || password.trim().length < 6;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth disableEnforceFocus>
-      <DialogTitle>{t('admin.create.title')}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          <Typography variant="body2" color="text.secondary">
-            {t('admin.create.subtitle')}
-          </Typography>
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          <TextField
-            label={t('admin.create.emailLabel')}
+    <Modal
+      title={t('admin.create.title')}
+      open={open}
+      onCancel={handleClose}
+      onOk={handleSubmit}
+      okText={submitting ? t('admin.create.submitting') : t('admin.create.submit')}
+      cancelText={t('admin.create.cancel')}
+      confirmLoading={submitting}
+      okButtonProps={{ disabled: isDisabled }}
+      cancelButtonProps={{ disabled: submitting }}
+      maskClosable={!submitting}
+      keyboard={!submitting}
+    >
+      <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: 24 }}>
+        <Text type="secondary">
+          {t('admin.create.subtitle')}
+        </Text>
+
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            closable
+            onClose={() => setError(null)}
+          />
+        )}
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('admin.create.emailLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+          </label>
+          <Input
+            prefix={<MailOutlined />}
             type="email"
+            placeholder={t('admin.create.emailLabel')}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={submitting}
             autoFocus
-            required
-            disabled={submitting}
           />
-          <TextField
-            label={t('admin.create.passwordLabel')}
-            type="password"
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('admin.create.passwordLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+          </label>
+          <Input.Password
+            prefix={<LockOutlined />}
+            placeholder={t('admin.create.passwordLabel')}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
+            onChange={(e) => setPassword(e.target.value)}
             disabled={submitting}
           />
-          <TextField
-            label={t('admin.create.displayNameLabel')}
+          <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+            {t('admin.create.passwordHelperText', '6文字以上')}
+          </Text>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('admin.create.displayNameLabel')}
+          </label>
+          <Input
+            prefix={<UserOutlined />}
+            placeholder={t('admin.create.displayNameLabel')}
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
+            onChange={(e) => setDisplayName(e.target.value)}
             disabled={submitting}
           />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={submitting}>
-          {t('admin.create.cancel')}
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={isDisabled}>
-          {submitting ? t('admin.create.submitting') : t('admin.create.submit')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </div>
+      </Space>
+    </Modal>
   );
 };
 
