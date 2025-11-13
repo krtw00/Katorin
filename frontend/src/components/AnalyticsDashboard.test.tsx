@@ -15,8 +15,8 @@ describe('AnalyticsDashboard', () => {
     expect(screen.getByText('analytics.title')).toBeInTheDocument();
   });
 
-  it('renders development message', () => {
+  it('renders description', () => {
     render(<AnalyticsDashboard />);
-    expect(screen.getByText(/Analytics dashboard is under development/i)).toBeInTheDocument();
+    expect(screen.getByText(/Analytics dashboard provides insights into match performance and player statistics./i)).toBeInTheDocument();
   });
 });
