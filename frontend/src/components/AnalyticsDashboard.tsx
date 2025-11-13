@@ -44,7 +44,7 @@ const AnalyticsDashboard: React.FC = () => {
       {/* Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 8 }}>
+          <Card variant="borderless" style={{ borderRadius: 8 }}>
             <Statistic
               title="Total Matches"
               value={mockStats.totalMatches}
@@ -54,7 +54,7 @@ const AnalyticsDashboard: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 8 }}>
+          <Card variant="borderless" style={{ borderRadius: 8 }}>
             <Statistic
               title="Total Players"
               value={mockStats.totalPlayers}
@@ -64,7 +64,7 @@ const AnalyticsDashboard: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 8 }}>
+          <Card variant="borderless" style={{ borderRadius: 8 }}>
             <Statistic
               title="Win Rate"
               value={mockStats.winRate}
@@ -75,7 +75,7 @@ const AnalyticsDashboard: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 8 }}>
+          <Card variant="borderless" style={{ borderRadius: 8 }}>
             <Statistic
               title="Matches This Week"
               value={mockStats.matchesThisWeek}
@@ -92,7 +92,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card
             title="Deck Distribution"
-            bordered={false}
+            variant="borderless"
             style={{ borderRadius: 8, minHeight: 400 }}
           >
             <div
@@ -140,7 +140,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card
             title="Match Performance Trend"
-            bordered={false}
+            variant="borderless"
             style={{ borderRadius: 8, minHeight: 400 }}
           >
             <div
@@ -182,7 +182,7 @@ const AnalyticsDashboard: React.FC = () => {
         <Col xs={24}>
           <Card
             title="Recent Activity"
-            bordered={false}
+            variant="borderless"
             style={{ borderRadius: 8 }}
           >
             <Paragraph>
