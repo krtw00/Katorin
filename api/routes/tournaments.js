@@ -11,8 +11,7 @@ const createSlugFrom = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-// Get all tournaments for authenticated user
-router.get('/', requireAuth, async (req, res) => {
+const listTournaments = async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -27,10 +26,9 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
   res.json(data ?? []);
-});
+};
 
-// Create a new tournament (admin only)
-router.post('/', requireAuth, requireAdmin, async (req, res) => {
+const createTournament = async (req, res) => {
   try {
     const { name, slug, description } = req.body ?? {};
     const normalizedName = (name ?? '').toString().trim();
@@ -75,10 +73,9 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     logger.error('Unexpected error creating tournament', { error: err.message });
     res.status(500).json({ error: '大会の作成に失敗しました。' });
   }
-});
+};
 
-// List rounds for a tournament
-router.get('/:tournamentId/rounds', requireAuth, async (req, res) => {
+const listRounds = async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -94,10 +91,9 @@ router.get('/:tournamentId/rounds', requireAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
   res.json(data ?? []);
-});
+};
 
-// Create a new round (admin only)
-router.post('/:tournamentId/rounds', requireAuth, requireAdmin, async (req, res) => {
+const createRound = async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -137,10 +133,9 @@ router.post('/:tournamentId/rounds', requireAuth, requireAdmin, async (req, res)
     return res.status(500).json({ error: error.message });
   }
   res.status(201).json(data);
-});
+};
 
-// Close a round (admin only)
-router.post('/:tournamentId/rounds/:roundId/close', requireAuth, requireAdmin, async (req, res) => {
+const closeRound = async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -191,10 +186,9 @@ router.post('/:tournamentId/rounds/:roundId/close', requireAuth, requireAdmin, a
     return res.status(500).json({ error: error.message });
   }
   res.json(data);
-});
+};
 
-// Reopen a round (admin only, only latest closed round)
-router.post('/:tournamentId/rounds/:roundId/reopen', requireAuth, requireAdmin, async (req, res) => {
+const reopenRound = async (req, res) => {
   const client = req.supabase;
   if (!client) {
     return res.status(500).json({ error: '認証済みクライアントの初期化に失敗しました。' });
@@ -238,6 +232,22 @@ router.post('/:tournamentId/rounds/:roundId/reopen', requireAuth, requireAdmin, 
     return res.status(500).json({ error: error.message });
   }
   res.json(data);
-});
+};
 
-module.exports = router;
+router.get('/', requireAuth, listTournaments);
+router.post('/', requireAuth, requireAdmin, createTournament);
+router.get('/:tournamentId/rounds', requireAuth, listRounds);
+router.post('/:tournamentId/rounds', requireAuth, requireAdmin, createRound);
+router.post('/:tournamentId/rounds/:roundId/close', requireAuth, requireAdmin, closeRound);
+router.post('/:tournamentId/rounds/:roundId/reopen', requireAuth, requireAdmin, reopenRound);
+
+const handlers = {
+  listTournaments,
+  createTournament,
+  listRounds,
+  createRound,
+  closeRound,
+  reopenRound,
+};
+
+module.exports = Object.assign(router, { handlers });
