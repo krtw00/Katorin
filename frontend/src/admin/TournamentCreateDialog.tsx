@@ -1,17 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Input, Modal, Space, Typography } from 'antd';
+import { TrophyOutlined, LinkOutlined } from '@ant-design/icons';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
+
+const { TextArea } = Input;
+const { Text: TypographyText } = Typography;
 
 export type Tournament = {
   id: string;
@@ -37,6 +31,10 @@ const slugify = (raw: string) =>
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * 大会作成ダイアログ（Ant Design版）
+ * 新しい大会を作成
+ */
 const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, onClose, onCreated }) => {
   const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
@@ -112,55 +110,82 @@ const TournamentCreateDialog: React.FC<TournamentCreateDialogProps> = ({ open, o
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableEnforceFocus>
-      <DialogTitle>{t('tournament.create.title')}</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          <Typography variant="body2" color="text.secondary">
-            {t('tournament.create.subtitle')}
-          </Typography>
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          <TextField
-            label={t('tournament.create.nameLabel')}
+    <Modal
+      title={t('tournament.create.title')}
+      open={open}
+      onCancel={onClose}
+      onOk={handleSubmit}
+      okText={submitting ? t('tournament.create.submitting') : t('tournament.create.submit')}
+      cancelText={t('tournament.create.cancel')}
+      confirmLoading={submitting}
+      okButtonProps={{ disabled: submitting }}
+      cancelButtonProps={{ disabled: submitting }}
+      maskClosable={!submitting}
+      keyboard={!submitting}
+      width={560}
+    >
+      <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: 24 }}>
+        <TypographyText type="secondary">
+          {t('tournament.create.subtitle')}
+        </TypographyText>
+
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            closable
+            onClose={() => setError(null)}
+          />
+        )}
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('tournament.create.nameLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+          </label>
+          <Input
+            prefix={<TrophyOutlined />}
+            placeholder={t('tournament.create.nameLabel')}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(e) => setName(e.target.value)}
+            disabled={submitting}
             autoFocus
-            required
-            fullWidth
-            disabled={submitting}
           />
-          <TextField
-            label={t('tournament.create.slugLabel')}
-            value={slugTouched ? slug : derivedSlug}
-            onChange={(event) => {
-              setSlugTouched(true);
-              setSlug(event.target.value);
-            }}
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('tournament.create.slugLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+          </label>
+          <Input
+            prefix={<LinkOutlined />}
             placeholder={t('tournament.create.slugPlaceholder')}
-            helperText={t('tournament.create.slugHelperText')}
-            fullWidth
+            value={slugTouched ? slug : derivedSlug}
+            onChange={(e) => {
+              setSlugTouched(true);
+              setSlug(e.target.value);
+            }}
             disabled={submitting}
           />
-          <TextField
-            label={t('tournament.create.descriptionLabel')}
+          <TypographyText type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+            {t('tournament.create.slugHelperText')}
+          </TypographyText>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            {t('tournament.create.descriptionLabel')}
+          </label>
+          <TextArea
+            placeholder={t('tournament.create.descriptionLabel')}
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            multiline
-            minRows={3}
-            fullWidth
+            onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
+            rows={3}
+            autoSize={{ minRows: 3, maxRows: 6 }}
           />
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={submitting}>
-          {t('tournament.create.cancel')}
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
-          {submitting ? t('tournament.create.submitting') : t('tournament.create.submit')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </div>
+      </Space>
+    </Modal>
   );
 };
 

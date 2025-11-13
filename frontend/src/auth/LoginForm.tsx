@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import {
   Alert,
-  Box,
   Button,
+  Card,
   Divider,
-  Paper,
-  Stack,
-  Tab,
+  Input,
+  Space,
   Tabs,
-  TextField,
   Typography,
-} from '@mui/material';
+} from 'antd';
+import { LockOutlined, MailOutlined, TeamOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 import AdminCreateDialog from '../admin/AdminCreateDialog';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import AntLanguageSwitcher from '../components/AntLanguageSwitcher';
+
+const { Title, Text } = Typography;
 
 type LoginFormProps = {
   onSuccess?: () => void;
@@ -24,6 +24,10 @@ type LoginFormProps = {
 
 type LoginMode = 'admin' | 'team';
 
+/**
+ * ログインフォームコンポーネント（Ant Design版）
+ * 管理者ログインとチームログインの両方をサポート
+ */
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset }) => {
   const { t } = useTranslation();
   const { signInWithPassword } = useAuth();
@@ -33,9 +37,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
   const [teamName, setTeamName] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleModeChange = (_: React.SyntheticEvent, newMode: LoginMode) => {
+  const handleModeChange = (newMode: string) => {
     if (mode !== newMode) {
-      setMode(newMode);
+      setMode(newMode as LoginMode);
       setEmail('');
       setTournamentSlug('');
       setTeamName('');
@@ -65,7 +69,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
         await signInWithPassword({ email, password });
       }
 
-
       onSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : t('auth.login.loginFailed');
@@ -75,139 +78,215 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
     }
   };
 
+  const tabItems = [
+    {
+      key: 'admin',
+      label: (
+        <span>
+          <MailOutlined style={{ marginRight: 8 }} />
+          {t('auth.login.adminTab')}
+        </span>
+      ),
+    },
+    {
+      key: 'team',
+      label: (
+        <span>
+          <TeamOutlined style={{ marginRight: 8 }} />
+          {t('auth.login.teamTab')}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <Box
-      component="section"
-      sx={{
+    <div
+      style={{
         minHeight: '100vh',
-        bgcolor: '#f4f6fb',
+        backgroundColor: '#f5f5f7',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 2,
+        padding: 16,
       }}
     >
-      <Paper elevation={3} sx={{ maxWidth: 480, width: '100%', padding: 4, position: 'relative' }}>
-        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-          <LanguageSwitcher />
-        </Box>
-        <Stack spacing={3}>
-          <Stack spacing={1}>
-            <Typography component="h1" variant="h5" textAlign="center" fontWeight="bold">
+      <Card
+        style={{
+          maxWidth: 480,
+          width: '100%',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 16, right: 16 }}>
+          <AntLanguageSwitcher />
+        </div>
+
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {/* ヘッダー */}
+          <Space direction="vertical" size={4} style={{ width: '100%', textAlign: 'center' }}>
+            <Title level={3} style={{ margin: 0 }}>
               {t('auth.login.title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+            </Title>
+            <Text type="secondary">
               {t('auth.login.subtitle')}
-            </Typography>
-          </Stack>
+            </Text>
+          </Space>
 
+          {/* モード切り替えタブ */}
           <Tabs
-            value={mode}
-            onChange={(event, value) => handleModeChange(event, value as LoginMode)}
-            variant="fullWidth"
-            sx={{
-              bgcolor: '#f4f6fb',
-              borderRadius: 999,
-              '& .MuiTabs-indicator': { display: 'none' },
-              '& .MuiTab-root': {
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: 14,
-                color: '#6a7184',
-              },
-              '& .Mui-selected': {
-                bgcolor: '#fff',
-                boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
-                color: '#1a1d2f !important',
-              },
-            }}
-          >
-            <Tab value="admin" label={t('auth.login.adminTab')} />
-            <Tab value="team" label={t('auth.login.teamTab')} />
-          </Tabs>
+            activeKey={mode}
+            onChange={handleModeChange}
+            items={tabItems}
+            centered
+            size="large"
+          />
 
-          <Stack component="form" spacing={3} onSubmit={handleSubmit}>
-            {mode === 'team' ? (
-              <Alert severity="info" color="info">
-                {t('auth.login.teamInfo')}
-              </Alert>
-            ) : null}
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            {mode === 'team' ? (
-              <>
-                <TextField
-                  label={t('teamLoginForm.tournamentCodeLabel')}
-                  required
-                  fullWidth
-                  disabled={submitting}
-                  value={tournamentSlug}
-                  onChange={(event) => setTournamentSlug(event.target.value)}
+          {/* フォーム */}
+          <form onSubmit={handleSubmit}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {/* チームログイン情報 */}
+              {mode === 'team' && (
+                <Alert
+                  message={t('auth.login.teamInfo')}
+                  type="info"
+                  showIcon
                 />
-                <TextField
-                  label={t('auth.login.teamNameLabel')}
-                  required
-                  fullWidth
-                  disabled={submitting}
-                  value={teamName}
-                  onChange={(event) => setTeamName(event.target.value)}
+              )}
+
+              {/* エラーメッセージ */}
+              {error && (
+                <Alert
+                  message={error}
+                  type="error"
+                  closable
+                  onClose={() => setError(null)}
                 />
-              </>
-            ) : (
-              <TextField
-                label={t('auth.login.emailLabel')}
-                type="email"
-                required
-                fullWidth
-                disabled={submitting}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-              />
-            )}
-            <TextField
-              label={t('auth.login.passwordLabel')}
-              type="password"
-              required
-              fullWidth
-              disabled={submitting}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              helperText={mode === 'admin' ? '' : t('auth.login.passwordHelperText')}
-            />
-            <Stack spacing={2}>
-              <Button type="submit" variant="contained" size="large" disabled={submitting || (mode === 'team' && teamName.trim().length === 0)}>
+              )}
+
+              {/* 入力フィールド */}
+              {mode === 'team' ? (
+                <>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                      {t('teamLoginForm.tournamentCodeLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                    </label>
+                    <Input
+                      prefix={<TrophyOutlined />}
+                      placeholder={t('teamLoginForm.tournamentCodeLabel')}
+                      size="large"
+                      value={tournamentSlug}
+                      onChange={(e) => setTournamentSlug(e.target.value)}
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                      {t('auth.login.teamNameLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                    </label>
+                    <Input
+                      prefix={<TeamOutlined />}
+                      placeholder={t('auth.login.teamNameLabel')}
+                      size="large"
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                    {t('auth.login.emailLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                  </label>
+                  <Input
+                    prefix={<MailOutlined />}
+                    type="email"
+                    placeholder={t('auth.login.emailLabel')}
+                    size="large"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={submitting}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                  {t('auth.login.passwordLabel')} <span style={{ color: '#ff4d4f' }}>*</span>
+                </label>
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder={t('auth.login.passwordLabel')}
+                  size="large"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={submitting}
+                  autoComplete="current-password"
+                  required
+                />
+                {mode === 'team' && (
+                  <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    {t('auth.login.passwordHelperText')}
+                  </Text>
+                )}
+              </div>
+
+              {/* 送信ボタン */}
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                block
+                loading={submitting}
+                disabled={mode === 'team' && teamName.trim().length === 0}
+              >
                 {submitting ? t('auth.login.submitting') : t('auth.login.submitButton')}
               </Button>
+
+              {/* パスワードリセット（管理者のみ） */}
               {mode === 'admin' && (
-                <Button variant="text" size="small" onClick={onShowPasswordReset} sx={{ alignSelf: 'center' }}>
+                <Button
+                  type="link"
+                  onClick={onShowPasswordReset}
+                  style={{ alignSelf: 'center' }}
+                >
                   {t('auth.login.forgotPassword')}
                 </Button>
               )}
-              <Divider flexItem>
-                <Typography variant="caption" color="text.secondary">
+
+              {/* 管理者作成セクション */}
+              <Divider>
+                <Text type="secondary" style={{ fontSize: 12 }}>
                   {t('auth.login.adminCreateSection')}
-                </Typography>
+                </Text>
               </Divider>
+
               <Button
-                variant="outlined"
-                onClick={() => {
-                  setAdminDialogOpen(true);
-                }}
+                onClick={() => setAdminDialogOpen(true)}
                 disabled={submitting}
+                block
               >
                 {t('auth.login.adminCreateButton')}
               </Button>
-            </Stack>
-          </Stack>
+            </Space>
+          </form>
 
-          {adminSuccess ? (
-            <Alert severity="success" onClose={() => setAdminSuccess(null)}>
-              {adminSuccess}
-            </Alert>
-          ) : null}
-        </Stack>
+          {/* 管理者作成成功メッセージ */}
+          {adminSuccess && (
+            <Alert
+              message={adminSuccess}
+              type="success"
+              closable
+              onClose={() => setAdminSuccess(null)}
+            />
+          )}
+        </Space>
+
+        {/* 管理者作成ダイアログ */}
         <AdminCreateDialog
           open={adminDialogOpen}
           onClose={() => setAdminDialogOpen(false)}
@@ -216,8 +295,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
             setAdminSuccess(t('auth.login.adminCreatedSuccess', { email: createdEmail }));
           }}
         />
-      </Paper>
-    </Box>
+      </Card>
+    </div>
   );
 };
 

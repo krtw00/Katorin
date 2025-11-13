@@ -3,38 +3,34 @@ import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Avatar,
-  Box,
   Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  Paper,
+  Card,
+  Flex,
+  Input,
+  Modal,
   Select,
-  SelectChangeEvent,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
+  Segmented,
+  Space,
+  Spin,
+  Tag,
   Tooltip,
   Typography,
-} from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
-import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
+} from 'antd';
+import {
+  PlusOutlined,
+  CalendarOutlined,
+  ReloadOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UnlockOutlined,
+  UndoOutlined,
+} from '@ant-design/icons';
 import { useAuthorizedFetch } from './auth/useAuthorizedFetch';
 import type { Tournament } from './admin/TournamentCreateDialog';
 import MatchCreateDialog from './components/MatchCreateDialog';
 import { MatchRecord, DisplayMatch, CardStatus, MatchStats, formatDate, getInitial, parseScoreValue, determineStatus, statusMeta, toTimestamp } from './types/matchTypes';
+
+const { Title, Text, Paragraph } = Typography;
 
 interface Team {
   id: string;
@@ -319,9 +315,9 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
   const roundStatusChip = useMemo(() => {
     if (!selectedRound) return null;
     if (selectedRound.status === 'closed') {
-      return <Chip label={t('matchManager.closed')} sx={{ bgcolor: '#e8ecf8', color: '#43506c', fontWeight: 700 }} />;
+      return <Tag color="default" style={{ fontWeight: 700 }}>{t('matchManager.closed')}</Tag>;
     }
-    return <Chip label={t('matchManager.inProgress')} sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700 }} />;
+    return <Tag color="success" style={{ fontWeight: 700 }}>{t('matchManager.inProgress')}</Tag>;
   }, [selectedRound, t]);
 
   const latestRoundNumber = useMemo(
@@ -510,139 +506,96 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
     }
   };
   const renderStatsChips = () => (
-    <Stack direction="row" spacing={1} flexWrap="wrap">
-      <Chip
-        label={t('matchManager.totalMatches', { count: stats.total })}
-        sx={{ bgcolor: '#0d1026', color: '#fff', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
-      />
-      <Chip
-        label={t('matchManager.completed', { count: stats.completed })}
-        sx={{ bgcolor: '#e6f7ef', color: '#1f8a5d', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
-      />
-      <Chip
-        label={t('matchManager.pending', { count: stats.pending })}
-        sx={{ bgcolor: '#fff4e6', color: '#b66d1f', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
-      />
-      <Chip
-        label={t('matchManager.registeredTeams', { count: stats.teamCount })}
-        sx={{ bgcolor: '#f4f6fd', color: '#4a5162', fontWeight: 700, height: 26, '& .MuiChip-label': { px: 1.75 } }}
-      />
-    </Stack>
+    <Space wrap>
+      <Tag color="#0d1026" style={{ fontWeight: 700, color: '#fff' }}>
+        {t('matchManager.totalMatches', { count: stats.total })}
+      </Tag>
+      <Tag color="success" style={{ fontWeight: 700 }}>
+        {t('matchManager.completed', { count: stats.completed })}
+      </Tag>
+      <Tag color="warning" style={{ fontWeight: 700 }}>
+        {t('matchManager.pending', { count: stats.pending })}
+      </Tag>
+      <Tag color="default" style={{ fontWeight: 700 }}>
+        {t('matchManager.registeredTeams', { count: stats.teamCount })}
+      </Tag>
+    </Space>
   );
 
   const renderRoundControls = () => (
-    <Stack spacing={2}>
-      {roundFeedback ? (
-        <Alert severity="success" onClose={() => setRoundFeedback(null)}>
-          {roundFeedback}
-        </Alert>
-      ) : null}
-      {roundError ? (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      {roundFeedback && (
         <Alert
-          severity="error"
+          type="success"
+          message={roundFeedback}
+          closable
+          onClose={() => setRoundFeedback(null)}
+        />
+      )}
+      {roundError && (
+        <Alert
+          type="error"
+          message={roundError}
           action={
-            <Button color="inherit" size="small" startIcon={<RefreshRoundedIcon />} onClick={loadRounds}>
+            <Button size="small" icon={<ReloadOutlined />} onClick={loadRounds}>
               {t('matchManager.reload')}
             </Button>
           }
-        >
-          {roundError}
-        </Alert>
-      ) : null}
+        />
+      )}
       {roundsLoading ? (
-        <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
-          <CircularProgress />
-          <Typography variant="body2" color="text.secondary">
-            {t('matchManager.loadingRounds')}
-          </Typography>
-        </Stack>
+        <Flex vertical align="center" gap={12} style={{ padding: '32px 0' }}>
+          <Spin size="large" />
+          <Text type="secondary">{t('matchManager.loadingRounds')}</Text>
+        </Flex>
       ) : rounds.length === 0 ? (
-        <Paper
-          sx={{
-            p: { xs: 3, md: 4 },
-            borderRadius: 4,
-            bgcolor: '#fff',
-            border: '1px dashed rgba(24, 32, 56, 0.18)',
+        <Card
+          style={{
             textAlign: 'center',
+            borderStyle: 'dashed',
+            borderRadius: 16,
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.noRoundsYet')}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 3 }}>
+          <Title level={5}>{t('matchManager.noRoundsYet')}</Title>
+          <Paragraph type="secondary" style={{ marginBottom: 24 }}>
             {t('matchManager.createFirstRoundPrompt')}
-          </Typography>
+          </Paragraph>
           <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            style={{ borderRadius: 999 }}
             onClick={() => {
               setRoundTitle('');
               setRoundDialogError(null);
               setRoundDialogOpen(true);
             }}
-            sx={{
-              bgcolor: '#0d1026',
-              borderRadius: 999,
-              px: 3,
-              py: 1.15,
-              fontWeight: 700,
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#181d3f' },
-            }}
           >
             {t('matchManager.createFirstRound')}
           </Button>
-        </Paper>
+        </Card>
       ) : (
-        <Stack spacing={2}>
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            spacing={2}
-            alignItems={{ xs: 'stretch', md: 'center' }}
-            justifyContent="space-between"
-          >
-            <ToggleButtonGroup
-              exclusive
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Flex wrap="wrap" gap={16} justify="space-between" align="center">
+            <Segmented
               value={selectedRoundId}
-              onChange={(_, newRoundId) => {
-                if (newRoundId) {
-                  setSelectedRoundId(newRoundId);
-                }
-              }}
-              sx={{
-                flexWrap: 'wrap',
-                gap: 1,
-                '& .MuiToggleButton-root': {
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  minWidth: 140,
-                  borderRadius: 12,
-                  border: '1px solid rgba(24, 32, 56, 0.12)',
-                  color: '#4a5162',
-                  px: 2,
-                  py: 1.25,
-                },
-                '& .Mui-selected': {
-                  bgcolor: '#f4f7ff',
-                  borderColor: '#0d1026',
-                  color: '#0d1026',
-                  boxShadow: '0 6px 18px rgba(34, 53, 102, 0.12)',
-                },
-              }}
-            >
-              {rounds.map((round) => (
-                <ToggleButton key={round.id} value={round.id}>
-                  <Stack spacing={0.5} alignItems="center">
-                    <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{t('matchManager.roundNumber', { number: round.number })}</Typography>
-                    <Typography sx={{ fontSize: 11, color: '#7d8495' }}>
+              onChange={(value) => setSelectedRoundId(value as string)}
+              options={rounds.map((round) => ({
+                label: (
+                  <Flex vertical align="center" style={{ padding: '8px 16px' }}>
+                    <Text strong>{t('matchManager.roundNumber', { number: round.number })}</Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
                       {round.status === 'closed' ? t('matchManager.closed') : t('matchManager.inProgress')}
-                    </Typography>
-                  </Stack>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                    </Text>
+                  </Flex>
+                ),
+                value: round.id,
+              }))}
+              style={{ flexWrap: 'wrap' }}
+            />
+            <Space>
               <Button
-                variant="outlined"
-                startIcon={<AddRoundedIcon />}
+                icon={<PlusOutlined />}
                 onClick={() => {
                   setRoundTitle('');
                   setRoundDialogError(null);
@@ -654,8 +607,8 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
               </Button>
               {selectedRound && selectedRound.status === 'closed' ? (
                 <Button
-                  variant="contained"
-                  startIcon={<ReplayRoundedIcon />}
+                  type="primary"
+                  icon={<UndoOutlined />}
                   onClick={handleReopenRound}
                   disabled={!canReopenRound}
                 >
@@ -663,35 +616,38 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
                 </Button>
               ) : (
                 <Button
-                  variant="contained"
-                  color="secondary"
+                  type="primary"
+                  danger
                   onClick={handleCloseRound}
                   disabled={!selectedRound || roundSubmitting}
                 >
                   {t('matchManager.closeThisRound')}
                 </Button>
               )}
-            </Stack>
-          </Stack>
-          {selectedRound ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography sx={{ fontWeight: 700, color: '#2f3645' }}>
+            </Space>
+          </Flex>
+          {selectedRound && (
+            <Flex gap={8} align="center">
+              <Text strong>
                 {t('matchManager.roundNumber', { number: selectedRound.number })}
                 {selectedRound.title ? `｜${selectedRound.title}` : ''}
-              </Typography>
+              </Text>
               {roundStatusChip}
-            </Stack>
-          ) : null}
-          {selectedRound && selectedRound.status === 'closed' ? (
-            <Alert severity="info" sx={{ borderRadius: 3 }}>
-              {canReopenRound
-                ? t('matchManager.roundClosedCanReopen')
-                : t('matchManager.roundClosedCannotReopen')}
-            </Alert>
-          ) : null}
-        </Stack>
+            </Flex>
+          )}
+          {selectedRound && selectedRound.status === 'closed' && (
+            <Alert
+              type="info"
+              message={
+                canReopenRound
+                  ? t('matchManager.roundClosedCanReopen')
+                  : t('matchManager.roundClosedCannotReopen')
+              }
+            />
+          )}
+        </Space>
       )}
-    </Stack>
+    </Space>
   );
 
   const renderMatchCard = (match: DisplayMatch) => {
@@ -707,367 +663,276 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
     const isDraw = match.status === 'draw';
 
     const renderTeamColumn = (teamName: string, initial: string, highlight: boolean) => (
-      <Stack spacing={1} alignItems="center" sx={{ flex: 1 }}>
+      <Flex vertical gap={8} align="center" style={{ flex: 1 }}>
         <Avatar
-          sx={{
-            width: 40,
-            height: 40,
+          size={40}
+          style={{
             fontWeight: 700,
             fontSize: 16,
-            bgcolor: highlight ? '#0d1026' : '#f4f6fd',
+            backgroundColor: highlight ? '#0d1026' : '#f4f6fd',
             color: highlight ? '#fff' : '#4a5162',
           }}
         >
           {initial}
         </Avatar>
-        <Typography
-          sx={{
+        <Text
+          strong
+          style={{
             fontSize: 15,
-            fontWeight: 700,
             color: highlight ? '#0d1026' : '#4a5162',
             textAlign: 'center',
           }}
         >
           {teamName}
-        </Typography>
+        </Text>
         {highlight && match.status !== 'pending' && match.status !== 'draw' && (
-          <Chip
-            label="WIN"
-            size="small"
-            sx={{
-              bgcolor: '#0d1026',
-              color: '#fff',
-              fontWeight: 700,
-              height: 22,
-              '& .MuiChip-label': { px: 1.25 },
-            }}
-          />
+          <Tag color="#0d1026" style={{ fontWeight: 700, color: '#fff' }}>
+            WIN
+          </Tag>
         )}
         {isDraw && (
-          <Chip
-            label="DRAW"
-            size="small"
-            sx={{
-              bgcolor: '#e8ecf8',
-              color: '#43506c',
-              fontWeight: 700,
-              height: 22,
-              '& .MuiChip-label': { px: 1.25 },
-            }}
-          />
+          <Tag color="default" style={{ fontWeight: 700 }}>
+            DRAW
+          </Tag>
         )}
         {isPending && (
-          <Chip
-            label={t('matchManager.awaitingResult')}
-            size="small"
-            sx={{
-              bgcolor: '#f6f7fb',
-              color: '#7e8494',
-              fontWeight: 600,
-              height: 22,
-              '& .MuiChip-label': { px: 1.25 },
-            }}
-          />
+          <Tag style={{ fontWeight: 600 }}>
+            {t('matchManager.awaitingResult')}
+          </Tag>
         )}
-      </Stack>
+      </Flex>
     );
 
     return (
-      <Paper
+      <Card
         key={match.id}
-        sx={{
-          borderRadius: 4,
-          p: { xs: 2.5, md: 3 },
-          bgcolor: '#fff',
+        style={{
+          borderRadius: 16,
           boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
-          border: '1px solid rgba(24, 32, 56, 0.08)',
         }}
       >
-        <Stack spacing={2.5}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#7e8494' }}>
-              <CalendarTodayRoundedIcon sx={{ fontSize: 16 }} />
-              <Typography sx={{ fontSize: 13 }}>{formatDate(match.date)}</Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip
-                label={info.label}
-                size="small"
-                sx={{
-                  bgcolor: info.bgcolor,
-                  color: info.color,
-                  fontWeight: 700,
-                  height: 24,
-                  '& .MuiChip-label': { px: 1.75 },
-                }}
-              />
-              <Tooltip title={t('matchManager.setInputPermission')} arrow>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      // matches は生データを持っているので、現在値を見にいく
-                      const raw = matches.find((m) => m.id === match.id);
-                      const current = raw?.input_allowed_team_id ?? null;
-                      const eligibleTeamIds = Array.from(
-                        new Set(
-                          [raw?.team, raw?.opponentTeam].filter(
-                            (teamId): teamId is string => Boolean(teamId),
-                          ),
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Flex justify="space-between" align="center" gap={16}>
+            <Space style={{ color: '#7e8494' }}>
+              <CalendarOutlined style={{ fontSize: 16 }} />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                {formatDate(match.date)}
+              </Text>
+            </Space>
+            <Space>
+              <Tag
+                color={info.bgcolor}
+                style={{ color: info.color, fontWeight: 700 }}
+              >
+                {info.label}
+              </Tag>
+              <Tooltip title={t('matchManager.setInputPermission')}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<UnlockOutlined />}
+                  onClick={() => {
+                    const raw = matches.find((m) => m.id === match.id);
+                    const current = raw?.input_allowed_team_id ?? null;
+                    const eligibleTeamIds = Array.from(
+                      new Set(
+                        [raw?.team, raw?.opponentTeam].filter(
+                          (teamId): teamId is string => Boolean(teamId),
                         ),
-                      );
-                      let nextValue: string = 'none';
-                      if (current === 'admin') {
-                        nextValue = 'admin';
-                      } else if (current && eligibleTeamIds.includes(current)) {
-                        nextValue = current;
-                      }
-                      setPermError(null);
-                      setPermDialog({
-                        open: true,
-                        matchId: match.id,
-                        value: nextValue,
-                        eligibleTeamIds,
-                      });
-                    }}
-                    disabled={!canCreateMatch}
-                    sx={{ color: '#4a5162' }}
-                  >
-                    <LockOpenRoundedIcon fontSize="small" />
-                  </IconButton>
-                </span>
+                      ),
+                    );
+                    let nextValue: string = 'none';
+                    if (current === 'admin') {
+                      nextValue = 'admin';
+                    } else if (current && eligibleTeamIds.includes(current)) {
+                      nextValue = current;
+                    }
+                    setPermError(null);
+                    setPermDialog({
+                      open: true,
+                      matchId: match.id,
+                      value: nextValue,
+                      eligibleTeamIds,
+                    });
+                  }}
+                  disabled={!canCreateMatch}
+                />
               </Tooltip>
-              <Tooltip title={t('matchManager.editMatch')} arrow>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenEditMatch(match)}
-                    disabled={!canCreateMatch}
-                    sx={{ color: '#4a5162' }}
-                  >
-                    <EditRoundedIcon fontSize="small" />
-                  </IconButton>
-                </span>
+              <Tooltip title={t('matchManager.editMatch')}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => handleOpenEditMatch(match)}
+                  disabled={!canCreateMatch}
+                />
               </Tooltip>
-              <Tooltip title={t('matchManager.deleteMatch')} arrow>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleConfirmDeleteMatch(match)}
-                    disabled={!canCreateMatch}
-                    sx={{ color: '#b42318' }}
-                  >
-                    <DeleteRoundedIcon fontSize="small" />
-                  </IconButton>
-                </span>
+              <Tooltip title={t('matchManager.deleteMatch')}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  danger
+                  onClick={() => handleConfirmDeleteMatch(match)}
+                  disabled={!canCreateMatch}
+                />
               </Tooltip>
-            </Stack>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
+            </Space>
+          </Flex>
+          <Flex justify="space-between" align="center" gap={24}>
             {renderTeamColumn(match.homeTeam, homeInitial, isHomeWinner)}
-            <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 96 }}>
-              <Typography sx={{ fontSize: 12, color: '#7e8494', letterSpacing: '0.12em' }}>SCORE</Typography>
-              <Typography sx={{ fontSize: 30, fontWeight: 800, color: '#1a1d2f' }}>
+            <Flex vertical gap={4} align="center" style={{ minWidth: 96 }}>
+              <Text type="secondary" style={{ fontSize: 12, letterSpacing: '0.12em' }}>
+                SCORE
+              </Text>
+              <Text
+                strong
+                style={{ fontSize: 30, fontWeight: 800, color: '#1a1d2f' }}
+              >
                 {homeScoreDisplay}
-                <Typography component="span" sx={{ mx: 1, fontSize: 22, color: '#7e8494' }}>
+                <Text type="secondary" style={{ margin: '0 8px', fontSize: 22 }}>
                   -
-                </Typography>
+                </Text>
                 {awayScoreDisplay}
-              </Typography>
-              <Typography sx={{ fontSize: 12, color: '#9ba0ad', letterSpacing: '0.16em' }}>VS</Typography>
-            </Stack>
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12, letterSpacing: '0.16em' }}>
+                VS
+              </Text>
+            </Flex>
             {renderTeamColumn(match.awayTeam, awayInitial, isAwayWinner)}
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          </Flex>
+          <Flex justify="flex-end">
             <Button
-              variant="outlined"
+              style={{ borderRadius: 999 }}
               onClick={() => onOpenResultEntry(match.id)}
-              sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 700,
-                px: 2.5,
-                borderColor: 'rgba(24,32,56,0.18)',
-                color: '#2f3645',
-                '&:hover': { borderColor: '#181d3f', bgcolor: 'rgba(24,32,56,0.05)' },
-              }}
             >
               {t('matchManager.toResultEntry')}
             </Button>
-          </Box>
-        </Stack>
-      </Paper>
+          </Flex>
+        </Space>
+      </Card>
     );
   };
 
   const renderMatchList = () => {
     if (loading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress color="inherit" />
-        </Box>
+        <Flex justify="center" style={{ padding: '48px 0' }}>
+          <Spin size="large" />
+        </Flex>
       );
     }
 
     if (error) {
       return (
         <Alert
-          severity="error"
+          type="error"
+          message={error}
           action={
-            <Button color="inherit" size="small" startIcon={<RefreshRoundedIcon />} onClick={loadMatches}>
+            <Button size="small" icon={<ReloadOutlined />} onClick={loadMatches}>
               {t('matchManager.reload')}
             </Button>
           }
-          sx={{ borderRadius: 3 }}
-        >
-          {error}
-        </Alert>
+        />
       );
     }
 
     if (displayMatches.length === 0) {
       return (
-        <Paper
-          sx={{
-            p: { xs: 3, md: 4 },
-            borderRadius: 4,
-            bgcolor: '#fff',
-            border: '1px dashed rgba(24, 32, 56, 0.16)',
+        <Card
+          style={{
             textAlign: 'center',
+            borderStyle: 'dashed',
+            borderRadius: 16,
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#2f3645', mb: 1.5 }}>{t('matchManager.noMatchesYet')}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#7e8494', mb: 3 }}>
+          <Title level={5}>{t('matchManager.noMatchesYet')}</Title>
+          <Paragraph type="secondary" style={{ marginBottom: 24 }}>
             {t('matchManager.createMatchPrompt')}
-          </Typography>
+          </Paragraph>
           <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            style={{ borderRadius: 999 }}
             onClick={handleOpenCreateMatch}
             disabled={!canCreateMatch}
-            sx={{
-              borderRadius: 999,
-              textTransform: 'none',
-              fontWeight: 700,
-              px: 3,
-              bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
-              '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
-            }}
           >
             {t('matchManager.createMatch')}
           </Button>
-        </Paper>
+        </Card>
       );
     }
 
     return (
-      <Stack spacing={3}>
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         {displayMatches.map(renderMatchCard)}
-      </Stack>
+      </Space>
     );
   };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         minHeight: '100vh',
-        bgcolor: '#f6f7fb',
-        py: 6,
-        px: { xs: 3, md: 8 },
-        boxSizing: 'border-box',
+        backgroundColor: '#f6f7fb',
+        padding: '48px 24px',
       }}
     >
-      <Box
-        sx={{
+      <div
+        style={{
           maxWidth: 1120,
-          mx: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 5,
+          margin: '0 auto',
         }}
       >
-        <Paper
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', md: 'center' },
-            gap: { xs: 3, md: 4 },
-            px: { xs: 3, md: 4 },
-            py: { xs: 3, md: 3.5 },
-            borderRadius: 4,
-            boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
-            border: '1px solid rgba(24, 32, 56, 0.06)',
-            bgcolor: '#fff',
-          }}
-        >
-          <Stack spacing={2} sx={{ width: '100%', maxWidth: 420 }}>
-            <Stack spacing={0.5}>
-              <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#ff8c3d', letterSpacing: 1 }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Card
+            style={{
+              borderRadius: 16,
+              boxShadow: '0 18px 45px rgba(14, 30, 64, 0.08)',
+            }}
+          >
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Title level={2} style={{ color: '#ff8c3d', marginBottom: 0 }}>
                 {t('matchManager.title')}
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: '#6d7385', fontWeight: 600 }}>
+              </Title>
+              <Text type="secondary" style={{ fontWeight: 600 }}>
                 {t('matchManager.description')}
-              </Typography>
-            </Stack>
-          </Stack>
-        </Paper>
-        <Box>
-          <Stack spacing={3} sx={{ mb: 3 }}>
+              </Text>
+            </Space>
+          </Card>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {renderRoundControls()}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                flexDirection: { xs: 'column', sm: 'row' },
-                justifyContent: 'space-between',
-                gap: 2,
-              }}
+            <Flex
+              wrap="wrap"
+              justify="space-between"
+              align="center"
+              gap={16}
             >
-              <Stack spacing={0.5}>
-                <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#293049' }}>{t('matchManager.matchCardList')}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#7e8494' }}>
+              <Space direction="vertical" size={4}>
+                <Title level={4} style={{ margin: 0 }}>
+                  {t('matchManager.matchCardList')}
+                </Title>
+                <Text type="secondary" style={{ fontSize: 13 }}>
                   {t('matchManager.matchCardListDescription')}
-                </Typography>
-              </Stack>
+                </Text>
+              </Space>
               <Button
-                variant="contained"
-                startIcon={<AddRoundedIcon />}
+                type="primary"
+                icon={<PlusOutlined />}
+                size="large"
+                style={{ borderRadius: 999 }}
                 onClick={handleOpenCreateMatch}
                 disabled={!canCreateMatch}
-                sx={{
-                  alignSelf: { xs: 'stretch', sm: 'auto' },
-                  bgcolor: canCreateMatch ? '#0d1026' : '#9ca3af',
-                  px: 3,
-                  py: 1.25,
-                  borderRadius: 999,
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  '&:hover': { bgcolor: canCreateMatch ? '#181d3f' : '#9ca3af' },
-                }}
               >
                 {t('matchManager.createMatch')}
               </Button>
-            </Box>
+            </Flex>
             {renderStatsChips()}
-          </Stack>
+          </Space>
           {renderMatchList()}
-        </Box>
-      </Box>
+        </Space>
+      </div>
       <MatchCreateDialog
         open={matchDialog.open}
         mode={matchDialog.mode}
@@ -1078,154 +943,127 @@ const MatchManager: React.FC<MatchManagerProps> = ({ tournament, onOpenResultEnt
         roundId={selectedRound?.id ?? null}
       />
       {/* 入力権限設定モーダル */}
-      <Dialog
+      <Modal
+        title={t('matchManager.inputPermissionTitle')}
         open={permDialog.open}
-        onClose={() =>
+        onCancel={() =>
           !permSaving ? setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] }) : null
         }
-        maxWidth="sm"
-        fullWidth
+        onOk={async () => {
+          if (!permDialog.matchId) return;
+          setPermSaving(true);
+          setPermError(null);
+          try {
+            const value = permDialog.value;
+            const input_allowed_team_id = value === 'none' ? null : value;
+            const response = await authFetch(`/api/matches/${permDialog.matchId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ input_allowed_team_id }),
+            });
+            const contentType = response.headers.get('content-type') ?? '';
+            if (!response.ok) {
+              const message = contentType.includes('application/json')
+                ? (await response.json()).error ?? `HTTP ${response.status}`
+                : await response.text();
+              throw new Error(message || `HTTP ${response.status}`);
+            }
+            await loadMatches();
+            setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] });
+          } catch (err: any) {
+            console.error('Failed to update input permission:', err);
+            setPermError(err?.message || t('matchManager.updatePermissionFailed'));
+          } finally {
+            setPermSaving(false);
+          }
+        }}
+        okText={permSaving ? t('matchManager.saving') : t('matchManager.save')}
+        cancelText={t('matchManager.cancel')}
+        confirmLoading={permSaving}
+        okButtonProps={{ disabled: !permDialog.matchId }}
       >
-        <DialogTitle>{t('matchManager.inputPermissionTitle')}</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            {permError ? <Alert severity="error">{permError}</Alert> : null}
-            <Typography variant="body2" color="text.secondary">
-              {t('matchManager.inputPermissionDescription')}
-            </Typography>
-            <Select
-              size="small"
-              value={permDialog.value}
-              onChange={(e: SelectChangeEvent<string>) => setPermDialog((p) => ({ ...p, value: e.target.value }))}
-              disabled={permSaving}
-            >
-              <MenuItem value="none">{t('matchManager.permissionNone')}</MenuItem>
-              <MenuItem value="admin">{t('matchManager.permissionAdmin')}</MenuItem>
-              {permDialogTeams.length > 0 ? (
-                <>
-                  <MenuItem disabled value="__sep__">──────────</MenuItem>
-                  {permDialogTeams.map((team) => (
-                    <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
-                  ))}
-                </>
-              ) : null}
-            </Select>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] })}
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {permError && <Alert type="error" message={permError} />}
+          <Text type="secondary">
+            {t('matchManager.inputPermissionDescription')}
+          </Text>
+          <Select
+            style={{ width: '100%' }}
+            value={permDialog.value}
+            onChange={(value) => setPermDialog((p) => ({ ...p, value }))}
             disabled={permSaving}
-          >
-            {t('matchManager.cancel')}
-          </Button>
-          <Button
-            variant="contained"
-            disabled={permSaving || !permDialog.matchId}
-            onClick={async () => {
-              if (!permDialog.matchId) return;
-              setPermSaving(true);
-              setPermError(null);
-              try {
-                const value = permDialog.value;
-                const input_allowed_team_id = value === 'none' ? null : value; // 'admin' または teamId
-                const response = await authFetch(`/api/matches/${permDialog.matchId}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ input_allowed_team_id }),
-                });
-                const contentType = response.headers.get('content-type') ?? '';
-                if (!response.ok) {
-                  const message = contentType.includes('application/json')
-                    ? (await response.json()).error ?? `HTTP ${response.status}`
-                    : await response.text();
-                  throw new Error(message || `HTTP ${response.status}`);
-                }
-                await loadMatches();
-                setPermDialog({ open: false, matchId: null, value: 'none', eligibleTeamIds: [] });
-              } catch (err: any) {
-                console.error('Failed to update input permission:', err);
-                setPermError(err?.message || t('matchManager.updatePermissionFailed'));
-              } finally {
-                setPermSaving(false);
-              }
-            }}
-          >
-            {permSaving ? t('matchManager.saving') : t('matchManager.save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog open={roundDialogOpen} onClose={() => (!roundSubmitting ? setRoundDialogOpen(false) : null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{t('matchManager.createRound')}</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={3}>
-            {roundDialogError ? <Alert severity="error">{roundDialogError}</Alert> : null}
-            <Typography variant="body2" color="text.secondary">
-              {t('matchManager.roundNameOptional')}
-            </Typography>
-            <TextField
-              label={t('matchManager.roundNameLabel')}
-              placeholder={t('matchManager.roundNamePlaceholder')}
-              value={roundTitle}
-              onChange={(event) => setRoundTitle(event.target.value)}
-              fullWidth
-              disabled={roundSubmitting}
-            />
-          </Stack>
-        </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
+            options={[
+              { value: 'none', label: t('matchManager.permissionNone') },
+              { value: 'admin', label: t('matchManager.permissionAdmin') },
+              ...(permDialogTeams.length > 0
+                ? [
+                    { value: '__sep__', label: '──────────', disabled: true },
+                    ...permDialogTeams.map((team) => ({
+                      value: team.id,
+                      label: team.name,
+                    })),
+                  ]
+                : []),
+            ]}
+          />
+        </Space>
+      </Modal>
+      <Modal
+        title={t('matchManager.createRound')}
+        open={roundDialogOpen}
+        onCancel={() => {
+          if (!roundSubmitting) {
             setRoundDialogOpen(false);
             setRoundDialogError(null);
-          }}
-            disabled={roundSubmitting}
-          >
-            {t('matchManager.cancel')}
-          </Button>
-          <Button onClick={handleCreateRound} variant="contained" disabled={roundSubmitting}>
-            {roundSubmitting ? t('matchManager.creating') : t('matchManager.create')}
-          </Button>
-      </DialogActions>
-    </Dialog>
-      <Dialog
-        open={Boolean(deleteTarget)}
-        onClose={handleCloseDeleteDialog}
-        maxWidth="sm"
-        fullWidth
+          }
+        }}
+        onOk={handleCreateRound}
+        okText={roundSubmitting ? t('matchManager.creating') : t('matchManager.create')}
+        cancelText={t('matchManager.cancel')}
+        confirmLoading={roundSubmitting}
       >
-        <DialogTitle>{t('matchManager.deleteMatchTitle')}</DialogTitle>
-        <DialogContent dividers>
-          {deleteError ? <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert> : null}
-          <DialogContentText sx={{ color: '#4a5162' }}>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {roundDialogError && <Alert type="error" message={roundDialogError} />}
+          <Text type="secondary">
+            {t('matchManager.roundNameOptional')}
+          </Text>
+          <Input
+            placeholder={t('matchManager.roundNamePlaceholder')}
+            value={roundTitle}
+            onChange={(e) => setRoundTitle(e.target.value)}
+            disabled={roundSubmitting}
+          />
+        </Space>
+      </Modal>
+      <Modal
+        title={t('matchManager.deleteMatchTitle')}
+        open={Boolean(deleteTarget)}
+        onCancel={handleCloseDeleteDialog}
+        onOk={handleDeleteMatch}
+        okText={deleteSubmitting ? t('matchManager.deleting') : t('matchManager.delete')}
+        cancelText={t('matchManager.cancel')}
+        okButtonProps={{ danger: true }}
+        confirmLoading={deleteSubmitting}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {deleteError && <Alert type="error" message={deleteError} />}
+          <Text>
             {t('matchManager.deleteMatchConfirmation')}
-          </DialogContentText>
-          {deleteTarget ? (
-            <Box sx={{ mt: 2, p: 2, bgcolor: '#f9fafc', borderRadius: 2 }}>
-              <Typography fontWeight={700} sx={{ color: '#1f2937' }}>
+          </Text>
+          {deleteTarget && (
+            <Card style={{ backgroundColor: '#f9fafc' }}>
+              <Text strong>
                 {deleteTarget.team ?? t('matchManager.teamNotSet')} vs {deleteTarget.opponentTeam ?? t('matchManager.teamNotSet')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </Text>
+              <br />
+              <Text type="secondary">
                 {formatDate(deleteTarget.date)}
-              </Typography>
-            </Box>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} disabled={deleteSubmitting}>
-            {t('matchManager.cancel')}
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDeleteMatch}
-            disabled={deleteSubmitting}
-          >
-            {deleteSubmitting ? t('matchManager.deleting') : t('matchManager.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+              </Text>
+            </Card>
+          )}
+        </Space>
+      </Modal>
+    </div>
   );
 };
 

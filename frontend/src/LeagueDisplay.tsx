@@ -1,4 +1,7 @@
 import React from 'react';
+import { Card, Table, Typography, Space } from 'antd';
+
+const { Title, Text } = Typography;
 
 interface PlayerStats {
   name: string;
@@ -33,31 +36,48 @@ const mockLeagueData: TeamStats[] = [
 
 const LeagueDisplay: React.FC = () => {
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>League Standings</h1>
-      {mockLeagueData.map((team, teamIndex) => (
-        <div key={teamIndex} style={{ marginBottom: '30px', border: '1px solid #ccc', borderRadius: '5px', padding: '15px' }}>
-          <h2 style={{ color: '#333' }}>Team: {team.name} (Record: {team.teamRecord})</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f2f2f2' }}>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Player</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Deck</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Match Record</th>
-              </tr>
-            </thead>
-            <tbody>
-              {team.players.map((player, playerIndex) => (
-                <tr key={playerIndex}>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{player.name}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{player.deck}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{player.matchRecord}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+    <div style={{ padding: '20px' }}>
+      <Title level={2}>League Standings</Title>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {mockLeagueData.map((team, teamIndex) => (
+          <Card
+            key={teamIndex}
+            title={
+              <div>
+                <Text strong style={{ fontSize: 18 }}>Team: {team.name}</Text>
+                <Text style={{ marginLeft: 16, color: '#666' }}>Record: {team.teamRecord}</Text>
+              </div>
+            }
+            style={{ borderRadius: 8 }}
+          >
+            <Table
+              dataSource={team.players.map((player, idx) => ({
+                key: idx,
+                ...player,
+              }))}
+              columns={[
+                {
+                  title: 'Player',
+                  dataIndex: 'name',
+                  key: 'name',
+                },
+                {
+                  title: 'Deck',
+                  dataIndex: 'deck',
+                  key: 'deck',
+                },
+                {
+                  title: 'Match Record',
+                  dataIndex: 'matchRecord',
+                  key: 'matchRecord',
+                },
+              ]}
+              pagination={false}
+              size="middle"
+            />
+          </Card>
+        ))}
+      </Space>
     </div>
   );
 };

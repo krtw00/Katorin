@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import { Flex, Spin } from 'antd';
 import { useAdminAccess } from '../hooks/useAdminAccess';
 
 type Props = {
@@ -19,17 +19,16 @@ const AdminRoute: React.FC<Props> = ({ children }) => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
+      <Flex
+        justify="center"
+        align="center"
+        style={{
           minHeight: '100vh',
-          bgcolor: '#f4f6fb',
+          backgroundColor: '#f4f6fb',
         }}
       >
-        <CircularProgress />
-      </Box>
+        <Spin size="large" />
+      </Flex>
     );
   }
 

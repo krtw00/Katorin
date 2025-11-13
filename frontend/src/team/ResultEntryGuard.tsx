@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, CircularProgress } from '@mui/material';
+import { Alert, Spin } from 'antd';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 
 type Props = {
@@ -45,8 +45,8 @@ const ResultEntryGuard: React.FC<Props> = ({ matchId, teamId, children, fallback
     };
   }, [authFetch, matchId, teamId]);
 
-  if (loading) return <CircularProgress size={20} />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (loading) return <Spin size="small" />;
+  if (error) return <Alert message={error} type="error" showIcon />;
   if (!allowed) return <>{fallback ?? null}</>;
   return <>{children}</>;
 };

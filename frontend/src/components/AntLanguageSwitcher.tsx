@@ -1,10 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Dropdown, Tooltip } from 'antd';
-import { GlobalOutlined } from '@ant-design/icons';
+import { GlobalOutlined, CheckOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 
-const LanguageSwitcher: React.FC = () => {
+/**
+ * Ant Design版 言語切り替えコンポーネント
+ * 日本語/英語の切り替えを提供
+ */
+const AntLanguageSwitcher: React.FC = () => {
   const { i18n, t } = useTranslation();
 
   const handleLanguageChange = (language: string) => {
@@ -14,26 +18,24 @@ const LanguageSwitcher: React.FC = () => {
   const currentLanguage = i18n.language || 'ja';
   const languageName = currentLanguage === 'ja' ? t('language.japanese') : t('language.english');
 
-  const menuItems: MenuProps['items'] = [
+  const items: MenuProps['items'] = [
     {
       key: 'ja',
       label: t('language.japanese'),
+      icon: currentLanguage === 'ja' ? <CheckOutlined /> : null,
+      onClick: () => handleLanguageChange('ja'),
     },
     {
       key: 'en',
       label: t('language.english'),
+      icon: currentLanguage === 'en' ? <CheckOutlined /> : null,
+      onClick: () => handleLanguageChange('en'),
     },
   ];
 
-  const menuProps: MenuProps = {
-    items: menuItems,
-    selectedKeys: [currentLanguage],
-    onClick: ({ key }) => handleLanguageChange(String(key)),
-  };
-
   return (
     <Dropdown
-      menu={menuProps}
+      menu={{ items, selectedKeys: [currentLanguage] }}
       placement="bottomRight"
       trigger={['click']}
     >
@@ -41,12 +43,12 @@ const LanguageSwitcher: React.FC = () => {
         <Button
           type="text"
           icon={<GlobalOutlined />}
-          size="small"
-          style={{ marginLeft: 16, color: '#9ca3af' }}
+          aria-label={languageName}
+          style={{ color: '#9ca3af' }}
         />
       </Tooltip>
     </Dropdown>
   );
 };
 
-export default LanguageSwitcher;
+export default AntLanguageSwitcher;

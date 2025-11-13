@@ -1,28 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert, Button, Card, Space, Typography, Row, Col } from 'antd';
 import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+  PlusOutlined,
+  ReloadOutlined,
+  ArrowRightOutlined,
+  LogoutOutlined,
+  TrophyOutlined,
+} from '@ant-design/icons';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useAuth } from '../auth/AuthContext';
 import TournamentCreateDialog, { Tournament } from './TournamentCreateDialog';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import AntLanguageSwitcher from '../components/AntLanguageSwitcher';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import EmptyState from '../components/common/EmptyState';
+
+const { Title, Text, Paragraph } = Typography;
 
 type TournamentSelectionProps = {
   onSelect: (tournament: Tournament) => void;
   onCancel?: () => void;
 };
 
+/**
+ * 大会選択コンポーネント（Ant Design版）
+ * 大会一覧を表示し、選択または新規作成を行う
+ */
 const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onCancel }) => {
   const { t } = useTranslation();
   const authFetch = useAuthorizedFetch();
@@ -100,159 +103,177 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
   };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         minHeight: '100vh',
-        bgcolor: '#f4f6fb',
+        backgroundColor: '#f5f5f7',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: { xs: 2, md: 6 },
+        padding: 24,
       }}
     >
-      <Paper
-        elevation={4}
-        sx={{
-          maxWidth: 720,
+      <Card
+        style={{
+          maxWidth: 1200,
           width: '100%',
-          p: { xs: 4, md: 6 },
-          borderRadius: 4,
-          bgcolor: '#fff',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          position: 'relative',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         }}
       >
-        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-          <LanguageSwitcher />
-        </Box>
-        <Stack spacing={1}>
-          <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.04em' }}>
-            {t('tournament.selection.title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('tournament.selection.subtitle')}
-          </Typography>
-          {infoMessage ? (
-            <Alert severity="success" onClose={() => setInfoMessage(null)}>
-              {infoMessage}
-            </Alert>
-          ) : null}
-          {error ? <Alert severity="error">{error}</Alert> : null}
-        </Stack>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-        >
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              onClick={() => {
-                setDialogOpen(true);
-                setInfoMessage(null);
-              }}
-            >
-              {t('tournament.selection.createButton')}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshRoundedIcon />}
-              onClick={loadTournaments}
-              disabled={loading}
-            >
-              {t('tournament.selection.refreshButton')}
-            </Button>
-          </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            {onCancel ? (
-              <Button variant="text" color="inherit" onClick={onCancel}>
-                {t('tournament.selection.backButton')}
-              </Button>
-            ) : null}
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<LogoutRoundedIcon />}
-              onClick={handleLogout}
-            >
-              {t('tournament.selection.logoutButton')}
-            </Button>
-          </Stack>
-        </Stack>
-        {loading ? (
-          <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>
-            <CircularProgress />
-            <Typography variant="body2" color="text.secondary">
-              {t('tournament.selection.loading')}
-            </Typography>
-          </Stack>
-        ) : sortedTournaments.length === 0 ? (
-          <Alert severity="info" icon={<AddRoundedIcon fontSize="inherit" />}>
-            {t('tournament.selection.noTournaments')}
-          </Alert>
-        ) : (
-          <Stack spacing={2}>
-            {sortedTournaments.map((tournament) => (
-              <Paper
-                key={tournament.id}
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  borderColor: '#d3dcff',
-                  bgcolor: '#f8faff',
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  justifyContent: 'space-between',
-                  gap: 2,
-                }}
-              >
-                <Stack spacing={0.5}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {tournament.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {tournament.slug}
-                  </Typography>
-                  {tournament.description ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {tournament.description}
-                    </Typography>
-                  ) : null}
-                  <Typography variant="caption" color="text.disabled">
-                    {t('tournament.selection.createdAt')}{' '}
-                    {new Date(tournament.created_at).toLocaleString('ja-JP', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Typography>
-                </Stack>
+        <div style={{ position: 'absolute', top: 16, right: 16 }}>
+          <AntLanguageSwitcher />
+        </div>
+
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {/* ヘッダー */}
+          <div>
+            <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+              {t('tournament.selection.title')}
+            </Title>
+            <Text type="secondary">
+              {t('tournament.selection.subtitle')}
+            </Text>
+          </div>
+
+          {/* 成功・エラーメッセージ */}
+          {infoMessage && (
+            <Alert
+              message={infoMessage}
+              type="success"
+              closable
+              onClose={() => setInfoMessage(null)}
+            />
+          )}
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              closable
+              onClose={() => setError(null)}
+            />
+          )}
+
+          {/* アクションボタン */}
+          <Row gutter={[16, 16]} justify="space-between">
+            <Col xs={24} sm={12}>
+              <Space wrap>
                 <Button
-                  variant="contained"
-                  endIcon={<ArrowForwardRoundedIcon />}
-                  onClick={() => handleSelect(tournament)}
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    setInfoMessage(null);
+                  }}
                 >
-                  {t('tournament.selection.selectButton')}
+                  {t('tournament.selection.createButton')}
                 </Button>
-              </Paper>
-            ))}
-          </Stack>
-        )}
-      </Paper>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={loadTournaments}
+                  loading={loading}
+                >
+                  {t('tournament.selection.refreshButton')}
+                </Button>
+              </Space>
+            </Col>
+            <Col xs={24} sm={12} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Space wrap>
+                {onCancel && (
+                  <Button onClick={onCancel}>
+                    {t('tournament.selection.backButton')}
+                  </Button>
+                )}
+                <Button
+                  danger
+                  icon={<LogoutOutlined />}
+                  onClick={handleLogout}
+                >
+                  {t('tournament.selection.logoutButton')}
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+
+          {/* 大会一覧 */}
+          {loading ? (
+            <LoadingSpinner fullscreen={false} tip={t('tournament.selection.loading')} />
+          ) : sortedTournaments.length === 0 ? (
+            <EmptyState
+              message={t('tournament.selection.noTournaments')}
+              description={t('tournament.selection.noTournamentsDescription', '大会を作成してください')}
+              actionText={t('tournament.selection.createButton')}
+              onAction={() => setDialogOpen(true)}
+            />
+          ) : (
+            <Row gutter={[16, 16]}>
+              {sortedTournaments.map((tournament) => (
+                <Col xs={24} sm={12} lg={8} key={tournament.id}>
+                  <Card
+                    hoverable
+                    style={{
+                      height: '100%',
+                      borderColor: '#d3dcff',
+                      backgroundColor: '#f8faff',
+                    }}
+                    bodyStyle={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+                  >
+                    <Space direction="vertical" size="small" style={{ flex: 1, width: '100%' }}>
+                      <div>
+                        <Title level={5} style={{ margin: 0, fontWeight: 700 }}>
+                          <TrophyOutlined style={{ marginRight: 8, color: '#007AFF' }} />
+                          {tournament.name}
+                        </Title>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {tournament.slug}
+                        </Text>
+                      </div>
+
+                      {tournament.description && (
+                        <Paragraph
+                          type="secondary"
+                          style={{ marginBottom: 0, fontSize: 13 }}
+                          ellipsis={{ rows: 2 }}
+                        >
+                          {tournament.description}
+                        </Paragraph>
+                      )}
+
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {t('tournament.selection.createdAt')}{' '}
+                        {new Date(tournament.created_at).toLocaleString('ja-JP', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+
+                      <Button
+                        type="primary"
+                        block
+                        icon={<ArrowRightOutlined />}
+                        iconPosition="end"
+                        onClick={() => handleSelect(tournament)}
+                        style={{ marginTop: 'auto' }}
+                      >
+                        {t('tournament.selection.selectButton')}
+                      </Button>
+                    </Space>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
+        </Space>
+      </Card>
+
       <TournamentCreateDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onCreated={handleCreated}
       />
-    </Box>
+    </div>
   );
 };
 

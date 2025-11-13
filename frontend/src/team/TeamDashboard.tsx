@@ -1,42 +1,38 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Box,
   Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Card,
+  Col,
+  DatePicker,
   Divider,
-  IconButton,
-  InputAdornment,
-  LinearProgress,
+  Flex,
+  Input,
+  Modal,
   Pagination,
-  Paper,
-  Stack,
-  Tab,
+  Row,
+  Space,
+  Spin,
+  Statistic,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tabs,
-  TextField,
+  Tag,
   Typography,
-} from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
-import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
-import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
-import EventRoundedIcon from '@mui/icons-material/EventRounded';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+  Drawer,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  SyncOutlined,
+  LogoutOutlined,
+  LinkOutlined,
+  EyeOutlined,
+  ClockCircleOutlined,
+  CalendarOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
@@ -44,7 +40,9 @@ import { useTeamApi } from './useTeamApi';
 import MatchEditDialog from '../matches/MatchEditDialog';
 import type { MatchRecord } from '../types/matchTypes';
 import { parseScoreValue } from '../types/matchTypes';
+import dayjs, { Dayjs } from 'dayjs';
 
+const { Title, Text, Paragraph } = Typography;
 const COMPLETED_PAGE_SIZE = 25;
 
 type Participant = {
@@ -57,7 +55,7 @@ type Participant = {
 type TeamUser = {
   id: string;
   name: string;
-  can_edit: boolean; // 常に true（全チームメンバーが編集可能）
+  can_edit: boolean;
 };
 
 type CompletedMatchFilters = {
@@ -101,11 +99,11 @@ const formatDateTime = (value?: string | null) => {
   }).format(date);
 };
 
-const outcomeMeta: Record<string, { labelKey: string; bgcolor: string; color: string }> = {
-  win: { labelKey: 'matchManager.teamOutcomeWin', bgcolor: '#e8f5e9', color: '#1b5e20' },
-  lose: { labelKey: 'matchManager.teamOutcomeLose', bgcolor: '#ffebee', color: '#c62828' },
-  draw: { labelKey: 'matchManager.teamOutcomeDraw', bgcolor: '#e3f2fd', color: '#1565c0' },
-  pending: { labelKey: 'matchManager.teamOutcomePending', bgcolor: '#fff3e0', color: '#ef6c00' },
+const outcomeMeta: Record<string, { labelKey: string; color: string }> = {
+  win: { labelKey: 'matchManager.teamOutcomeWin', color: 'success' },
+  lose: { labelKey: 'matchManager.teamOutcomeLose', color: 'error' },
+  draw: { labelKey: 'matchManager.teamOutcomeDraw', color: 'processing' },
+  pending: { labelKey: 'matchManager.teamOutcomePending', color: 'warning' },
 };
 
 const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
@@ -116,10 +114,10 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
 
   const [activeTab, setActiveTab] = useState<'matches' | 'members' | 'completed'>('matches');
   const [teamId, setTeamId] = useState<string | null>(
-    (typeof window !== 'undefined' && window.localStorage.getItem('team_id')) || null,
+    (typeof window !== 'undefined' && window.localStorage.getItem('team_id')) || null
   );
   const [teamName, setTeamName] = useState<string | null>(
-    (typeof window !== 'undefined' && window.localStorage.getItem('team_name')) || null,
+    (typeof window !== 'undefined' && window.localStorage.getItem('team_name')) || null
   );
   const [teamLoading, setTeamLoading] = useState<boolean>(true);
   const [teamLoadError, setTeamLoadError] = useState<string | null>(null);
@@ -279,7 +277,7 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
         setCompletedLoading(false);
       }
     },
-    [teamApi, t],
+    [teamApi, t]
   );
 
   useEffect(() => {
@@ -308,16 +306,17 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
     });
     const pending = matches.filter((m) => m.result_status !== 'finalized').length;
     const finalized = matches.filter((m) => m.result_status === 'finalized').length;
-    return { total, wins, losses, draws, pending, finalized };
+    const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
+    return { total, wins, losses, draws, pending, finalized, winRate };
   }, [matches]);
 
   const pendingMatches = useMemo(
     () => matches.filter((match) => match.result_status !== 'finalized'),
-    [matches],
+    [matches]
   );
   const finalizedMatches = useMemo(
     () => matches.filter((match) => match.result_status === 'finalized').slice(0, 5),
-    [matches],
+    [matches]
   );
 
   const openMemberDialog = (participant?: Participant) => {
@@ -415,7 +414,12 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
       const data: MatchRecord = await res.json();
       setCompletedDetail({ open: true, loading: false, data, error: null });
     } catch (e: any) {
-      setCompletedDetail({ open: true, loading: false, data: null, error: e?.message || t('teamDashboard.completedDetailFailed') });
+      setCompletedDetail({
+        open: true,
+        loading: false,
+        data: null,
+        error: e?.message || t('teamDashboard.completedDetailFailed'),
+      });
     }
   };
 
@@ -433,386 +437,436 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
 
   const resolvedTeamName = teamName ?? t('teamDashboard.unknownTeam');
 
-  const tabPanels = {
-    members: (
-      <Paper elevation={0} sx={{ p: 3, bgcolor: '#fff', borderRadius: 3 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} sx={{ mb: 3 }}>
-          <Stack spacing={0.5}>
-            <Typography variant="h6" fontWeight="bold">
-              {t('teamDashboard.membersTitle')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('teamDashboard.membersDescription')}
-            </Typography>
-          </Stack>
+  const memberColumns: ColumnsType<Participant> = [
+    {
+      title: t('teamDashboard.memberNameLabel'),
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: t('teamDashboard.memberUpdatedAt'),
+      dataIndex: 'updated_at',
+      key: 'updated_at',
+      width: 200,
+      render: (text: string) => (text ? formatDateTime(text) : '—'),
+    },
+    {
+      title: t('teamDashboard.actions'),
+      key: 'actions',
+      width: 140,
+      align: 'right',
+      render: (_: any, record: Participant) => (
+        <Space size="small">
           <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => openMemberDialog()}
-          >
-            {t('teamDashboard.addMember')}
-          </Button>
-        </Stack>
-        {participantsError ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {participantsError}
-          </Alert>
-        ) : null}
-        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <Chip label={t('teamDashboard.totalMembers', { count: participantsCount })} />
-          <Button
-            startIcon={<RefreshRoundedIcon />}
             size="small"
-            variant="outlined"
-            onClick={loadParticipants}
-          >
-            {t('teamDashboard.refresh')}
-          </Button>
-        </Stack>
-        {participantsLoading ? (
-          <LinearProgress sx={{ mb: 2 }} />
-        ) : null}
-        {participants.length === 0 && !participantsLoading ? (
-          <Alert severity="info">{t('teamDashboard.noMembers')}</Alert>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('teamDashboard.memberNameLabel')}</TableCell>
-                  <TableCell width={200}>{t('teamDashboard.memberUpdatedAt')}</TableCell>
-                  <TableCell width={140} align="right">
-                    {t('teamDashboard.actions')}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {participants.map((participant) => (
-                  <TableRow key={participant.id} hover>
-                    <TableCell>{participant.name}</TableCell>
-                    <TableCell>{participant.updated_at ? formatDateTime(participant.updated_at) : '—'}</TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={() => openMemberDialog(participant)}>
-                        <EditRoundedIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => setMemberDeleteTarget(participant)}>
-                        <DeleteOutlineRoundedIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
+            icon={<EditOutlined />}
+            onClick={() => openMemberDialog(record)}
+          />
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setMemberDeleteTarget(record)}
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  const completedColumns: ColumnsType<MatchRecord> = [
+    {
+      title: t('teamDashboard.completedMatchColumn'),
+      key: 'match',
+      render: (_: any, record: MatchRecord) => (
+        <Space direction="vertical" size="small">
+          <Text strong>{record.team ?? t('teamDashboard.unknownTeam')}</Text>
+          <Text type="secondary">
+            vs. {record.opponentTeam ?? t('teamDashboard.unknownTeam')}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: t('teamDashboard.completedScoreColumn'),
+      key: 'score',
+      render: (_: any, record: MatchRecord) => (
+        <Space direction="vertical" size="small">
+          <Text>
+            {t('teamDashboard.scoreValue', {
+              self: record.selfScore ?? '-',
+              opponent: record.opponentScore ?? '-',
+            })}
+          </Text>
+          <ResultChip match={record} t={t} />
+        </Space>
+      ),
+    },
+    {
+      title: t('teamDashboard.completedDateColumn'),
+      dataIndex: 'date',
+      key: 'date',
+      render: (text: string) => formatDateTime(text),
+    },
+    {
+      title: t('teamDashboard.actions'),
+      key: 'actions',
+      width: 120,
+      align: 'right',
+      render: (_: any, record: MatchRecord) => (
+        <Button
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => handleCompletedMatchDetail(record.id)}
+        >
+          {t('teamDashboard.viewDetails')}
+        </Button>
+      ),
+    },
+  ];
+
+  const tabItems = [
+    {
+      key: 'matches',
+      label: t('teamDashboard.matchesTab'),
+      children: (
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Card>
+            <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+              <Space direction="vertical" size="small">
+                <Title level={4} style={{ margin: 0 }}>
+                  {t('teamDashboard.myMatchesTitle')}
+                </Title>
+                <Text type="secondary">{t('teamDashboard.myMatchesDescription')}</Text>
+              </Space>
+              <Button icon={<SyncOutlined />} onClick={loadMatches}>
+                {t('teamDashboard.refresh')}
+              </Button>
+            </Flex>
+            <Divider />
+            <Row gutter={16}>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title={t('teamDashboard.statTotal', { value: '' })}
+                    value={stats.total}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title={t('teamDashboard.statWins', { value: '' })}
+                    value={stats.wins}
+                    valueStyle={{ color: '#3f8600' }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title={t('teamDashboard.statLosses', { value: '' })}
+                    value={stats.losses}
+                    valueStyle={{ color: '#cf1322' }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title={t('teamDashboard.statDraws', { value: '' })}
+                    value={stats.draws}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title={t('teamDashboard.statPending', { value: '' })}
+                    value={stats.pending}
+                    valueStyle={{ color: '#d46b08' }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <Card>
+                  <Statistic
+                    title="Win Rate"
+                    value={stats.winRate}
+                    suffix="%"
+                    valueStyle={{ color: stats.wins > 0 ? '#3f8600' : undefined }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+            {matchesError && (
+              <Alert message={matchesError} type="error" showIcon style={{ marginTop: 16 }} />
+            )}
+            {matchesLoading && (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <Spin />
+              </div>
+            )}
+          </Card>
+
+          <Card title={t('teamDashboard.pendingSectionTitle')}>
+            <Paragraph type="secondary">
+              {t('teamDashboard.pendingSectionDescription')}
+            </Paragraph>
+            {pendingMatches.length === 0 && !matchesLoading ? (
+              <Alert message={t('teamDashboard.noPendingMatches')} type="info" showIcon />
+            ) : (
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                {pendingMatches.map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    canEdit={canEdit}
+                    onEdit={() => setMatchEditTarget(match)}
+                    onDelete={() => setMatchDeleteTarget(match)}
+                    onReport={() => navigate(`/team/matches/${match.id}/entry`)}
+                    onView={() => handleCompletedMatchDetail(match.id)}
+                    t={t}
+                    teamName={resolvedTeamName}
+                  />
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-    ),
-    matches: (
-      <Stack spacing={3}>
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
-            <Stack spacing={0.5}>
-              <Typography variant="h6" fontWeight="bold">
-                {t('teamDashboard.myMatchesTitle')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('teamDashboard.myMatchesDescription')}
-              </Typography>
-            </Stack>
+              </Space>
+            )}
+          </Card>
+
+          <Card title={t('teamDashboard.completedSectionTitle')}>
+            <Paragraph type="secondary">
+              {t('teamDashboard.completedSectionDescription')}
+            </Paragraph>
+            {finalizedMatches.length === 0 ? (
+              <Alert message={t('teamDashboard.noCompletedMatches')} type="info" showIcon />
+            ) : (
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                {finalizedMatches.map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    canEdit={false}
+                    onReport={() => navigate(`/team/matches/${match.id}/entry`)}
+                    onView={() => handleCompletedMatchDetail(match.id)}
+                    t={t}
+                    teamName={resolvedTeamName}
+                    compact
+                  />
+                ))}
+              </Space>
+            )}
+          </Card>
+        </Space>
+      ),
+    },
+    {
+      key: 'members',
+      label: t('teamDashboard.membersTab'),
+      children: (
+        <Card>
+          <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+            <Space direction="vertical" size="small">
+              <Title level={4} style={{ margin: 0 }}>
+                {t('teamDashboard.membersTitle')}
+              </Title>
+              <Text type="secondary">{t('teamDashboard.membersDescription')}</Text>
+            </Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openMemberDialog()}>
+              {t('teamDashboard.addMember')}
+            </Button>
+          </Flex>
+          {participantsError && (
+            <Alert message={participantsError} type="error" showIcon style={{ margin: '16px 0' }} />
+          )}
+          <Space size="small" style={{ margin: '16px 0' }}>
+            <Tag>{t('teamDashboard.totalMembers', { count: participantsCount })}</Tag>
+            <Button size="small" icon={<SyncOutlined />} onClick={loadParticipants}>
+              {t('teamDashboard.refresh')}
+            </Button>
+          </Space>
+          {participantsLoading ? (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <Spin />
+            </div>
+          ) : participants.length === 0 ? (
+            <Alert message={t('teamDashboard.noMembers')} type="info" showIcon />
+          ) : (
+            <Table
+              columns={memberColumns}
+              dataSource={participants}
+              rowKey="id"
+              size="small"
+              pagination={false}
+            />
+          )}
+        </Card>
+      ),
+    },
+    {
+      key: 'completed',
+      label: t('teamDashboard.completedTab'),
+      children: (
+        <Card>
+          <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+            <Space direction="vertical" size="small">
+              <Title level={4} style={{ margin: 0 }}>
+                {t('teamDashboard.completedTitle')}
+              </Title>
+              <Text type="secondary">{t('teamDashboard.completedDescription')}</Text>
+            </Space>
             <Button
-              variant="outlined"
-              startIcon={<RefreshRoundedIcon />}
-              onClick={loadMatches}
+              icon={<SyncOutlined />}
+              onClick={() => loadCompletedMatches(completedPage, appliedCompletedFilters)}
             >
               {t('teamDashboard.refresh')}
             </Button>
-          </Stack>
-          <Divider sx={{ my: 2 }} />
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <StatChip label={t('teamDashboard.statTotal', { value: stats.total })} color="#1e293b" />
-            <StatChip label={t('teamDashboard.statWins', { value: stats.wins })} color="#065f46" />
-            <StatChip label={t('teamDashboard.statLosses', { value: stats.losses })} color="#b91c1c" />
-            <StatChip label={t('teamDashboard.statDraws', { value: stats.draws })} color="#1d4ed8" />
-            <StatChip label={t('teamDashboard.statPending', { value: stats.pending })} color="#b45309" />
-          </Stack>
-          {matchesError ? (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {matchesError}
-            </Alert>
-          ) : null}
-          {matchesLoading ? <LinearProgress sx={{ mt: 2 }} /> : null}
-        </Paper>
-
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-          <SectionHeader
-            title={t('teamDashboard.pendingSectionTitle')}
-            subtitle={t('teamDashboard.pendingSectionDescription')}
-          />
-          {pendingMatches.length === 0 && !matchesLoading ? (
-            <Alert severity="info">{t('teamDashboard.noPendingMatches')}</Alert>
-          ) : (
-            <Stack spacing={2}>
-              {pendingMatches.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  canEdit={canEdit}
-                  onEdit={() => setMatchEditTarget(match)}
-                  onDelete={() => setMatchDeleteTarget(match)}
-                  onReport={() => navigate(`/team/matches/${match.id}/entry`)}
-                  onView={() => handleCompletedMatchDetail(match.id)}
-                  t={t}
-                  teamName={resolvedTeamName}
-                />
-              ))}
-            </Stack>
+          </Flex>
+          <Divider />
+          <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 24 }}>
+            <Input
+              placeholder={t('teamDashboard.completedSearch')}
+              value={completedFilters.search}
+              onChange={(e) =>
+                setCompletedFilters((prev) => ({ ...prev, search: e.target.value }))
+              }
+              prefix={<SearchOutlined />}
+            />
+            <Space wrap>
+              <DatePicker
+                placeholder={t('teamDashboard.completedDateFrom')}
+                value={completedFilters.dateFrom ? dayjs(completedFilters.dateFrom) : null}
+                onChange={(date: Dayjs | null) =>
+                  setCompletedFilters((prev) => ({
+                    ...prev,
+                    dateFrom: date ? date.format('YYYY-MM-DD') : '',
+                  }))
+                }
+              />
+              <DatePicker
+                placeholder={t('teamDashboard.completedDateTo')}
+                value={completedFilters.dateTo ? dayjs(completedFilters.dateTo) : null}
+                onChange={(date: Dayjs | null) =>
+                  setCompletedFilters((prev) => ({
+                    ...prev,
+                    dateTo: date ? date.format('YYYY-MM-DD') : '',
+                  }))
+                }
+              />
+            </Space>
+            <Space>
+              <Button type="primary" onClick={handleCompletedFilterApply}>
+                {t('teamDashboard.completedApplyFilters')}
+              </Button>
+              <Button onClick={handleCompletedFilterReset}>
+                {t('teamDashboard.completedResetFilters')}
+              </Button>
+            </Space>
+          </Space>
+          {completedError && <Alert message={completedError} type="error" showIcon />}
+          {completedLoading && (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <Spin />
+            </div>
           )}
-        </Paper>
-
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-          <SectionHeader
-            title={t('teamDashboard.completedSectionTitle')}
-            subtitle={t('teamDashboard.completedSectionDescription')}
-          />
-          {finalizedMatches.length === 0 ? (
-            <Alert severity="info">{t('teamDashboard.noCompletedMatches')}</Alert>
+          {completedMatches.length === 0 && !completedLoading ? (
+            <Alert message={t('teamDashboard.completedEmpty')} type="info" showIcon />
           ) : (
-            <Stack spacing={2}>
-              {finalizedMatches.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  canEdit={false}
-                  onReport={() => navigate(`/team/matches/${match.id}/entry`)}
-                  onView={() => handleCompletedMatchDetail(match.id)}
-                  t={t}
-                  teamName={resolvedTeamName}
-                  compact
-                />
-              ))}
-            </Stack>
+            <Table
+              columns={completedColumns}
+              dataSource={completedMatches}
+              rowKey="id"
+              pagination={false}
+            />
           )}
-        </Paper>
-      </Stack>
-    ),
-    completed: (
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
-          <Stack spacing={0.5}>
-            <Typography variant="h6" fontWeight="bold">
-              {t('teamDashboard.completedTitle')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('teamDashboard.completedDescription')}
-            </Typography>
-          </Stack>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={() => loadCompletedMatches(completedPage, appliedCompletedFilters)}
-          >
-            {t('teamDashboard.refresh')}
-          </Button>
-        </Stack>
-        <Divider sx={{ my: 3 }} />
-        <Stack spacing={2} sx={{ mb: 3 }}>
-          <TextField
-            label={t('teamDashboard.completedSearch')}
-            value={completedFilters.search}
-            onChange={(e) => setCompletedFilters((prev) => ({ ...prev, search: e.target.value }))}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchRoundedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              type="date"
-              label={t('teamDashboard.completedDateFrom')}
-              value={completedFilters.dateFrom}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setCompletedFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
-              fullWidth
-            />
-            <TextField
-              type="date"
-              label={t('teamDashboard.completedDateTo')}
-              value={completedFilters.dateTo}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setCompletedFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
-              fullWidth
-            />
-          </Stack>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" onClick={handleCompletedFilterApply}>
-              {t('teamDashboard.completedApplyFilters')}
-            </Button>
-            <Button onClick={handleCompletedFilterReset}>{t('teamDashboard.completedResetFilters')}</Button>
-          </Stack>
-        </Stack>
-        {completedError ? <Alert severity="error">{completedError}</Alert> : null}
-        {completedLoading ? <LinearProgress sx={{ mb: 2 }} /> : null}
-        {completedMatches.length === 0 && !completedLoading ? (
-          <Alert severity="info">{t('teamDashboard.completedEmpty')}</Alert>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('teamDashboard.completedMatchColumn')}</TableCell>
-                  <TableCell>{t('teamDashboard.completedScoreColumn')}</TableCell>
-                  <TableCell>{t('teamDashboard.completedDateColumn')}</TableCell>
-                  <TableCell width={120} align="right">
-                    {t('teamDashboard.actions')}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {completedMatches.map((match) => (
-                  <TableRow key={match.id} hover>
-                    <TableCell>
-                      <Stack spacing={0.5}>
-                        <Typography fontWeight="bold">
-                          {match.team ?? t('teamDashboard.unknownTeam')}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          vs. {match.opponentTeam ?? t('teamDashboard.unknownTeam')}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography>
-                        {t('teamDashboard.scoreValue', {
-                          self: match.selfScore ?? '-',
-                          opponent: match.opponentScore ?? '-',
-                        })}
-                      </Typography>
-                      <ResultChip match={match} t={t} />
-                    </TableCell>
-                    <TableCell>{formatDateTime(match.date)}</TableCell>
-                    <TableCell align="right">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleCompletedMatchDetail(match.id)}
-                        startIcon={<VisibilityRoundedIcon fontSize="small" />}
-                      >
-                        {t('teamDashboard.viewDetails')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        {completedTotal > COMPLETED_PAGE_SIZE ? (
-          <Stack alignItems="center" sx={{ mt: 3 }}>
-            <Pagination
-              count={Math.ceil(completedTotal / COMPLETED_PAGE_SIZE)}
-              page={completedPage}
-              onChange={(_, pageValue) => setCompletedPage(pageValue)}
-              color="primary"
-            />
-          </Stack>
-        ) : null}
-      </Paper>
-    ),
-  };
-
-  const tabValue = tabPanels[activeTab];
+          {completedTotal > COMPLETED_PAGE_SIZE && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+              <Pagination
+                current={completedPage}
+                total={completedTotal}
+                pageSize={COMPLETED_PAGE_SIZE}
+                onChange={setCompletedPage}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
+        </Card>
+      ),
+    },
+  ];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#0f172a' }}>
-      <Box
-        component="header"
-        sx={{
-          bgcolor: '#0f172a',
+    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a' }}>
+      <div
+        style={{
+          backgroundColor: '#0f172a',
           color: '#fff',
-          px: { xs: 2, md: 4 },
-          py: 2.5,
+          padding: '20px 32px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
-          <Stack spacing={0.5}>
-            <Typography variant="h5" fontWeight="bold">
+        <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+          <Space direction="vertical" size="small">
+            <Title level={3} style={{ margin: 0, color: '#fff' }}>
               {t('teamDashboard.title')}
-            </Typography>
-            <Typography variant="body2" color="rgba(255,255,255,0.72)">
-              {teamName ? t('teamDashboard.subtitle', { teamName }) : t('teamDashboard.subtitleGeneric')}
-            </Typography>
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<LogoutRoundedIcon />}
-              onClick={onSignOut}
-            >
-              {t('teamDashboard.signOut')}
-            </Button>
-          </Stack>
-        </Stack>
-      </Box>
+            </Title>
+            <Text style={{ color: 'rgba(255,255,255,0.72)' }}>
+              {teamName
+                ? t('teamDashboard.subtitle', { teamName })
+                : t('teamDashboard.subtitleGeneric')}
+            </Text>
+          </Space>
+          <Button icon={<LogoutOutlined />} onClick={onSignOut}>
+            {t('teamDashboard.signOut')}
+          </Button>
+        </Flex>
+      </div>
 
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
-        {teamLoadError ? (
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px' }}>
+        {teamLoadError && (
           <Alert
-            severity="error"
-            sx={{ mb: 3 }}
+            message={teamLoadError}
+            type="error"
+            showIcon
             action={
-              <Button color="inherit" size="small" onClick={loadTeamProfile}>
+              <Button size="small" onClick={loadTeamProfile}>
                 {t('teamDashboard.retry')}
               </Button>
             }
-          >
-            {teamLoadError}
-          </Alert>
-        ) : null}
-        {teamLoading && !teamId ? <LinearProgress sx={{ mb: 3 }} /> : null}
+            style={{ marginBottom: 24 }}
+          />
+        )}
+        {teamLoading && !teamId && (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Spin size="large" />
+          </div>
+        )}
 
-        <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3 }}>
-          <Stack spacing={1}>
-            <Typography variant="subtitle2" color="text.secondary">
-              {t('teamDashboard.summaryLabel')}
-            </Typography>
-            <Typography variant="h5" fontWeight="bold">
+        <Card style={{ marginBottom: 24 }}>
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Text type="secondary">{t('teamDashboard.summaryLabel')}</Text>
+            <Title level={3} style={{ margin: 0 }}>
               {resolvedTeamName}
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Chip label={t('teamDashboard.totalMembers', { count: participantsCount })} />
-              <Chip label={t('teamDashboard.statPendingChip', { value: stats.pending })} />
-              <Chip label={t('teamDashboard.statCompletedChip', { value: stats.finalized })} />
-            </Stack>
-          </Stack>
-        </Paper>
+            </Title>
+            <Space wrap>
+              <Tag>{t('teamDashboard.totalMembers', { count: participantsCount })}</Tag>
+              <Tag color="warning">
+                {t('teamDashboard.statPendingChip', { value: stats.pending })}
+              </Tag>
+              <Tag color="success">
+                {t('teamDashboard.statCompletedChip', { value: stats.finalized })}
+              </Tag>
+            </Space>
+          </Space>
+        </Card>
 
-        <Paper elevation={0} sx={{ mb: 3, borderRadius: 3 }}>
+        <Card style={{ marginBottom: 24 }}>
           <Tabs
-            value={activeTab}
-            onChange={(_, next) => setActiveTab(next)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              px: 2,
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-              },
-            }}
-          >
-            <Tab value="matches" label={t('teamDashboard.matchesTab')} />
-            <Tab value="members" label={t('teamDashboard.membersTab')} />
-            <Tab value="completed" label={t('teamDashboard.completedTab')} />
-          </Tabs>
-        </Paper>
-
-        {tabValue}
-      </Box>
+            activeKey={activeTab}
+            onChange={(key) => setActiveTab(key as 'matches' | 'members' | 'completed')}
+            items={tabItems}
+          />
+        </Card>
+      </div>
 
       <MatchEditDialog
         open={Boolean(matchEditTarget)}
@@ -822,142 +876,115 @@ const TeamDashboard: React.FC<Props> = ({ onSignOut }) => {
         onUpdated={handleMatchUpdated}
       />
 
-      <Dialog open={Boolean(matchDeleteTarget)} onClose={matchDeleteLoading ? undefined : () => setMatchDeleteTarget(null)}>
-        <DialogTitle>{t('teamDashboard.deleteMatchTitle')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography>{t('teamDashboard.deleteMatchBody')}</Typography>
-            {matchDeleteError ? <Alert severity="error">{matchDeleteError}</Alert> : null}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMatchDeleteTarget(null)} disabled={matchDeleteLoading}>
-            {t('teamDashboard.cancel')}
-          </Button>
-          <Button color="error" variant="contained" onClick={handleMatchDelete} disabled={matchDeleteLoading}>
-            {matchDeleteLoading ? t('teamDashboard.deleting') : t('teamDashboard.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={memberDialogOpen} onClose={memberSubmitting ? undefined : () => setMemberDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>
-          {memberDialogTarget ? t('teamDashboard.editMember') : t('teamDashboard.addMember')}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {memberDialogError ? <Alert severity="error">{memberDialogError}</Alert> : null}
-            <TextField
-              label={t('teamDashboard.memberNameLabel')}
-              fullWidth
-              value={memberDialogName}
-              onChange={(e) => setMemberDialogName(e.target.value)}
-              autoFocus
-            />
-            <Typography variant="caption" color="text.secondary">
-              {t('teamDashboard.memberDialogHelper')}
-            </Typography>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMemberDialogOpen(false)} disabled={memberSubmitting}>
-            {t('teamDashboard.cancel')}
-          </Button>
-          <Button variant="contained" onClick={handleMemberSave} disabled={memberSubmitting}>
-            {memberSubmitting ? t('teamDashboard.saving') : t('teamDashboard.save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={Boolean(memberDeleteTarget)} onClose={memberDeleteLoading ? undefined : () => setMemberDeleteTarget(null)}>
-        <DialogTitle>{t('teamDashboard.deleteMember')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography>
-              {t('teamDashboard.confirmDeleteMember', { name: memberDeleteTarget?.name ?? '' })}
-            </Typography>
-            {memberDeleteError ? <Alert severity="error">{memberDeleteError}</Alert> : null}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMemberDeleteTarget(null)} disabled={memberDeleteLoading}>
-            {t('teamDashboard.cancel')}
-          </Button>
-          <Button color="error" variant="contained" onClick={handleMemberDelete} disabled={memberDeleteLoading}>
-            {memberDeleteLoading ? t('teamDashboard.deleting') : t('teamDashboard.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={completedDetail.open}
-        onClose={() => setCompletedDetail({ open: false, loading: false, data: null, error: null })}
-        fullWidth
-        maxWidth="sm"
+      <Modal
+        open={Boolean(matchDeleteTarget)}
+        title={t('teamDashboard.deleteMatchTitle')}
+        onCancel={() => setMatchDeleteTarget(null)}
+        onOk={handleMatchDelete}
+        okText={t('teamDashboard.delete')}
+        cancelText={t('teamDashboard.cancel')}
+        okButtonProps={{ danger: true, loading: matchDeleteLoading }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {t('teamDashboard.completedDetailTitle')}
-          <IconButton size="small" onClick={() => setCompletedDetail({ open: false, loading: false, data: null, error: null })}>
-            <CloseRoundedIcon fontSize="small" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          {completedDetail.loading ? (
-            <LinearProgress />
-          ) : completedDetail.error ? (
-            <Alert severity="error">{completedDetail.error}</Alert>
-          ) : completedDetail.data ? (
-            <Stack spacing={2}>
-              <Stack spacing={0.5}>
-                <Typography variant="h6" fontWeight="bold">
-                  {completedDetail.data.team ?? t('teamDashboard.unknownTeam')} vs.{' '}
-                  {completedDetail.data.opponentTeam ?? t('teamDashboard.unknownTeam')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatDateTime(completedDetail.data.date)}
-                </Typography>
-              </Stack>
-              <Stack direction="row" spacing={1}>
-                <ResultChip match={completedDetail.data} t={t} />
-                <Chip
-                  label={t('teamDashboard.scoreValue', {
-                    self: completedDetail.data.selfScore ?? '-',
-                    opponent: completedDetail.data.opponentScore ?? '-',
-                  })}
-                  color="primary"
-                  variant="outlined"
-                />
-              </Stack>
-              <DetailRow
-                icon={<EventRoundedIcon fontSize="small" />}
-                label={t('teamDashboard.completedMatchupLabel')}
-                value={t('teamDashboard.matchupLabel', {
-                  home: completedDetail.data.team ?? resolvedTeamName,
-                  away: completedDetail.data.opponentTeam ?? t('teamDashboard.unknownTeam'),
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text>{t('teamDashboard.deleteMatchBody')}</Text>
+          {matchDeleteError && <Alert message={matchDeleteError} type="error" showIcon />}
+        </Space>
+      </Modal>
+
+      <Modal
+        open={memberDialogOpen}
+        title={
+          memberDialogTarget ? t('teamDashboard.editMember') : t('teamDashboard.addMember')
+        }
+        onCancel={() => setMemberDialogOpen(false)}
+        onOk={handleMemberSave}
+        okText={t('teamDashboard.save')}
+        cancelText={t('teamDashboard.cancel')}
+        okButtonProps={{ loading: memberSubmitting }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {memberDialogError && <Alert message={memberDialogError} type="error" showIcon />}
+          <Input
+            placeholder={t('teamDashboard.memberNameLabel')}
+            value={memberDialogName}
+            onChange={(e) => setMemberDialogName(e.target.value)}
+            autoFocus
+          />
+          <Text type="secondary">{t('teamDashboard.memberDialogHelper')}</Text>
+        </Space>
+      </Modal>
+
+      <Modal
+        open={Boolean(memberDeleteTarget)}
+        title={t('teamDashboard.deleteMember')}
+        onCancel={() => setMemberDeleteTarget(null)}
+        onOk={handleMemberDelete}
+        okText={t('teamDashboard.delete')}
+        cancelText={t('teamDashboard.cancel')}
+        okButtonProps={{ danger: true, loading: memberDeleteLoading }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text>
+            {t('teamDashboard.confirmDeleteMember', { name: memberDeleteTarget?.name ?? '' })}
+          </Text>
+          {memberDeleteError && <Alert message={memberDeleteError} type="error" showIcon />}
+        </Space>
+      </Modal>
+
+      <Drawer
+        open={completedDetail.open}
+        title={t('teamDashboard.completedDetailTitle')}
+        onClose={() => setCompletedDetail({ open: false, loading: false, data: null, error: null })}
+        width={600}
+      >
+        {completedDetail.loading ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Spin size="large" />
+          </div>
+        ) : completedDetail.error ? (
+          <Alert message={completedDetail.error} type="error" showIcon />
+        ) : completedDetail.data ? (
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Space direction="vertical" size="small">
+              <Title level={4} style={{ margin: 0 }}>
+                {completedDetail.data.team ?? t('teamDashboard.unknownTeam')} vs.{' '}
+                {completedDetail.data.opponentTeam ?? t('teamDashboard.unknownTeam')}
+              </Title>
+              <Text type="secondary">{formatDateTime(completedDetail.data.date)}</Text>
+            </Space>
+            <Space wrap>
+              <ResultChip match={completedDetail.data} t={t} />
+              <Tag color="blue">
+                {t('teamDashboard.scoreValue', {
+                  self: completedDetail.data.selfScore ?? '-',
+                  opponent: completedDetail.data.opponentScore ?? '-',
                 })}
-              />
+              </Tag>
+            </Space>
+            <DetailRow
+              icon={<CalendarOutlined />}
+              label={t('teamDashboard.completedMatchupLabel')}
+              value={t('teamDashboard.matchupLabel', {
+                home: completedDetail.data.team ?? resolvedTeamName,
+                away: completedDetail.data.opponentTeam ?? t('teamDashboard.unknownTeam'),
+              })}
+            />
+            <DetailRow
+              icon={<ClockCircleOutlined />}
+              label={t('teamDashboard.completedDateColumn')}
+              value={formatDateTime(completedDetail.data.date) || t('teamDashboard.noDate')}
+            />
+            {completedDetail.data.tournament_id && (
               <DetailRow
-                icon={<ScheduleRoundedIcon fontSize="small" />}
-                label={t('teamDashboard.completedDateColumn')}
-                value={formatDateTime(completedDetail.data.date) || t('teamDashboard.noDate')}
+                icon={<LinkOutlined />}
+                label={t('teamDashboard.completedTournament')}
+                value={completedDetail.data.tournament_id}
               />
-              {completedDetail.data.tournament_id ? (
-                <DetailRow
-                  icon={<OpenInNewRoundedIcon fontSize="small" />}
-                  label={t('teamDashboard.completedTournament')}
-                  value={completedDetail.data.tournament_id}
-                />
-              ) : null}
-            </Stack>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCompletedDetail({ open: false, loading: false, data: null, error: null })}>
-            {t('teamDashboard.close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            )}
+          </Space>
+        ) : null}
+      </Drawer>
+    </div>
   );
 };
 
@@ -973,90 +1000,61 @@ type MatchCardProps = {
   compact?: boolean;
 };
 
-const MatchCard: React.FC<MatchCardProps> = ({ match, canEdit, onEdit, onDelete, onReport, onView, t, teamName, compact }) => {
+const MatchCard: React.FC<MatchCardProps> = ({
+  match,
+  canEdit,
+  onEdit,
+  onDelete,
+  onReport,
+  onView,
+  t,
+  teamName,
+  compact,
+}) => {
   const date = formatDateTime(match.date);
   return (
-    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-      <Stack spacing={1}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="subtitle1" fontWeight="bold">
+    <Card size="small">
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Flex justify="space-between" align="center">
+          <Text strong>
             {t('teamDashboard.matchupLabel', {
               home: teamName,
               away: match.opponentTeam ?? t('teamDashboard.unknownTeam'),
             })}
-          </Typography>
-          <Box sx={{ flex: 1 }} />
+          </Text>
           <ResultChip match={match} t={t} />
-        </Stack>
-        <Typography variant="body2">
+        </Flex>
+        <Text>
           {t('teamDashboard.scoreValue', {
             self: match.selfScore ?? '-',
             opponent: match.opponentScore ?? '-',
           })}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {date || t('teamDashboard.noDate')}
-        </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          {onReport && match.result_status !== 'finalized' ? (
-            <Button variant="contained" onClick={onReport} startIcon={<OpenInNewRoundedIcon fontSize="small" />}>
-              {t('teamDashboard.reportScore')}
-            </Button>
-          ) : null}
-          {onView ? (
-            <Button variant="outlined" onClick={onView} startIcon={<VisibilityRoundedIcon fontSize="small" />}>
-              {t('teamDashboard.viewDetails')}
-            </Button>
-          ) : null}
-          <Box sx={{ flex: 1 }} />
-          {canEdit && !compact ? (
-            <Stack direction="row" spacing={1}>
-              <IconButton size="small" onClick={onEdit}>
-                <EditRoundedIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" color="error" onClick={onDelete}>
-                <DeleteOutlineRoundedIcon fontSize="small" />
-              </IconButton>
-            </Stack>
-          ) : null}
-        </Stack>
-      </Stack>
-    </Paper>
+        </Text>
+        <Text type="secondary">{date || t('teamDashboard.noDate')}</Text>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
+          <Space wrap>
+            {onReport && match.result_status !== 'finalized' && (
+              <Button type="primary" size="small" icon={<LinkOutlined />} onClick={onReport}>
+                {t('teamDashboard.reportScore')}
+              </Button>
+            )}
+            {onView && (
+              <Button size="small" icon={<EyeOutlined />} onClick={onView}>
+                {t('teamDashboard.viewDetails')}
+              </Button>
+            )}
+          </Space>
+          {canEdit && !compact && (
+            <Space size="small">
+              <Button size="small" icon={<EditOutlined />} onClick={onEdit} />
+              <Button size="small" danger icon={<DeleteOutlined />} onClick={onDelete} />
+            </Space>
+          )}
+        </Flex>
+      </Space>
+    </Card>
   );
 };
-
-type SectionHeaderProps = {
-  title: string;
-  subtitle: string;
-};
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, subtitle }) => (
-  <Stack spacing={0.5} sx={{ mb: 2 }}>
-    <Typography variant="h6" fontWeight="bold">
-      {title}
-    </Typography>
-    <Typography variant="body2" color="text.secondary">
-      {subtitle}
-    </Typography>
-  </Stack>
-);
-
-type StatChipProps = {
-  label: string;
-  color: string;
-};
-
-const StatChip: React.FC<StatChipProps> = ({ label, color }) => (
-  <Chip
-    label={label}
-    sx={{
-      bgcolor: `${color}12`,
-      color,
-      fontWeight: 600,
-      borderRadius: 2,
-    }}
-  />
-);
 
 type ResultChipProps = {
   match: MatchRecord;
@@ -1066,13 +1064,7 @@ type ResultChipProps = {
 const ResultChip: React.FC<ResultChipProps> = ({ match, t }) => {
   const outcome = getOutcome(match);
   const meta = outcomeMeta[outcome] ?? outcomeMeta.pending;
-  return (
-    <Chip
-      label={t(meta.labelKey)}
-      size="small"
-      sx={{ bgcolor: meta.bgcolor, color: meta.color, fontWeight: 600 }}
-    />
-  );
+  return <Tag color={meta.color}>{t(meta.labelKey)}</Tag>;
 };
 
 type DetailRowProps = {
@@ -1082,15 +1074,15 @@ type DetailRowProps = {
 };
 
 const DetailRow: React.FC<DetailRowProps> = ({ label, value, icon }) => (
-  <Stack direction="row" spacing={2} alignItems="center">
-    {icon ? <Box sx={{ color: 'text.secondary' }}>{icon}</Box> : null}
-    <Stack spacing={0.5}>
-      <Typography variant="caption" color="text.secondary">
+  <Flex align="start" gap={16}>
+    {icon && <div style={{ color: '#00000073', fontSize: 16 }}>{icon}</div>}
+    <Space direction="vertical" size={4}>
+      <Text type="secondary" style={{ fontSize: 12 }}>
         {label}
-      </Typography>
-      <Typography>{value}</Typography>
-    </Stack>
-  </Stack>
+      </Text>
+      <Text>{value}</Text>
+    </Space>
+  </Flex>
 );
 
 export default TeamDashboard;

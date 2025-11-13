@@ -25,20 +25,21 @@ describe('LanguageSwitcher', () => {
     expect(button).toBeInTheDocument();
   });
 
-  it('opens menu when button is clicked', () => {
+  it('opens menu when button is clicked', async () => {
     render(<LanguageSwitcher />);
     const button = screen.getByRole('button');
     fireEvent.click(button);
-    expect(screen.getByText('language.japanese')).toBeInTheDocument();
-    expect(screen.getByText('language.english')).toBeInTheDocument();
+
+    expect(await screen.findByText('language.japanese')).toBeInTheDocument();
+    expect(await screen.findByText('language.english')).toBeInTheDocument();
   });
 
-  it('changes language when menu item is clicked', () => {
+  it('changes language when menu item is clicked', async () => {
     render(<LanguageSwitcher />);
     const button = screen.getByRole('button');
     fireEvent.click(button);
 
-    const englishMenuItem = screen.getByText('language.english');
+    const englishMenuItem = await screen.findByText('language.english');
     fireEvent.click(englishMenuItem);
 
     expect(mockChangeLanguage).toHaveBeenCalledWith('en');

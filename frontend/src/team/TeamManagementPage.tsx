@@ -1,28 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   Alert,
-  Box,
   Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
+  Card,
+  Flex,
+  Input,
   List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Paper,
-  Stack,
-  TextField,
+  Modal,
+  Space,
+  Spin,
   Typography,
-} from '@mui/material';
-import { CloudDownload, CloudUpload, Delete, Description, Edit, GroupAdd, PersonAdd, Refresh } from '@mui/icons-material';
+  message,
+} from 'antd';
+import {
+  CloudDownloadOutlined,
+  CloudUploadOutlined,
+  FileTextOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  TeamOutlined,
+  SyncOutlined,
+  UserAddOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
-import { useRef } from 'react';
 import Papa from 'papaparse';
+
+const { Title, Text } = Typography;
 
 interface Team {
   id: string;
@@ -49,7 +53,10 @@ type TeamManagementPageProps = {
   tournament?: Tournament;
 };
 
-const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = false, tournament }) => {
+const TeamManagementPage: React.FC<TeamManagementPageProps> = ({
+  embedded = false,
+  tournament,
+}) => {
   const { t } = useTranslation();
   const { session } = useAuth();
   const tournamentId = tournament?.id ?? null;
@@ -88,7 +95,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
   const selectedTeam = useMemo(
     () => teams.find((team) => team.id === selectedTeamId) ?? null,
-    [teams, selectedTeamId],
+    [teams, selectedTeamId]
   );
 
   const authHeader = useMemo(() => {
@@ -162,7 +169,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         setParticipantsLoading(false);
       }
     },
-    [authHeader, t],
+    [authHeader, t]
   );
 
   const handleExportTeams = useCallback(async () => {
@@ -182,21 +189,23 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
         headers: authHeader,
       });
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(errorText || t('teamManagement.exportError'));
-            }
-      
-            const csvText = await response.text();
-            const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'teams_and_participants.csv';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);    } catch (err: any) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || t('teamManagement.exportError'));
+      }
+
+      const csvText = await response.text();
+      const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'teams_and_participants.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      message.success(t('teamManagement.exportSuccess'));
+    } catch (err: any) {
       console.error('Failed to export teams:', err);
       setExportError(err.message || t('teamManagement.exportError'));
     }
@@ -224,54 +233,65 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!authHeader) {
-      setImportError(t('teamManagement.importError'));
-      return;
-    }
-    if (!tournamentSlug) {
-      setImportError(t('teamManagement.tournamentSlugRequired'));
-      return;
-    }
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setImportError(null);
-    setImportSuccess(null);
-    setTeamSubmitting(true); // Use teamSubmitting to disable buttons during import
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('tournament_slug', tournamentSlug);
-
-    try {
-      const response = await fetch('/api/teams/import', {
-        method: 'POST',
-        headers: {
-          ...authHeader,
-          // 'Content-Type': 'multipart/form-data' はfetchが自動で設定するため不要
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('teamManagement.importError'));
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!authHeader) {
+        setImportError(t('teamManagement.importError'));
+        return;
       }
-
-      setImportSuccess(t('teamManagement.importSuccess', { teams: data.teamsCreatedCount, participants: data.participantsCreatedCount }));
-      await fetchTeams(); // Refresh team list after import
-    } catch (err: any) {
-      console.error('Failed to import teams:', err);
-      setImportError(err.message || t('teamManagement.importError'));
-    } finally {
-      setTeamSubmitting(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // Clear file input
+      if (!tournamentSlug) {
+        setImportError(t('teamManagement.tournamentSlugRequired'));
+        return;
       }
-    }
-  }, [authHeader, fetchTeams, t, tournamentSlug]);
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      setImportError(null);
+      setImportSuccess(null);
+      setTeamSubmitting(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tournament_slug', tournamentSlug);
+
+      try {
+        const response = await fetch('/api/teams/import', {
+          method: 'POST',
+          headers: authHeader,
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || t('teamManagement.importError'));
+        }
+
+        setImportSuccess(
+          t('teamManagement.importSuccess', {
+            teams: data.teamsCreatedCount,
+            participants: data.participantsCreatedCount,
+          })
+        );
+        await fetchTeams();
+        message.success(
+          t('teamManagement.importSuccess', {
+            teams: data.teamsCreatedCount,
+            participants: data.participantsCreatedCount,
+          })
+        );
+      } catch (err: any) {
+        console.error('Failed to import teams:', err);
+        setImportError(err.message || t('teamManagement.importError'));
+      } finally {
+        setTeamSubmitting(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    },
+    [authHeader, fetchTeams, t, tournamentSlug]
+  );
 
   useEffect(() => {
     fetchTeams();
@@ -315,6 +335,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     if (generatedPassword) {
       navigator.clipboard.writeText(generatedPassword);
       setCopySuccess(true);
+      message.success(t('teamManagement.copySuccess'));
       setTimeout(() => setCopySuccess(false), 2000);
     }
   };
@@ -330,7 +351,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
     const url = currentTeam ? `/api/teams/${currentTeam.id}` : '/api/teams/register';
     let body: Record<string, unknown>;
 
-    if (currentTeam) { // Edit mode
+    if (currentTeam) {
       if (!teamName.trim() || !teamUsername.trim()) {
         setTeamDialogError(t('teamManagement.allFieldsRequired'));
         return;
@@ -345,7 +366,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       if (teamPassword) {
         body.password = teamPassword;
       }
-    } else { // Create mode
+    } else {
       if (!teamName.trim()) {
         setTeamDialogError(t('teamManagement.teamNameRequired'));
         return;
@@ -383,6 +404,9 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       }
 
       await fetchTeams();
+      message.success(
+        currentTeam ? t('teamManagement.updateSuccess') : t('teamManagement.createSuccess')
+      );
     } catch (err: any) {
       console.error('Failed to save team:', err);
       setTeamDialogError(err.message || t('teamManagement.saveError'));
@@ -396,30 +420,33 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setTeamsError(t('teamManagement.deleteError'));
       return;
     }
-    if (!window.confirm(t('teamManagement.confirmDelete'))) {
-      return;
-    }
-    setTeamSubmitting(true);
-    setTeamsError(null);
-    try {
-      const response = await fetch(`/api/teams/${teamId}`, {
-        method: 'DELETE',
-        headers: authHeader,
-      });
+    Modal.confirm({
+      title: t('teamManagement.confirmDelete'),
+      onOk: async () => {
+        setTeamSubmitting(true);
+        setTeamsError(null);
+        try {
+          const response = await fetch(`/api/teams/${teamId}`, {
+            method: 'DELETE',
+            headers: authHeader,
+          });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || t('teamManagement.deleteError'));
-      }
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || t('teamManagement.deleteError'));
+          }
 
-      await fetchTeams();
-      setSelectedTeamId((prev) => (prev === teamId ? null : prev));
-    } catch (err: any) {
-      console.error('Failed to delete team:', err);
-      setTeamsError(err.message || t('teamManagement.deleteError'));
-    } finally {
-      setTeamSubmitting(false);
-    }
+          await fetchTeams();
+          setSelectedTeamId((prev) => (prev === teamId ? null : prev));
+          message.success(t('teamManagement.deleteSuccess'));
+        } catch (err: any) {
+          console.error('Failed to delete team:', err);
+          setTeamsError(err.message || t('teamManagement.deleteError'));
+        } finally {
+          setTeamSubmitting(false);
+        }
+      },
+    });
   };
 
   const handleOpenParticipantDialog = (participant?: Participant) => {
@@ -480,6 +507,11 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
 
       await fetchParticipants(selectedTeam.id);
       setParticipantDialogOpen(false);
+      message.success(
+        currentParticipant
+          ? t('participantManagement.updateSuccess')
+          : t('participantManagement.createSuccess')
+      );
     } catch (err: any) {
       console.error('Failed to save participant:', err);
       setParticipantDialogError(err.message || t('participantManagement.saveError'));
@@ -497,88 +529,82 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
       setParticipantsError(t('participantManagement.deleteError'));
       return;
     }
-    if (!window.confirm(t('participantManagement.confirmDelete'))) {
-      return;
-    }
-    setParticipantSubmitting(true);
-    setParticipantsError(null);
-    try {
-      const response = await fetch(`/api/admin/participants/${participantId}`, {
-        method: 'DELETE',
-        headers: authHeader,
-      });
+    Modal.confirm({
+      title: t('participantManagement.confirmDelete'),
+      onOk: async () => {
+        setParticipantSubmitting(true);
+        setParticipantsError(null);
+        try {
+          const response = await fetch(`/api/admin/participants/${participantId}`, {
+            method: 'DELETE',
+            headers: authHeader,
+          });
 
-      if (!response.ok && response.status !== 204) {
-        const data = await response.json();
-        throw new Error(data.error || t('participantManagement.deleteError'));
-      }
+          if (!response.ok && response.status !== 204) {
+            const data = await response.json();
+            throw new Error(data.error || t('participantManagement.deleteError'));
+          }
 
-      await fetchParticipants(selectedTeam.id);
-    } catch (err: any) {
-      console.error('Failed to delete participant:', err);
-      setParticipantsError(err.message || t('participantManagement.deleteError'));
-    } finally {
-      setParticipantSubmitting(false);
-    }
+          await fetchParticipants(selectedTeam.id);
+          message.success(t('participantManagement.deleteSuccess'));
+        } catch (err: any) {
+          console.error('Failed to delete participant:', err);
+          setParticipantsError(err.message || t('participantManagement.deleteError'));
+        } finally {
+          setParticipantSubmitting(false);
+        }
+      },
+    });
   };
 
   if (teamsLoading && teams.length === 0) {
     return (
-      <Box
-        sx={{
+      <div
+        style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           minHeight: embedded ? 360 : '100vh',
         }}
       >
-        <CircularProgress />
-      </Box>
+        <Spin size="large" />
+      </div>
     );
   }
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        p: embedded ? 0 : { xs: 2, md: 4 },
-      }}
-    >
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        spacing={2}
-        sx={{ mb: 3 }}
+    <div style={{ width: '100%', padding: embedded ? 0 : '16px 32px' }}>
+      <Flex
+        justify="space-between"
+        align="center"
+        wrap="wrap"
+        gap={16}
+        style={{ marginBottom: 24 }}
       >
-        <Stack spacing={0.5}>
-          <Typography variant={embedded ? 'h5' : 'h4'} component="h1" fontWeight="bold">
+        <Space direction="vertical" size="small">
+          <Title level={embedded ? 3 : 2} style={{ margin: 0, fontWeight: 'bold' }}>
             {t('teamManagement.title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('participantManagement.title')}
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={1}>
+          </Title>
+          <Text type="secondary">{t('participantManagement.title')}</Text>
+        </Space>
+        <Space wrap>
           <Button
-            variant="outlined"
-            startIcon={<CloudDownload />}
+            icon={<CloudDownloadOutlined />}
             onClick={handleExportTeams}
             disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.exportTeams')}
           </Button>
           <Button
-            variant="outlined"
-            startIcon={<Description />}
+            icon={<FileTextOutlined />}
             onClick={handleDownloadTemplate}
             disabled={teamSubmitting}
           >
             {t('teamManagement.downloadTemplate')}
           </Button>
           <Button
-            variant="contained"
-            startIcon={<CloudUpload />}
+            type="primary"
+            icon={<CloudUploadOutlined />}
             onClick={handleImportClick}
             disabled={teamSubmitting || missingTournamentContext}
           >
@@ -592,338 +618,289 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({ embedded = fals
             style={{ display: 'none' }}
           />
           <Button
-            variant="outlined"
-            startIcon={<Refresh />}
+            icon={<SyncOutlined />}
             onClick={fetchTeams}
             disabled={teamSubmitting || missingTournamentContext}
           >
             {t('common.refresh')}
           </Button>
           <Button
-            variant="contained"
-            startIcon={<GroupAdd />}
+            type="primary"
+            icon={<TeamOutlined />}
             onClick={handleOpenCreateTeam}
             disabled={teamSubmitting || missingTournamentContext}
           >
             {t('teamManagement.createTeam')}
           </Button>
-        </Stack>
-      </Stack>
+        </Space>
+      </Flex>
 
-      {missingTournamentContext ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {t('teamManagement.tournamentSlugRequired')}
-        </Alert>
-      ) : null}
+      {missingTournamentContext && (
+        <Alert
+          message={t('teamManagement.tournamentSlugRequired')}
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
-      {importError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {importError}
-        </Alert>
-      ) : null}
-      {importSuccess ? (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {importSuccess}
-        </Alert>
-      ) : null}
-      {exportError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {exportError}
-        </Alert>
-      ) : null}
+      {importError && (
+        <Alert message={importError} type="error" showIcon style={{ marginBottom: 16 }} />
+      )}
+      {importSuccess && (
+        <Alert message={importSuccess} type="success" showIcon style={{ marginBottom: 16 }} />
+      )}
+      {exportError && (
+        <Alert message={exportError} type="error" showIcon style={{ marginBottom: 16 }} />
+      )}
 
-      {teamsError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {teamsError}
-        </Alert>
-      ) : null}
+      {teamsError && (
+        <Alert message={teamsError} type="error" showIcon style={{ marginBottom: 16 }} />
+      )}
 
       {teams.length === 0 ? (
-        <Alert severity="info">{t('teamManagement.noTeams')}</Alert>
+        <Alert message={t('teamManagement.noTeams')} type="info" showIcon />
       ) : (
-        <Box
-          sx={{
+        <div
+          style={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 0.45fr) minmax(0, 1fr)' },
-            gap: embedded ? 2 : 3,
+            gridTemplateColumns: embedded ? '1fr' : 'minmax(0, 0.45fr) minmax(0, 1fr)',
+            gap: embedded ? 16 : 24,
           }}
         >
-          <Paper
-            elevation={embedded ? 0 : 2}
-            sx={{
-              borderRadius: 2,
+          <Card
+            title={
+              <Flex justify="space-between" align="center">
+                <Text strong>{t('teamManagement.title')}</Text>
+                <Text type="secondary">
+                  {t('common.total')}: {teams.length}
+                </Text>
+              </Flex>
+            }
+            style={{
               border: embedded ? '1px dashed rgba(24, 32, 56, 0.18)' : undefined,
             }}
+            bodyStyle={{ padding: 0 }}
           >
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ px: 3, py: 2, borderBottom: '1px solid rgba(24,32,56,0.08)' }}
-            >
-              <Typography fontWeight={700}>{t('teamManagement.title')}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('common.total')}: {teams.length}
-              </Typography>
-            </Stack>
-            <List disablePadding>
-              {teams.map((team) => (
-                <ListItem
-                  key={team.id}
-                  disablePadding
-                  divider
-                  secondaryAction={
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        aria-label="edit"
-                        onClick={() => handleOpenEditTeam(team)}
-                        disabled={teamSubmitting}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        aria-label="delete"
-                        onClick={() => handleDeleteTeam(team.id)}
-                        disabled={teamSubmitting}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                  }
+            <List
+              dataSource={teams}
+              renderItem={(team) => (
+                <List.Item
+                  style={{
+                    cursor: 'pointer',
+                    backgroundColor: team.id === selectedTeamId ? '#f0f5ff' : undefined,
+                  }}
+                  onClick={() => setSelectedTeamId(team.id)}
+                  actions={[
+                    <Button
+                      key="edit"
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditTeam(team);
+                      }}
+                      disabled={teamSubmitting}
+                    />,
+                    <Button
+                      key="delete"
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTeam(team.id);
+                      }}
+                      disabled={teamSubmitting}
+                    />,
+                  ]}
                 >
-                  <ListItemButton
-                    selected={team.id === selectedTeamId}
-                    onClick={() => setSelectedTeamId(team.id)}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography fontWeight={700} color="text.primary">
-                          {team.name}
-                        </Typography>
-                      }
-                      secondary={`@${team.username}`}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-          <Paper
-            elevation={embedded ? 0 : 2}
-            sx={{
-              borderRadius: 2,
+                  <List.Item.Meta
+                    title={<Text strong>{team.name}</Text>}
+                    description={`@${team.username}`}
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+          <Card
+            title={
+              selectedTeam
+                ? t('participantManagement.titleForTeam', { teamName: selectedTeam.name })
+                : t('participantManagement.title')
+            }
+            extra={
+              <Button
+                type="primary"
+                size="small"
+                icon={<UserAddOutlined />}
+                onClick={() => handleOpenParticipantDialog()}
+                disabled={!selectedTeam || participantSubmitting}
+              >
+                {t('participantManagement.addParticipant')}
+              </Button>
+            }
+            style={{
               border: embedded ? '1px dashed rgba(24, 32, 56, 0.18)' : undefined,
               minHeight: 320,
             }}
           >
-            <Stack
-              spacing={2}
-              sx={{
-                px: 3,
-                py: 2,
-                borderBottom: '1px solid rgba(24,32,56,0.08)',
-              }}
-            >
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography fontWeight={700}>
-                  {selectedTeam
-                    ? t('participantManagement.titleForTeam', { teamName: selectedTeam.name })
-                    : t('participantManagement.title')}
-                </Typography>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<PersonAdd />}
-                  onClick={() => handleOpenParticipantDialog()}
-                  disabled={!selectedTeam || participantSubmitting}
-                >
-                  {t('participantManagement.addParticipant')}
-                </Button>
-              </Stack>
-              {participantsError ? (
-                <Alert severity="error">{participantsError}</Alert>
-              ) : null}
-              {!selectedTeam ? (
-                <Alert severity="info">{t('teamManagement.noTeams')}</Alert>
-              ) : participantsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                  <CircularProgress size={28} />
-                </Box>
-              ) : participants.length === 0 ? (
-                <Alert severity="info">{t('participantManagement.noParticipants')}</Alert>
-              ) : (
-                <List disablePadding>
-                  {participants.map((participant) => (
-                    <ListItem
-                      key={participant.id}
-                      divider
-                      secondaryAction={
-                        <Stack direction="row" spacing={0.5}>
-                          <IconButton
-                            size="small"
-                            edge="end"
-                            aria-label="edit"
-                            onClick={() => handleOpenParticipantDialog(participant)}
-                            disabled={participantSubmitting}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            edge="end"
-                            aria-label="delete"
-                            onClick={() => handleDeleteParticipant(participant.id)}
-                            disabled={participantSubmitting}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      }
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography fontWeight={600} color="text.primary">
-                            {participant.name}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Stack>
-          </Paper>
-        </Box>
+            {participantsError && (
+              <Alert message={participantsError} type="error" showIcon style={{ marginBottom: 16 }} />
+            )}
+            {!selectedTeam ? (
+              <Alert message={t('teamManagement.noTeams')} type="info" showIcon />
+            ) : participantsLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                <Spin />
+              </div>
+            ) : participants.length === 0 ? (
+              <Alert message={t('participantManagement.noParticipants')} type="info" showIcon />
+            ) : (
+              <List
+                dataSource={participants}
+                renderItem={(participant) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        key="edit"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => handleOpenParticipantDialog(participant)}
+                        disabled={participantSubmitting}
+                      />,
+                      <Button
+                        key="delete"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteParticipant(participant.id)}
+                        disabled={participantSubmitting}
+                      />,
+                    ]}
+                  >
+                    <List.Item.Meta title={<Text strong>{participant.name}</Text>} />
+                  </List.Item>
+                )}
+              />
+            )}
+          </Card>
+        </div>
       )}
 
-      <Dialog open={teamDialogOpen} onClose={handleCloseTeamDialog} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {currentTeam ? t('teamManagement.editTeam') : t('teamManagement.createTeam')}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            {teamDialogError ? <Alert severity="error">{teamDialogError}</Alert> : null}
-            <TextField
-              label={t('teamManagement.teamName')}
-              fullWidth
-              value={teamName}
-              onChange={(event) => setTeamName(event.target.value)}
-              required
-              disabled={teamSubmitting || !!generatedPassword}
-            />
-            {currentTeam && (
-              <>
-                <TextField
-                  label={t('teamManagement.username')}
-                  fullWidth
-                  value={teamUsername}
-                  onChange={(event) => setTeamUsername(event.target.value)}
-                  required
-                  disabled={teamSubmitting}
-                />
-                <TextField
-                  label={t('teamManagement.password')}
-                  type="password"
-                  fullWidth
-                  value={teamPassword}
-                  onChange={(event) => setTeamPassword(event.target.value)}
-                  disabled={teamSubmitting}
-                  helperText={t('teamManagement.leaveBlankForNoChange')}
-                />
-              </>
-            )}
-            {generatedPassword && (
-              <Stack spacing={1}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {t('teamManagement.generatedPassword')}
-                </Typography>
-                <TextField
-                  fullWidth
-                  value={generatedPassword}
-                  type={showPassword ? 'text' : 'password'}
-                  InputProps={{
-                    readOnly: true,
-                    endAdornment: (
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          onClick={handleCopyPassword}
-                          disabled={teamSubmitting}
-                          size="small"
-                          variant="outlined"
-                        >
-                          {t('common.copy')}
-                        </Button>
-                        <Button
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          disabled={teamSubmitting}
-                          size="small"
-                          variant="outlined"
-                        >
-                          {showPassword ? t('common.hide') : t('common.show')}
-                        </Button>
-                      </Stack>
-                    ),
-                  }}
-                />
-                {copySuccess && <Alert severity="success" sx={{ py: 0.5, px: 1, '& .MuiAlert-icon': { fontSize: 18 }, '& .MuiAlert-message': { fontSize: 13 } }}>{t('teamManagement.copySuccess')}</Alert>}
-              </Stack>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseTeamDialog} disabled={teamSubmitting}>
-            {t('common.cancel')}
-          </Button>
-          {generatedPassword ? (
-            <Button onClick={handleCloseTeamDialog} variant="contained" disabled={teamSubmitting}>
+      <Modal
+        open={teamDialogOpen}
+        title={currentTeam ? t('teamManagement.editTeam') : t('teamManagement.createTeam')}
+        onCancel={handleCloseTeamDialog}
+        footer={
+          generatedPassword ? (
+            <Button type="primary" onClick={handleCloseTeamDialog} disabled={teamSubmitting}>
               {t('common.close')}
             </Button>
           ) : (
-            <Button onClick={handleSaveTeam} variant="contained" disabled={teamSubmitting}>
-              {t('common.save')}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={participantDialogOpen}
-        onClose={handleCloseParticipantDialog}
-        fullWidth
-        maxWidth="sm"
+            [
+              <Button key="cancel" onClick={handleCloseTeamDialog} disabled={teamSubmitting}>
+                {t('common.cancel')}
+              </Button>,
+              <Button
+                key="save"
+                type="primary"
+                onClick={handleSaveTeam}
+                loading={teamSubmitting}
+              >
+                {t('common.save')}
+              </Button>,
+            ]
+          )
+        }
       >
-        <DialogTitle>
-          {currentParticipant
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {teamDialogError && <Alert message={teamDialogError} type="error" showIcon />}
+          <Input
+            placeholder={t('teamManagement.teamName')}
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            disabled={teamSubmitting || !!generatedPassword}
+          />
+          {currentTeam && (
+            <>
+              <Input
+                placeholder={t('teamManagement.username')}
+                value={teamUsername}
+                onChange={(e) => setTeamUsername(e.target.value)}
+                disabled={teamSubmitting}
+              />
+              <Input.Password
+                placeholder={t('teamManagement.password')}
+                value={teamPassword}
+                onChange={(e) => setTeamPassword(e.target.value)}
+                disabled={teamSubmitting}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {t('teamManagement.leaveBlankForNoChange')}
+              </Text>
+            </>
+          )}
+          {generatedPassword && (
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Text type="secondary">{t('teamManagement.generatedPassword')}</Text>
+              <Input.Password
+                value={generatedPassword}
+                readOnly
+                visibilityToggle={{
+                  visible: showPassword,
+                  onVisibleChange: setShowPassword,
+                }}
+                addonAfter={
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={handleCopyPassword}
+                    disabled={teamSubmitting}
+                  >
+                    {t('common.copy')}
+                  </Button>
+                }
+              />
+              {copySuccess && (
+                <Alert
+                  message={t('teamManagement.copySuccess')}
+                  type="success"
+                  showIcon
+                  style={{ padding: '4px 8px', fontSize: 12 }}
+                />
+              )}
+            </Space>
+          )}
+        </Space>
+      </Modal>
+
+      <Modal
+        open={participantDialogOpen}
+        title={
+          currentParticipant
             ? t('participantManagement.editParticipant')
-            : t('participantManagement.addParticipant')}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            {participantDialogError ? <Alert severity="error">{participantDialogError}</Alert> : null}
-            <TextField
-              label={t('participantManagement.participantName')}
-              fullWidth
-              value={participantName}
-              onChange={(event) => setParticipantName(event.target.value)}
-              required
-              disabled={participantSubmitting}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseParticipantDialog} disabled={participantSubmitting}>
-            {t('common.cancel')}
-          </Button>
-          <Button onClick={handleSaveParticipant} variant="contained" disabled={participantSubmitting}>
-            {currentParticipant ? t('common.update') : t('common.create')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            : t('participantManagement.addParticipant')
+        }
+        onCancel={handleCloseParticipantDialog}
+        onOk={handleSaveParticipant}
+        okText={currentParticipant ? t('common.update') : t('common.create')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ loading: participantSubmitting }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {participantDialogError && (
+            <Alert message={participantDialogError} type="error" showIcon />
+          )}
+          <Input
+            placeholder={t('participantManagement.participantName')}
+            value={participantName}
+            onChange={(e) => setParticipantName(e.target.value)}
+            disabled={participantSubmitting}
+          />
+        </Space>
+      </Modal>
+    </div>
   );
 };
 

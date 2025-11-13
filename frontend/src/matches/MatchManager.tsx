@@ -1,30 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Box,
   Button,
-  Chip,
-  CircularProgress,
+  Card,
   Divider,
-  IconButton,
-  Paper,
-  Stack,
+  Flex,
+  Modal,
+  Space,
+  Spin,
+  Tag,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
-import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
+} from 'antd';
+import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTeamApi } from '../team/useTeamApi';
 import MatchEditDialog from './MatchEditDialog';
 import type { MatchRecord } from '../types/matchTypes';
 import { parseScoreValue } from '../types/matchTypes';
 import { useNavigate } from 'react-router-dom';
+
+const { Title, Text } = Typography;
 
 type Participant = {
   id: string;
@@ -166,7 +161,7 @@ const MatchManager: React.FC = () => {
     return { total, wins, losses, winRate };
   }, [matches]);
 
-  const renderOutcomeChip = (match: MatchRecord) => {
+  const renderOutcomeTag = (match: MatchRecord) => {
     const outcome = getOutcome(match);
     const labels: Record<string, string> = {
       win: t('matchManager.teamOutcomeWin'),
@@ -174,143 +169,142 @@ const MatchManager: React.FC = () => {
       draw: t('matchManager.teamOutcomeDraw'),
       pending: t('matchManager.teamOutcomePending'),
     };
-    const colors: Record<string, { bg: string; color: string }> = {
-      win: { bg: '#e8f5e9', color: '#1b5e20' },
-      lose: { bg: '#ffebee', color: '#c62828' },
-      draw: { bg: '#e3f2fd', color: '#1565c0' },
-      pending: { bg: '#fff3e0', color: '#ef6c00' },
+    const colors: Record<string, string> = {
+      win: 'success',
+      lose: 'error',
+      draw: 'processing',
+      pending: 'warning',
     };
-    const style = colors[outcome];
-    return (
-      <Chip
-        label={labels[outcome]}
-        size="small"
-        sx={{ bgcolor: style.bg, color: style.color, fontWeight: 600 }}
-      />
-    );
+    return <Tag color={colors[outcome]}>{labels[outcome]}</Tag>;
   };
 
   if (loading) {
     return (
-      <Stack alignItems="center" justifyContent="center" sx={{ minHeight: '60vh' }}>
-        <CircularProgress />
-      </Stack>
+      <Flex align="center" justify="center" style={{ minHeight: '60vh' }}>
+        <Spin size="large" />
+      </Flex>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Stack spacing={2} alignItems="flex-start">
-          <Alert severity="error">{error}</Alert>
-          <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={refreshAll}>
+      <div style={{ padding: 32 }}>
+        <Space direction="vertical" size="middle">
+          <Alert type="error" message={error} />
+          <Button icon={<ReloadOutlined />} onClick={refreshAll}>
             {t('matchManager.teamReload')}
           </Button>
-        </Stack>
-      </Box>
+        </Space>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Stack spacing={3}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" spacing={1} alignItems="center">
+    <div style={{ padding: '16px 32px' }}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+          <Space>
             <Button
-              variant="outlined"
-              startIcon={<ArrowBackRoundedIcon />}
+              icon={<ArrowLeftOutlined />}
               onClick={() => navigate('/team-dashboard')}
             >
               {t('common.back')}
             </Button>
-            <Typography variant="h4" fontWeight="bold">
+            <Title level={2} style={{ margin: 0 }}>
               {t('matchManager.teamTitle')}
-            </Typography>
-          </Stack>
-          <Button variant="outlined" startIcon={<ReplayRoundedIcon />} onClick={refreshAll}>
+            </Title>
+          </Space>
+          <Button icon={<ReloadOutlined />} onClick={refreshAll}>
             {t('matchManager.teamReload')}
           </Button>
-        </Stack>
+        </Flex>
 
-        {!teamUser?.can_edit ? (
-          <Alert severity="info">{t('matchManager.teamReadOnlyNotice')}</Alert>
-        ) : null}
+        {!teamUser?.can_edit && (
+          <Alert type="info" message={t('matchManager.teamReadOnlyNotice')} />
+        )}
 
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight="bold">
-            {t('matchManager.teamStatsTitle')}
-          </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <StatChip label={t('matchManager.teamStatsTotal', { count: stats.total })} color="#1a237e" />
-            <StatChip label={t('matchManager.teamStatsWins', { count: stats.wins })} color="#1b5e20" />
-            <StatChip label={t('matchManager.teamStatsLosses', { count: stats.losses })} color="#c62828" />
-            <StatChip label={t('matchManager.teamStatsWinRate', { rate: stats.winRate })} color="#006064" />
-          </Stack>
-        </Paper>
+        <Card>
+          <Title level={5}>{t('matchManager.teamStatsTitle')}</Title>
+          <Space wrap>
+            <StatTag label={t('matchManager.teamStatsTotal', { count: stats.total })} color="purple" />
+            <StatTag label={t('matchManager.teamStatsWins', { count: stats.wins })} color="green" />
+            <StatTag label={t('matchManager.teamStatsLosses', { count: stats.losses })} color="red" />
+            <StatTag label={t('matchManager.teamStatsWinRate', { rate: stats.winRate })} color="blue" />
+          </Space>
+        </Card>
 
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight="bold">
-            {t('matchManager.teamOpenMatches')}
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
+        <Card>
+          <Title level={5}>{t('matchManager.teamOpenMatches')}</Title>
+          <Divider style={{ margin: '16px 0' }} />
           {openMatches.length === 0 ? (
-            <Alert severity="info">{t('matchManager.teamNoMatchesToday')}</Alert>
+            <Alert type="info" message={t('matchManager.teamNoMatchesToday')} />
           ) : (
-            <Stack spacing={2}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {openMatches.map((match) => (
-                <Paper
+                <Card
                   key={match.id}
-                  variant="outlined"
-                  sx={{ p: 2, cursor: 'pointer' }}
+                  size="small"
+                  hoverable
                   onClick={() => {
                     window.location.href = `/team/matches/${match.id}/entry`;
                   }}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {renderOutcomeChip(match)}
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {match.player || t('matchManager.teamUnknownPlayer')}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDateWithTime(match.date)}
-                      </Typography>
-                      {match.timezone ? (
-                        <Typography variant="caption" color="text.secondary">
-                          ({match.timezone})
-                        </Typography>
-                      ) : null}
-                      <Box sx={{ flex: 1 }} />
-                      {teamUser?.can_edit ? (
-                        <Stack direction="row" spacing={1}>
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditTarget(match); }}>
-                            <EditRoundedIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteTarget(match); }}>
-                            <DeleteRoundedIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      ) : null}
-                    </Stack>
-                    <Typography variant="body2">
+                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    <Flex justify="space-between" align="center" wrap="wrap" gap={8}>
+                      <Space wrap>
+                        {renderOutcomeTag(match)}
+                        <Text strong>{match.player || t('matchManager.teamUnknownPlayer')}</Text>
+                        <Text type="secondary">{formatDateWithTime(match.date)}</Text>
+                        {match.timezone && (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            ({match.timezone})
+                          </Text>
+                        )}
+                      </Space>
+                      {teamUser?.can_edit && (
+                        <Space>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditTarget(match);
+                            }}
+                          />
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            danger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(match);
+                            }}
+                          />
+                        </Space>
+                      )}
+                    </Flex>
+                    <Text>
                       {t('matchManager.teamScoreLine', {
                         self: match.selfScore ?? '-',
                         opponent: match.opponentScore ?? '-',
                       })}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    </Text>
+                    <Text type="secondary">
                       {t('matchManager.teamOpponentLine', {
                         team: match.opponentTeam || t('matchManager.teamUnknownTeam'),
                         player: match.opponentPlayer || t('matchManager.teamUnknownPlayer'),
                       })}
-                    </Typography>
-                  </Stack>
-                </Paper>
+                    </Text>
+                  </Space>
+                </Card>
               ))}
-            </Stack>
+            </Space>
           )}
-        </Paper>
-      </Stack>
+        </Card>
+      </Space>
 
       <MatchEditDialog
         open={Boolean(editTarget)}
@@ -320,45 +314,34 @@ const MatchManager: React.FC = () => {
         onUpdated={handleUpdatedMatch}
       />
 
-      <Dialog open={Boolean(deleteTarget)} onClose={deleteLoading ? undefined : () => setDeleteTarget(null)}>
-        <DialogTitle>{t('matchManager.teamDeleteTitle')}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2}>
-            <Typography>{t('matchManager.teamDeleteConfirm')}</Typography>
-            {deleteError ? <Alert severity="error">{deleteError}</Alert> : null}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
-            {t('matchManager.teamCancel')}
-          </Button>
-          <Button color="error" onClick={handleDelete} disabled={deleteLoading} variant="contained">
-            {deleteLoading ? t('matchManager.teamDeleting') : t('matchManager.teamDelete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <Modal
+        title={t('matchManager.teamDeleteTitle')}
+        open={Boolean(deleteTarget)}
+        onCancel={deleteLoading ? undefined : () => setDeleteTarget(null)}
+        onOk={handleDelete}
+        okText={deleteLoading ? t('matchManager.teamDeleting') : t('matchManager.teamDelete')}
+        cancelText={t('matchManager.teamCancel')}
+        okButtonProps={{ danger: true }}
+        confirmLoading={deleteLoading}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text>{t('matchManager.teamDeleteConfirm')}</Text>
+          {deleteError && <Alert type="error" message={deleteError} />}
+        </Space>
+      </Modal>
+    </div>
   );
 };
 
-type StatChipProps = {
+type StatTagProps = {
   label: string;
   color: string;
 };
 
-const StatChip: React.FC<StatChipProps> = ({ label, color }) => (
-  <Chip
-    label={label}
-    sx={{
-      bgcolor: `${color}14`,
-      color,
-      fontWeight: 600,
-      px: 2,
-      py: 1,
-      borderRadius: 2,
-      fontSize: 14,
-    }}
-  />
+const StatTag: React.FC<StatTagProps> = ({ label, color }) => (
+  <Tag color={color} style={{ fontWeight: 600, padding: '4px 12px', fontSize: 14 }}>
+    {label}
+  </Tag>
 );
 
 export default MatchManager;

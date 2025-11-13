@@ -14,15 +14,15 @@
  */
 
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Typography } from 'antd';
 
 const TeamLoginForm: React.FC = () => {
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h6">
+    <div style={{ padding: 16 }}>
+      <Typography.Title level={4}>
         ⚠️ This component is deprecated. Use LoginForm.tsx instead.
-      </Typography>
-    </Box>
+      </Typography.Title>
+    </div>
   );
 };
 
