@@ -18,17 +18,25 @@ const LanguageSwitcher: React.FC = () => {
     {
       key: 'ja',
       label: t('language.japanese'),
-      onClick: () => handleLanguageChange('ja'),
     },
     {
       key: 'en',
       label: t('language.english'),
-      onClick: () => handleLanguageChange('en'),
     },
   ];
 
+  const menuProps: MenuProps = {
+    items: menuItems,
+    selectedKeys: [currentLanguage],
+    onClick: ({ key }) => handleLanguageChange(String(key)),
+  };
+
   return (
-    <Dropdown menu={{ items: menuItems, selectedKeys: [currentLanguage] }} placement="bottomRight">
+    <Dropdown
+      menu={menuProps}
+      placement="bottomRight"
+      trigger={['click']}
+    >
       <Tooltip title={languageName}>
         <Button
           type="text"
