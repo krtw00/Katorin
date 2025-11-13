@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, DatePicker, Flex, Form, Modal, Select, Space, Spin, Typography } from 'antd';
+import { Alert, DatePicker, Flex, Form, Modal, Select, Space, Spin, Typography } from 'antd';
 import { useAuthorizedFetch } from '../auth/useAuthorizedFetch';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
@@ -105,15 +105,6 @@ const MatchCreateDialog: React.FC<MatchCreateDialogProps> = ({
       setError(null);
     }
   }, [open, mode, match, fetchTeams]);
-
-  const handleChange =
-    (field: keyof MatchFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { value } = event.target;
-      setValues((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
 
   const handleSubmit = async () => {
     const targetRoundId = effectiveRoundId;

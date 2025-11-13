@@ -10,7 +10,6 @@ import {
   Input,
   Modal,
   Pagination,
-  Progress,
   Row,
   Space,
   Spin,
@@ -33,7 +32,6 @@ import {
   EyeOutlined,
   ClockCircleOutlined,
   CalendarOutlined,
-  CloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -45,8 +43,6 @@ import { parseScoreValue } from '../types/matchTypes';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
-const { RangePicker } = DatePicker;
-
 const COMPLETED_PAGE_SIZE = 25;
 
 type Participant = {

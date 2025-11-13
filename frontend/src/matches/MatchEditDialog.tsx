@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   AutoComplete,
@@ -85,11 +85,6 @@ const MatchEditDialog: React.FC<Props> = ({ open, match, participants, onClose, 
     setTimezone(match.timezone ?? '');
     setError(null);
   }, [open, match]);
-
-  const selectedParticipant = useMemo(
-    () => participants.find((participant) => participant.name === playerName) ?? null,
-    [participants, playerName],
-  );
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

@@ -10,7 +10,6 @@ import {
   Space,
   Spin,
   Typography,
-  Upload,
   message,
 } from 'antd';
 import {

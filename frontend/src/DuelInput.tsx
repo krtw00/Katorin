@@ -49,28 +49,6 @@ const groupStyles = {
   },
 } satisfies Record<'self' | 'opponent', { headerBg: string; headerColor: string; cellBg: string }>;
 
-const modalFieldStyles = {
-  self: {
-    '& .MuiInputBase-root': {
-      backgroundColor: 'rgba(70, 124, 224, 0.12)',
-    },
-    '& .MuiInputLabel-root': {
-      color: '#6f9dff',
-    },
-  },
-  opponent: {
-    '& .MuiInputBase-root': {
-      backgroundColor: 'rgba(224, 86, 70, 0.18)',
-    },
-    '& .MuiInputBase-input': {
-      color: '#111',
-    },
-    '& .MuiInputLabel-root': {
-      color: '#d46060',
-    },
-  },
-};
-
 const emptyValues: MatchRecordFormValues = {
   team: '',
   player: '',
