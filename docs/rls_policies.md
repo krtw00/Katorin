@@ -1,26 +1,48 @@
-# RLS Policies
+# Row-Level Security (RLS) Policies
 
-原則:
-- admin: 全データ読書/作成/更新/削除可
-- player: 自チーム/自大会に関わるレコードのみアクセス
+データベースの各テーブルには、ユーザーの役割や権限に基づいてデータアクセスを制御するためのRLSポリシーが設定されています。
 
-matches の追加列（`20251104090000_add_result_input_permissions.sql`）:
-- input_allowed_team_id: 入力許可（NULL=不可, 'admin'=管理者のみ, その他=チームID）
-- result_status: 'draft' | 'submitted' | 'finalized'（将来拡張）
-- locked_by / locked_at: 入力ロック
-- finalized_at: 確定日時
+## `tournaments`
 
-推奨ポリシー例（擬似）:
-- SELECT:
-  - admin: true
-  - player: row.tournament_id IN player_accessible_tournaments()
-- INSERT/UPDATE:
-  - admin: true
-  - player: row.input_allowed_team_id = current_player_team_id() AND row.result_status = 'draft'
-- DELETE:
-  - admin: true
-  - player: false
+| 操作 | ポリシー | 説明 |
+| :--- | :--- | :--- |
+| `SELECT` | "Public tournaments" | 誰でも閲覧可能です。 |
+| `INSERT` | "Allow authenticated users to create tournaments" | 認証済みのユーザーであれば誰でも作成できます。 |
+| `UPDATE` | "Allow owner to update their tournaments" | トーナメントの作成者のみが更新できます。 |
+| `DELETE` | "Allow owner to delete their tournaments" | トーナメントの作成者のみが削除できます。 |
 
-注意:
-- Supabase Auth の `app_metadata.role` で admin 判定
-- チーム/大会の関連は専用ビューや SECURITY DEFINER 関数で判定する
+## `rounds`
+
+| 操作 | ポリシー | 説明 |
+| :--- | :--- | :--- |
+| `SELECT` | "Allow all users to read rounds" | 誰でも閲覧可能です。 |
+| `INSERT` | "Allow tournament owner to insert rounds" | 関連するトーナメントの作成者のみが作成できます。 |
+| `UPDATE` | "Allow tournament owner to update rounds" | 関連するトーナメントの作成者のみが更新できます。 |
+| `DELETE` | "Allow tournament owner to delete rounds" | 関連するトーナメントの作成者のみが削除できます。 |
+
+## `teams`
+
+| 操作 | ポリシー | 説明 |
+| :--- | :--- | :--- |
+| `SELECT` | "Teams can be viewed by anyone." | 誰でも閲覧可能です。 |
+| `INSERT` | "Teams can be created by authenticated users." | 認証済みのユーザーであれば誰でも作成できます。 |
+| `UPDATE` | "Team members or admins can update team details." | チームの`auth_user_id`に紐づくユーザー、または管理者権限(`has_admin_access`)を持つユーザーが更新できます。 |
+| `DELETE` | "Team members can delete their own team." | チームの`auth_user_id`に紐づくユーザーのみが削除できます。 |
+
+## `participants`
+
+| 操作 | ポリシー | 説明 |
+| :--- | :--- | :--- |
+| `SELECT` | "Team members and admins can view participants." | チームの作成者、または管理者権限(`has_admin_access`)を持つユーザーが閲覧できます。 |
+| `INSERT` | "Team members and admins can create participants." | チームの作成者、または管理者権限(`has_admin_access`)を持つユーザーが作成できます。 |
+| `UPDATE` | "Team members and admins can update participants." | チームの作成者、または管理者権限(`has_admin_access`)を持つユーザーが更新できます。 |
+| `DELETE` | "Team members and admins can delete participants." | チームの作成者、または管理者権限(`has_admin_access`)を持つユーザーが削除できます。 |
+
+## `matches`
+
+| 操作 | ポリシー | 説明 |
+| :--- | :--- | :--- |
+| `SELECT` | "Matches can be viewed by team members or creator." | 関連するチームのメンバー、またはトーナメントの作成者が閲覧できます。 |
+| `INSERT` | "Matches can be created by team members or creator." | 関連するチームのメンバー、またはトーナメントの作成者が作成できます。 |
+| `UPDATE` | "Matches can be updated by team members or creator." | 関連するチームのメンバー、またはトーナメントの作成者が更新できます。結果入力が許可されている(`input_allowed_team_id`)場合にも更新可能です。 |
+| `DELETE` | "Matches can be deleted by team members or creator." | 関連するチームのメンバー、またはトーナメントの作成者が削除できます。 |
