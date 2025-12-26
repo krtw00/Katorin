@@ -680,7 +680,7 @@ const TeamManagementPage: React.FC<TeamManagementPageProps> = ({
             style={{
               border: embedded ? '1px dashed rgba(24, 32, 56, 0.18)' : undefined,
             }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
           >
             <List
               dataSource={teams}

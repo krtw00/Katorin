@@ -215,7 +215,7 @@ const TournamentSelection: React.FC<TournamentSelectionProps> = ({ onSelect, onC
                       borderColor: '#d3dcff',
                       backgroundColor: '#f8faff',
                     }}
-                    bodyStyle={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+                    styles={{ body: { display: 'flex', flexDirection: 'column', height: '100%' } }}
                   >
                     <Space direction="vertical" size="small" style={{ flex: 1, width: '100%' }}>
                       <div>

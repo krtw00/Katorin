@@ -239,7 +239,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
                 overflow: 'hidden',
                 border: '3px solid rgba(0,0,0,0.2)',
               }}
-              bodyStyle={{ padding: 0 }}
+              styles={{ body: { padding: 0 } }}
             >
               <div
                 style={{
@@ -300,7 +300,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
                 overflow: 'hidden',
                 border: '3px solid rgba(0,0,0,0.2)',
               }}
-              bodyStyle={{ padding: 0 }}
+              styles={{ body: { padding: 0 } }}
             >
               <div
                 style={{
@@ -348,7 +348,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
             border: '3px solid #777',
             backgroundColor: '#d0d0d0',
           }}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <Table
             size="small"
@@ -458,7 +458,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
                 boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.25)',
                 border: 'none',
               }}
-              bodyStyle={{ padding: 0 }}
+              styles={{ body: { padding: 0 } }}
             >
               {form.winLabel}
             </Card>
@@ -477,7 +477,7 @@ const Duel: React.FC<DuelProps> = ({ form }) => {
                 boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.25)',
                 border: 'none',
               }}
-              bodyStyle={{ padding: 0 }}
+              styles={{ body: { padding: 0 } }}
             >
               {form.loseLabel}
             </Card>
