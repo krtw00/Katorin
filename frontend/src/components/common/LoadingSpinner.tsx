@@ -48,7 +48,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         width: '100%',
       }}
     >
-      <Spin indicator={icon} tip={tip} size={size} />
+      <Spin indicator={icon} size={size} />
     </div>
   );
 };
