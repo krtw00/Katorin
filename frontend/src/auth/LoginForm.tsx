@@ -53,6 +53,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [adminSuccess, setAdminSuccess] = useState<string | null>(null);
 
+  // Convert team name to slug format (same as backend)
+  const createSlugFrom = (value: string): string => {
+    return value
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -63,7 +73,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
         if (!teamName.trim() || !tournamentSlug.trim()) {
           throw new Error(t('auth.login.teamFieldsRequired'));
         }
-        const teamEmail = `${teamName.trim()}@${tournamentSlug.trim()}.players.local`;
+        // Convert team name to username slug (matches backend createSlugFrom)
+        const teamUsername = createSlugFrom(teamName);
+        const teamEmail = `${teamUsername}@${tournamentSlug.trim().toLowerCase()}.players.local`;
+        console.log('Team login attempt:', { teamName, teamUsername, teamEmail }); // Debug log
         await signInWithPassword({ email: teamEmail, password });
       } else {
         await signInWithPassword({ email, password });
@@ -72,6 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onShowPasswordReset })
       onSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : t('auth.login.loginFailed');
+      console.error('Login error:', err); // Debug log
       setError(message);
     } finally {
       setSubmitting(false);

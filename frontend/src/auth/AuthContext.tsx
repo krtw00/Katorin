@@ -51,10 +51,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithPassword = useCallback(async (credentials: { email: string; password: string }) => {
-    const { error } = await supabase.auth.signInWithPassword(credentials);
+    console.log('[AuthContext] Sign in attempt with email:', credentials.email);
+    const { data, error } = await supabase.auth.signInWithPassword(credentials);
     if (error) {
+      console.error('[AuthContext] Sign in failed:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        details: error
+      });
       throw error;
     }
+    console.log('[AuthContext] Sign in successful:', data.user?.email);
   }, []);
 
   const signOut = useCallback(async () => {
